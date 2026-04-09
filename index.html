@@ -139,7 +139,7 @@
             border: 1px solid var(--border);
             border-radius: 28px;
             padding: 28px 20px 24px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             position: relative;
             overflow: hidden;
         }
@@ -206,7 +206,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .stat-box {
@@ -284,82 +284,6 @@
             margin: -4px 0 12px 2px;
         }
 
-        .quick-meals {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .quick-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 12px 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            transition: all 0.18s;
-            min-height: 72px;
-        }
-
-        .quick-btn:hover {
-            border-color: var(--border2);
-            background: var(--surface2);
-        }
-
-        .quick-btn:active { transform: scale(0.98); }
-
-        .quick-btn .icon { font-size: 18px; }
-        .quick-btn .txt {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text);
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        .sport-mini {
-            margin-bottom: 20px;
-        }
-
-        .sport-row-btn {
-            width: 100%;
-            background: linear-gradient(135deg, rgba(255,124,77,0.15), rgba(255,77,124,0.08));
-            border: 1px solid rgba(255,124,77,0.28);
-            border-radius: 16px;
-            padding: 14px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.18s;
-        }
-
-        .sport-row-btn:hover {
-            border-color: rgba(255,124,77,0.45);
-            background: linear-gradient(135deg, rgba(255,124,77,0.22), rgba(255,77,124,0.12));
-        }
-
-        .sport-row-btn .left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sport-row-btn .title {
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .sport-row-btn .sub {
-            font-size: 10px;
-            color: var(--muted);
-            margin-top: 2px;
-        }
-
         .daily-section { margin-bottom: 8px; }
 
         #daily-list {
@@ -368,7 +292,9 @@
             gap: 14px;
         }
 
-        .entry-group { margin-bottom: 4px; }
+        .entry-group {
+            margin-bottom: 2px;
+        }
 
         .entry-group-header {
             display: flex;
@@ -383,12 +309,22 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 0;
         }
 
         .entry-group-title {
             font-family: 'Syne', sans-serif;
             font-size: 13px;
             font-weight: 700;
+            color: var(--text);
+        }
+
+        .entry-group-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .entry-group-total {
@@ -400,12 +336,20 @@
 
         .entry-group-total.sport { color: var(--orange); }
 
-        .entry-group-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+        .entry-add-btn {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .entry-add-btn:hover {
+            border-color: var(--border2);
         }
 
         .meal-save-btn {
@@ -557,7 +501,6 @@
 
         .recipes-list,
         .summary-cards,
-        .timeline-grid,
         .daily-week-list {
             display: flex;
             flex-direction: column;
@@ -566,12 +509,10 @@
 
         .recipe-card,
         .summary-card,
-        .timeline-card,
         .day-line,
         .recipe-form,
         .recipe-link-card,
-        .builder-item,
-        .metric-table {
+        .builder-item {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
@@ -579,16 +520,14 @@
         }
 
         .recipe-name,
-        .summary-title,
-        .timeline-title {
+        .summary-title {
             font-family: 'Syne', sans-serif;
             font-size: 15px;
             font-weight: 700;
         }
 
         .recipe-meta,
-        .summary-sub,
-        .timeline-sub {
+        .summary-sub {
             font-size: 11px;
             color: var(--muted);
             margin-top: 3px;
@@ -648,10 +587,6 @@
             background: rgba(91,127,255,0.14);
             border-color: rgba(91,127,255,0.24);
             color: var(--text);
-        }
-
-        .summary-cards {
-            margin-bottom: 12px;
         }
 
         .summary-kpi-row {
@@ -1188,7 +1123,7 @@
                 </div>
             </div>
 
-            <div class="stats-grid" style="margin-bottom:12px;">
+            <div class="stats-grid">
                 <div class="stat-box ingere">
                     <div class="s-label">🍽️ Ingérées</div>
                     <div class="s-val" id="stat-in">0</div>
@@ -1201,7 +1136,7 @@
                     <div class="s-label">🫀 Métabolisme</div>
                     <div class="s-val" id="stat-bmr">—</div>
                 </div>
-                <div class="stat-box.sport stat-box sport">
+                <div class="stat-box sport">
                     <div class="s-label">🚴 Sport</div>
                     <div class="s-val" id="stat-sport">0</div>
                 </div>
@@ -1223,50 +1158,9 @@
             </div>
         </div>
 
-        <div class="section-label">⚡ Ajout rapide</div>
-        <div class="quick-meals">
-            <button class="quick-btn" onclick="openModal('Petit-déjeuner')">
-                <div class="icon">🥐</div>
-                <div class="txt">Petit-déj.</div>
-            </button>
-            <button class="quick-btn" onclick="openModal('Déjeuner')">
-                <div class="icon">🍽️</div>
-                <div class="txt">Déjeuner</div>
-            </button>
-            <button class="quick-btn" onclick="openModal('Dîner')">
-                <div class="icon">🌙</div>
-                <div class="txt">Dîner</div>
-            </button>
-            <button class="quick-btn" onclick="openModal('Snack')">
-                <div class="icon">🍎</div>
-                <div class="txt">Snack</div>
-            </button>
-            <button class="quick-btn" onclick="openModal('Boissons')">
-                <div class="icon">🥤</div>
-                <div class="txt">Boissons</div>
-            </button>
-            <button class="quick-btn" onclick="openModal('Autre')">
-                <div class="icon">➕</div>
-                <div class="txt">Autre</div>
-            </button>
-        </div>
-
-        <div class="sport-mini">
-            <div class="section-label">🏃 Activité</div>
-            <button class="sport-row-btn" onclick="openModal('Sport')">
-                <div class="left">
-                    <span>🔥</span>
-                    <div>
-                        <div class="title">Ajouter une activité</div>
-                        <div class="sub">Marche 4 / 5 / 6 / 6,5 km/h ou vélo</div>
-                    </div>
-                </div>
-                <span>→</span>
-            </button>
-        </div>
-
         <div class="daily-section">
-            <div class="section-label" id="list-title" style="display:none">📋 Journal du jour</div>
+            <div class="section-label">📋 Journal du jour</div>
+            <div class="helper-line">Ajoute ou modifie directement les repas et l’activité dans chaque bloc.</div>
             <div id="daily-list"></div>
         </div>
     </section>
@@ -1309,11 +1203,11 @@
         </div>
 
         <div class="search-row">
-            <input id="in-desc" class="search-input" type="text" placeholder="Rechercher un aliment..." autocomplete="off" onkeydown="if(event.key==='Enter') startSearch()">
+            <input id="in-desc" class="search-input" type="text" placeholder="Rechercher..." autocomplete="off" onkeydown="if(event.key==='Enter') startSearch()">
             <button class="search-btn" onclick="startSearch()">↵</button>
         </div>
 
-        <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">Ajouter une recette sauvegardée au repas</button>
+        <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">Ajouter une recette sauvegardée</button>
 
         <div id="search-results"></div>
 
@@ -1437,11 +1331,11 @@
 
         <div class="inputs-grid">
             <div class="input-box">
-                <label>Quantité (g)</label>
+                <label>Quantité (g / ml)</label>
                 <input id="re-qty" type="number" value="100" oninput="recalcRecipeDraft()">
             </div>
             <div class="input-box">
-                <label>Kcal / 100g</label>
+                <label>Kcal / 100</label>
                 <input id="re-kcal" type="number" placeholder="0" oninput="recalcRecipeDraft()">
             </div>
         </div>
@@ -1463,7 +1357,7 @@
 
         <div class="calc-result">
             <div class="big" id="re-calc">0 kcal</div>
-            <div class="sub" id="re-calc-sub">pour 100g</div>
+            <div class="sub" id="re-calc-sub">pour 100</div>
         </div>
 
         <button class="btn-primary" onclick="addIngredientToRecipeBuilder()">Ajouter cet ingrédient</button>
@@ -1719,10 +1613,10 @@ function openModal(cat) {
 
     resetModalForm();
 
-    document.getElementById('modal-title').textContent = isSport ? '🔥 Sport' : '+ ' + cat;
+    document.getElementById('modal-title').textContent = isSport ? '🔥 Activité physique' : '+ ' + cat;
     document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
     document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
-    document.getElementById('in-qty').value = isSport ? '30' : (isDrink ? '100' : '100');
+    document.getElementById('in-qty').value = isSport ? '30' : '100';
     document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
     document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'inline-block';
     document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
@@ -2233,7 +2127,7 @@ function recalcRecipeDraft() {
     const k = parseFloat(document.getElementById('re-kcal').value) || 0;
     const total = Math.round(k * (q / 100));
     document.getElementById('re-calc').textContent = total + ' kcal';
-    document.getElementById('re-calc-sub').textContent = `pour ${q}g/ml`;
+    document.getElementById('re-calc-sub').textContent = `pour ${q} g/ml`;
 }
 
 function addIngredientToRecipeBuilder() {
@@ -2511,7 +2405,6 @@ async function loadBilan() {
         <div class="summary-card">
             <div class="summary-title">${label}</div>
             <div class="summary-sub">${formatDateFR(startStr, { day:'numeric', month:'short', year:'numeric' })} → ${formatDateFR(endStr, { day:'numeric', month:'short', year:'numeric' })}</div>
-
             <div class="summary-kpi-row">
                 <div class="mini-kpi in">
                     <div class="label">Moy. ingérée / jour</div>
@@ -2526,7 +2419,6 @@ async function loadBilan() {
         <div class="summary-card">
             <div class="summary-title">Totaux période</div>
             <div class="summary-sub">${totalDays} jour(s) pris en compte</div>
-
             <div class="summary-kpi-row">
                 <div class="mini-kpi in">
                     <div class="label">Total ingéré</div>
@@ -2565,7 +2457,7 @@ async function loadBilan() {
         detailEl.innerHTML = `
             <div class="summary-card">
                 <div class="summary-title">Vue synthétique</div>
-                <div class="summary-sub">Pour cette timeline, seules les moyennes quotidiennes et les totaux sont affichés.</div>
+                <div class="summary-sub">Pour cette timeline, les moyennes quotidiennes et les totaux sont affichés.</div>
             </div>
         `;
     }
@@ -2597,10 +2489,10 @@ async function loadData() {
 
     const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
     const totalOut = bmr + tSport;
-    const remaining = userGoal + tSport - tIn;
-    const pct = Math.min(100, Math.round((tIn / Math.max(userGoal,1)) * 100));
+    const remaining = userGoal - tIn;
+    const pct = Math.min(100, Math.round((tIn / Math.max(userGoal, 1)) * 100));
 
-    document.getElementById('kcal-left').textContent = Math.max(0, remaining);
+    document.getElementById('kcal-left').textContent = remaining;
     document.getElementById('stat-in').textContent = tIn;
     document.getElementById('stat-out').textContent = totalOut;
     document.getElementById('stat-bmr').textContent = bmr;
@@ -2618,22 +2510,13 @@ async function loadData() {
     else bar.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
 
     const kcalEl = document.getElementById('kcal-left');
-    if (remaining < 200) kcalEl.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
-    else if (remaining < 500) kcalEl.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
+    if (remaining < 0) kcalEl.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
+    else if (remaining < 300) kcalEl.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
     else kcalEl.style.background = 'linear-gradient(135deg,#fff 30%,#7a8098)';
     kcalEl.style.webkitBackgroundClip = 'text';
     kcalEl.style.webkitTextFillColor = 'transparent';
 
     const listEl = document.getElementById('daily-list');
-    const titleEl = document.getElementById('list-title');
-
-    if (!entries.length) {
-        titleEl.style.display = 'none';
-        listEl.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>Aucun aliment enregistré aujourd'hui</div>`;
-        return;
-    }
-
-    titleEl.style.display = 'block';
 
     const ORDER = ['Petit-déjeuner','Déjeuner','Dîner','Snack','Boissons','Autre','Sport'];
     const ICONS = {
@@ -2657,8 +2540,6 @@ async function loadData() {
 
     ORDER.forEach(cat => {
         const items = groups[cat];
-        if (!items.length) return;
-
         const subtotal = items.reduce((sum, e) => sum + e.val, 0);
         const isSport = cat === 'Sport';
 
@@ -2670,14 +2551,15 @@ async function loadData() {
                         <span class="entry-group-title">${cat}</span>
                     </div>
                     <div class="entry-group-actions">
-                        ${!isSport ? `<button class="meal-save-btn" onclick="openLinkMealModal('${esc(cat)}')">Ajouter à une recette</button>` : ''}
+                        <button class="entry-add-btn" onclick="openModal('${esc(cat)}')">+ Ajouter</button>
+                        ${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${esc(cat)}')">Ajouter à une recette</button>` : ''}
                         <span class="entry-group-total ${isSport ? 'sport' : ''}">
                             ${isSport ? '−' : '+'}${subtotal} kcal
                         </span>
                     </div>
                 </div>
                 <div class="entry-group-items">
-                    ${items.map(e => `
+                    ${items.length ? items.map(e => `
                         <div class="entry-item">
                             <div class="entry-main">
                                 <div class="entry-desc">${e.desc}</div>
@@ -2688,7 +2570,7 @@ async function loadData() {
                                 <button class="entry-action delete" onclick="del(${e.id})">✕</button>
                             </div>
                         </div>
-                    `).join('')}
+                    `).join('') : `<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}
                 </div>
             </div>
         `;
