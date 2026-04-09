@@ -893,9 +893,9 @@ async function submitEntry() {
         category: currentCat,
         desc:     `${desc} (${q}${isSport ? 'min' : 'g'})`,
         val,
-        prot:     Math.round(p * factor * 10) / 10,
-        gluc:     Math.round(g * factor * 10) / 10,
-        lip:      Math.round(l * factor * 10) / 10,
+        prot: Math.round(p * factor),
+        gluc: Math.round(g * factor),
+        lip:  Math.round(l * factor),
         date:     new Date().toISOString().split('T')[0]
     }]);
 
