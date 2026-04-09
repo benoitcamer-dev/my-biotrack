@@ -21,14 +21,14 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE"; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Favoris Sport
         const sportsDB = [
             { name: "Course à pied (10km/h)", kcal: 600 },
             { name: "Marche active", kcal: 280 },
             { name: "Cyclisme (modéré)", kcal: 450 },
             { name: "Natation", kcal: 550 },
             { name: "Musculation / Fitness", kcal: 350 },
-            { name: "Yoga / Pilates", kcal: 180 },
-            { name: "Football / Tennis", kcal: 600 }
+            { name: "Yoga / Pilates", kcal: 180 }
         ];
     </script>
 
@@ -47,16 +47,16 @@
             
             <div class="grid grid-cols-3 gap-3 mt-8">
                 <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
-                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase text-center">Prot</p>
-                    <p id="total-p" class="font-bold text-sm text-slate-700 text-center">0g</p>
+                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase">Prot</p>
+                    <p id="total-p" class="font-bold text-sm text-slate-700">0g</p>
                 </div>
                 <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100">
-                    <p class="text-[9px] font-black text-orange-500 mb-1 uppercase text-center">Gluc</p>
-                    <p id="total-g" class="font-bold text-sm text-slate-700 text-center">0g</p>
+                    <p class="text-[9px] font-black text-orange-500 mb-1 uppercase">Gluc</p>
+                    <p id="total-g" class="font-bold text-sm text-slate-700">0g</p>
                 </div>
                 <div class="bg-pink-50/50 p-3 rounded-2xl border border-pink-100">
-                    <p class="text-[9px] font-black text-pink-500 mb-1 uppercase text-center">Lip</p>
-                    <p id="total-l" class="font-bold text-sm text-slate-700 text-center">0g</p>
+                    <p class="text-[9px] font-black text-pink-500 mb-1 uppercase">Lip</p>
+                    <p id="total-l" class="font-bold text-sm text-slate-700">0g</p>
                 </div>
             </div>
         </div>
@@ -77,7 +77,7 @@
         <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
             
             <div class="flex gap-2 mb-4">
-                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100" onkeypress="if(event.key === 'Enter') startSearch()">
+                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100">
                 <button onclick="startSearch()" class="bg-blue-600 text-white px-5 rounded-2xl shadow-md active:scale-95 transition-transform">🔍</button>
             </div>
 
@@ -89,27 +89,27 @@
                     <input id="in-qty" type="number" value="100" class="w-full bg-transparent font-bold text-blue-600 outline-none" oninput="recalc()">
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal / 100g ou h</label>
+                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal / unité</label>
                     <input id="in-kcal" type="number" placeholder="0" class="w-full bg-transparent font-bold outline-none" oninput="recalc()">
                 </div>
             </div>
 
             <div id="macro-fields" class="grid grid-cols-3 gap-2 mb-6">
                 <div class="text-center bg-blue-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot/100g</label>
+                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot</label>
                     <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-orange-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc/100g</label>
-                    <input id="in-g" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
+                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc</label>
+                    <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-pink-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip/100g</label>
+                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip</label>
                     <input id="in-l" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
             </div>
 
-            <div id="calc-res" class="text-3xl font-black text-center mb-6 text-slate-800 tracking-tighter">0 kcal</div>
+            <div id="calc-res" class="text-3xl font-black text-center mb-6 text-slate-800">0 kcal</div>
             
             <button onclick="submitEntry()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:bg-blue-700">VALIDER</button>
             <button onclick="closeModal()" class="w-full mt-4 text-[10px] text-slate-300 font-bold uppercase text-center">Annuler</button>
@@ -139,7 +139,7 @@
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-pass').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Email ou mot de passe incorrect"); else init();
+            if (error) alert("Accès refusé"); else init();
         }
 
         function logout() { supabaseClient.auth.signOut().then(() => location.reload()); }
@@ -156,11 +156,13 @@
             resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche...</div>`;
 
             try {
-                const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=15`);
+                // URL OPTIMISÉE POUR L'ALCOOL ET LES BOISSONS
+                const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=24&action=process&sort_by=unique_scans_n`;
+                const res = await fetch(url);
                 const data = await res.json();
                 
                 if (!data.products || data.products.length === 0) {
-                    resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun produit trouvé</div>`;
+                    resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun résultat</div>`;
                     return;
                 }
 
@@ -168,9 +170,12 @@
                     const n = (p.product_name_fr || p.product_name || "Inconnu").replace(/'/g, "\\'");
                     let k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
                     
-                    // Correction Vin : si calories absentes et mot "vin" présent
-                    const isWine = n.toLowerCase().includes('vin');
-                    if (k === 0 && isWine) k = 80;
+                    // Correction Manuelle pour les alcools sans calories dans la base
+                    const lowerN = n.toLowerCase();
+                    if (k === 0) {
+                        if (lowerN.includes('vin')) k = 80;
+                        else if (lowerN.includes('bière') || lowerN.includes('biere')) k = 45;
+                    }
 
                     const pr = p.nutriments?.proteins_100g || 0;
                     const gl = p.nutriments?.carbohydrates_100g || 0;
@@ -182,7 +187,7 @@
                     </div>`;
                 }).join('');
             } catch (err) {
-                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur réseau API</div>`;
+                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur réseau</div>`;
             }
         }
 
@@ -190,21 +195,18 @@
             const resDiv = document.getElementById('search-results');
             resDiv.classList.remove('hidden');
             const filtered = sportsDB.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
-            
-            resDiv.innerHTML = filtered.length > 0 ? filtered.map(s => `
+            resDiv.innerHTML = filtered.map(s => `
                 <div onclick="fill('${s.name}', ${s.kcal}, 0, 0, 0)" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-orange-50 bg-white">
                     <p class="font-bold text-xs text-slate-800">${s.name}</p>
                     <p class="text-[9px] text-orange-500 font-black mt-1 uppercase">${s.kcal} kcal / heure</p>
                 </div>
-            `).join('') : `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Remplissez les Kcal manuellement</div>`;
+            `).join('') || `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Saisie libre</div>`;
         }
 
         function fill(n, k, pr, gl, lp) {
             document.getElementById('in-desc').value = n;
             document.getElementById('in-kcal').value = k;
             document.getElementById('in-p').value = pr;
-            document.getElementById('in-g').value = gl;
-            document.getElementById('in-l').value = lp;
             document.getElementById('search-results').classList.add('hidden');
             recalc();
         }
@@ -222,23 +224,17 @@
             const k = parseFloat(document.getElementById('in-kcal').value) || 0;
             const d = document.getElementById('in-desc').value;
             if(!d || !user) return;
-
             const factor = (currentCat === 'Sport') ? (q / 60) : (q / 100);
 
-            const { error } = await supabaseClient.from('entries').insert([{
+            await supabaseClient.from('entries').insert([{
                 user_id: user.id,
                 type: currentCat === 'Sport' ? 'burn' : 'food',
                 category: currentCat,
                 desc: `${d} (${q}${currentCat === 'Sport' ? 'min' : 'g'})`,
                 val: Math.round(k * factor),
-                prot: Math.round((parseFloat(document.getElementById('in-p').value) || 0) * factor),
-                gluc: Math.round((parseFloat(document.getElementById('in-g').value) || 0) * factor),
-                lip: Math.round((parseFloat(document.getElementById('in-l').value) || 0) * factor),
                 date: new Date().toISOString().split('T')[0]
             }]);
-
-            if (error) alert("Erreur base de données");
-            else { closeModal(); loadData(); }
+            closeModal(); loadData();
         }
 
         async function loadData() {
@@ -247,31 +243,25 @@
             const today = new Date().toISOString().split('T')[0];
             const { data } = await supabaseClient.from('entries').select('*').eq('user_id', user.id).eq('date', today);
 
-            let html = ""; let tIn = 0, tOut = 0, tp = 0, tg = 0, tl = 0;
+            let html = ""; let tIn = 0, tOut = 0;
             (data || []).sort((a,b) => b.id - a.id).forEach(e => {
-                if(e.type === 'food') { tIn += e.val; tp += e.prot || 0; tg += e.gluc || 0; tl += e.lip || 0; }
-                else { tOut += e.val; }
-                
+                if(e.type === 'food') tIn += e.val; else tOut += e.val;
                 html += `<div class="bg-white p-5 rounded-[1.5rem] flex justify-between items-center shadow-sm border border-slate-50">
                     <div>
-                        <span class="text-[9px] font-black ${e.type === 'food' ? 'text-slate-400' : 'text-orange-400'} uppercase tracking-widest mb-1">${e.category}</span>
+                        <span class="text-[9px] font-black ${e.type === 'food' ? 'text-slate-400' : 'text-orange-400'} uppercase tracking-widest">${e.category}</span>
                         <p class="font-bold text-[11px] text-slate-700">${e.desc}</p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <span class="font-black text-sm ${e.type === 'food' ? 'text-blue-600' : 'text-orange-500'} tracking-tighter">${e.type === 'burn' ? '-' : ''}${e.val} kcal</span>
-                        <button onclick="del(${e.id})" class="p-2 text-slate-200 hover:text-red-500 transition-colors">✕</button>
+                        <span class="font-black text-sm ${e.type === 'food' ? 'text-blue-600' : 'text-orange-500'}">${e.type === 'burn' ? '-' : ''}${e.val} kcal</span>
+                        <button onclick="del(${e.id})" class="p-2 text-slate-200">✕</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('daily-list').innerHTML = html || `<div class="py-20 text-center opacity-20 font-black italic uppercase text-xs">Aucune entrée aujourd'hui</div>`;
+            document.getElementById('daily-list').innerHTML = html;
             document.getElementById('kcal-left').innerText = (goal + tOut) - tIn;
-            document.getElementById('total-p').innerText = Math.round(tp) + 'g';
-            document.getElementById('total-g').innerText = Math.round(tg) + 'g';
-            document.getElementById('total-l').innerText = Math.round(tl) + 'g';
         }
 
         async function del(id) {
-            if (!confirm("Supprimer ?")) return;
             await supabaseClient.from('entries').delete().eq('id', id);
             loadData();
         }
@@ -279,25 +269,15 @@
         function openModal(c) { 
             currentCat = c; 
             document.getElementById('modal-add').classList.remove('hidden');
-            document.getElementById('in-desc').value = ""; 
-            document.getElementById('in-kcal').value = "";
-            document.getElementById('in-p').value = "0";
-            document.getElementById('in-g').value = "0";
-            document.getElementById('in-l').value = "0";
-            document.getElementById('search-results').classList.add('hidden');
-            
             if (c === 'Sport') {
                 document.getElementById('label-qty').innerText = "Durée (min)";
                 document.getElementById('label-kcal').innerText = "Kcal / Heure";
                 document.getElementById('macro-fields').classList.add('hidden');
-                document.getElementById('in-qty').value = "30";
             } else {
                 document.getElementById('label-qty').innerText = "Quantité (g)";
                 document.getElementById('label-kcal').innerText = "Kcal / 100g";
                 document.getElementById('macro-fields').classList.remove('hidden');
-                document.getElementById('in-qty').value = "100";
             }
-            recalc();
         }
 
         function closeModal() { document.getElementById('modal-add').classList.add('hidden'); }
