@@ -646,7 +646,8 @@ const SPORT_DB = [
 // ════════════════════════════════════════
 function calcBMR(w, h, a, s) {
     const base = 10 * w + 6.25 * h - 5 * a;
-    return Math.round(s === 'H' ? base + 5 : base - 161);
+    const bmr  = s === 'H' ? base + 5 : base - 161;
+    return Math.round(bmr * 1.2); // × 1.2 = sédentaire
 }
 
 // ════════════════════════════════════════
