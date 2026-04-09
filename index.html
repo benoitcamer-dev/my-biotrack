@@ -292,9 +292,7 @@
             gap: 14px;
         }
 
-        .entry-group {
-            margin-bottom: 2px;
-        }
+        .entry-group { margin-bottom: 2px; }
 
         .entry-group-header {
             display: flex;
@@ -348,9 +346,7 @@
             white-space: nowrap;
         }
 
-        .entry-add-btn:hover {
-            border-color: var(--border2);
-        }
+        .entry-add-btn:hover { border-color: var(--border2); }
 
         .meal-save-btn {
             border: 1px solid rgba(91,127,255,0.22);
@@ -366,9 +362,7 @@
             white-space: nowrap;
         }
 
-        .meal-save-btn:hover {
-            background: rgba(91,127,255,0.16);
-        }
+        .meal-save-btn:hover { background: rgba(91,127,255,0.16); }
 
         .entry-group-items {
             display: flex;
@@ -512,7 +506,8 @@
         .day-line,
         .recipe-form,
         .recipe-link-card,
-        .builder-item {
+        .builder-item,
+        .nav-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
@@ -541,14 +536,17 @@
             margin-bottom: 10px;
         }
 
-        .recipe-actions {
+        .recipe-actions,
+        .week-nav {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             margin-top: 8px;
+            align-items: center;
         }
 
-        .recipe-btn {
+        .recipe-btn,
+        .nav-btn {
             border: 1px solid var(--border);
             background: var(--surface2);
             color: var(--text);
@@ -557,7 +555,8 @@
             font-size: 11px;
         }
 
-        .recipe-btn.primary {
+        .recipe-btn.primary,
+        .nav-btn.primary {
             background: var(--accent);
             border-color: transparent;
             color: #fff;
@@ -639,9 +638,7 @@
             margin-top: 2px;
         }
 
-        .day-line-right {
-            text-align: right;
-        }
+        .day-line-right { text-align: right; }
 
         .day-line-right .in {
             font-family: 'Syne', sans-serif;
@@ -1025,6 +1022,18 @@
             gap: 10px;
         }
 
+        .nav-card .week-nav {
+            justify-content: space-between;
+        }
+
+        .nav-center {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text);
+            font-weight: 700;
+        }
+
         #auth-screen {
             position: fixed;
             inset: 0;
@@ -1189,6 +1198,7 @@
             <button class="range-btn" id="range-year" onclick="setBilanRange('year')">Année</button>
         </div>
 
+        <div id="bilan-nav"></div>
         <div id="bilan-summary" class="summary-cards"></div>
         <div id="bilan-detail" class="daily-week-list"></div>
     </section>
@@ -1213,12 +1223,23 @@
 
         <div class="inputs-grid">
             <div class="input-box">
-                <label id="label-qty">Quantité (g)</label>
+                <label id="label-qty">Quantité</label>
                 <input id="in-qty" type="number" value="100" oninput="recalc()">
             </div>
             <div class="input-box">
-                <label id="label-kcal">Kcal / 100g</label>
+                <label id="label-kcal">Kcal / 100</label>
                 <input id="in-kcal" type="number" placeholder="0" oninput="recalc()">
+            </div>
+        </div>
+
+        <div class="inputs-grid" id="speed-row" style="display:none;">
+            <div class="input-box">
+                <label>Vitesse (km/h)</label>
+                <input id="in-speed" type="number" value="6" step="0.1" oninput="recalc()">
+            </div>
+            <div class="input-box">
+                <label>Distance estimée</label>
+                <input id="in-distance" type="text" value="—" readonly style="opacity:.8;">
             </div>
         </div>
 
@@ -1411,23 +1432,21 @@ let recipeBuilder = [];
 let editingRecipeId = null;
 let recipePickerTargetCategory = null;
 let bilanRange = "week";
+let bilanCursor = new Date();
 
 const DRINK_DB = [
-    { name:"Aperol spritz", k:120, pr:0, gl:11, lp:0 },
-    { name:"Moscow mule", k:105, pr:0, gl:10, lp:0 },
-    { name:"London Mule", k:110, pr:0, gl:10, lp:0 },
-    { name:"Bière légère (4-5%)", k:42, pr:0.4, gl:3.2, lp:0 },
-    { name:"Bière forte (6-8%)", k:58, pr:0.5, gl:4.5, lp:0 },
-    { name:"Vin rouge", k:85, pr:0.1, gl:2.6, lp:0 },
-    { name:"Vin rosé", k:83, pr:0.1, gl:2.1, lp:0 },
-    { name:"Vin blanc", k:82, pr:0.1, gl:1.6, lp:0 }
+    { name:"Aperol spritz", k:120, pr:0, gl:11, lp:0, defaultQty:150, kind:'cocktail' },
+    { name:"Moscow mule", k:105, pr:0, gl:10, lp:0, defaultQty:200, kind:'cocktail' },
+    { name:"London Mule", k:110, pr:0, gl:10, lp:0, defaultQty:200, kind:'cocktail' },
+    { name:"Bière légère (4-5%)", k:42, pr:0.4, gl:3.2, lp:0, defaultQty:500, kind:'beer' },
+    { name:"Bière forte (6-8%)", k:58, pr:0.5, gl:4.5, lp:0, defaultQty:500, kind:'beer' },
+    { name:"Vin rouge", k:85, pr:0.1, gl:2.6, lp:0, defaultQty:120, kind:'wine' },
+    { name:"Vin rosé", k:83, pr:0.1, gl:2.1, lp:0, defaultQty:120, kind:'wine' },
+    { name:"Vin blanc", k:82, pr:0.1, gl:1.6, lp:0, defaultQty:120, kind:'wine' }
 ];
 
 const SPORT_DB = [
-    { name:"Marche 4 km/h", speed:4, mode:'walk' },
-    { name:"Marche 5 km/h", speed:5, mode:'walk' },
-    { name:"Marche 6 km/h", speed:6, mode:'walk' },
-    { name:"Marche 6,5 km/h", speed:6.5, mode:'walk' },
+    { name:"Marche", mode:'walk' },
     { name:"Vélo", mode:'bike' }
 ];
 
@@ -1462,9 +1481,23 @@ function showPage(page) {
 
 function setBilanRange(range) {
     bilanRange = range;
+    bilanCursor = new Date();
     ['week','month','quarter','year'].forEach(r => {
         document.getElementById('range-' + r).classList.toggle('active', r === range);
     });
+    loadBilan();
+}
+
+function moveBilan(delta) {
+    if (bilanRange === 'week') bilanCursor.setDate(bilanCursor.getDate() + (delta * 7));
+    else if (bilanRange === 'month') bilanCursor.setMonth(bilanCursor.getMonth() + delta);
+    else if (bilanRange === 'quarter') bilanCursor.setMonth(bilanCursor.getMonth() + (delta * 3));
+    else bilanCursor.setFullYear(bilanCursor.getFullYear() + delta);
+    loadBilan();
+}
+
+function resetBilanToToday() {
+    bilanCursor = new Date();
     loadBilan();
 }
 
@@ -1579,7 +1612,9 @@ function calcWalkKcalPerHour(speed) {
     if (speed <= 4) return 180;
     if (speed <= 5) return 240;
     if (speed <= 6) return 320;
-    return 360;
+    if (speed <= 6.5) return 360;
+    if (speed <= 7) return 400;
+    return 450;
 }
 
 function calcBikeKcalPerHour(speed) {
@@ -1604,6 +1639,9 @@ function resetModalForm() {
     document.getElementById('in-l').value = '0';
     document.getElementById('search-results').style.display = 'none';
     document.getElementById('search-results').innerHTML = '';
+    document.getElementById('speed-row').style.display = 'none';
+    document.getElementById('in-speed').value = '6';
+    document.getElementById('in-distance').value = '—';
 }
 
 function openModal(cat) {
@@ -1645,29 +1683,23 @@ function cancelEdit() {
 function showAllSports() {
     const resDiv = document.getElementById('search-results');
     resDiv.style.display = 'block';
-    resDiv.innerHTML = SPORT_DB.map(s => {
-        if (s.mode === 'bike') {
-            return `
-                <div class="result-item" onclick="selectBikeMode()">
-                    <div class="result-name">Vélo</div>
-                    <div class="result-kcal burn">Entrer une vitesse</div>
-                </div>
-            `;
-        }
-        return `
-            <div class="result-item" onclick="selectWalk('${esc(s.name)}', ${s.speed})">
-                <div class="result-name">${s.name}</div>
-                <div class="result-kcal burn">${calcWalkKcalPerHour(s.speed)} kcal/h</div>
-            </div>
-        `;
-    }).join('');
+    resDiv.innerHTML = `
+        <div class="result-item" onclick="selectWalkMode()">
+            <div class="result-name">Marche</div>
+            <div class="result-kcal burn">6 km/h par défaut, modifiable ensuite</div>
+        </div>
+        <div class="result-item" onclick="selectBikeMode()">
+            <div class="result-name">Vélo</div>
+            <div class="result-kcal burn">Entrer une vitesse</div>
+        </div>
+    `;
 }
 
 function showDrinkSuggestions() {
     const resDiv = document.getElementById('search-results');
     resDiv.style.display = 'block';
     resDiv.innerHTML = DRINK_DB.map(a => `
-        <div class="result-item" onclick="fill('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})">
+        <div class="result-item" onclick="fillDrink('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp}, ${a.defaultQty}, '${a.kind}')">
             <div><span class="result-tag">Base locale</span></div>
             <div class="result-name">${a.name}</div>
             <div class="result-kcal">${a.k} kcal/100ml</div>
@@ -1675,11 +1707,12 @@ function showDrinkSuggestions() {
     `).join('');
 }
 
-function selectWalk(name, speed) {
-    document.getElementById('in-desc').value = name;
+function selectWalkMode() {
+    document.getElementById('in-desc').value = 'Marche';
     document.getElementById('label-kcal').textContent = 'Kcal / heure';
-    document.getElementById('in-kcal').placeholder = '0';
-    document.getElementById('in-kcal').value = calcWalkKcalPerHour(speed);
+    document.getElementById('in-kcal').placeholder = 'Auto';
+    document.getElementById('speed-row').style.display = 'grid';
+    document.getElementById('in-speed').value = '6';
     document.getElementById('search-results').style.display = 'none';
     recalc();
 }
@@ -1687,9 +1720,25 @@ function selectWalk(name, speed) {
 function selectBikeMode() {
     document.getElementById('in-desc').value = 'Vélo';
     document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
-    document.getElementById('in-kcal').value = '';
+    document.getElementById('in-kcal').value = '18';
     document.getElementById('in-kcal').placeholder = 'Ex: 18';
+    document.getElementById('speed-row').style.display = 'none';
     document.getElementById('search-results').style.display = 'none';
+    recalc();
+}
+
+function fillDrink(name, k, pr, gl, lp, defaultQty, kind) {
+    document.getElementById('in-desc').value = name;
+    document.getElementById('in-kcal').value = k;
+    document.getElementById('in-p').value = pr;
+    document.getElementById('in-g').value = gl;
+    document.getElementById('in-l').value = lp;
+    document.getElementById('in-qty').value = defaultQty;
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('calc-sub').textContent =
+        kind === 'beer' ? 'pinte de 500ml' :
+        kind === 'cocktail' ? 'dose bar classique' :
+        `pour ${defaultQty}ml`;
     recalc();
 }
 
@@ -1713,7 +1762,7 @@ async function searchFood(val, target = 'main') {
     const lowerVal = val.toLowerCase();
     const localHits = DRINK_DB.filter(a => a.name.toLowerCase().includes(lowerVal));
     const localHTML = localHits.map(a => `
-        <div class="result-item" onclick="${isRecipe ? `fillRecipeIngredient('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})` : `fill('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})`}">
+        <div class="result-item" onclick="${isRecipe ? `fillRecipeIngredient('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})` : `fillDrink('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp}, ${a.defaultQty}, '${a.kind}')`}">
             <div><span class="result-tag">Base locale</span></div>
             <div class="result-name">${a.name}</div>
             <div class="result-kcal">${a.k} kcal/100ml</div>
@@ -1733,7 +1782,7 @@ async function searchFood(val, target = 'main') {
             const gl = p.nutriments?.carbohydrates_100g || 0;
             const lp = p.nutriments?.fat_100g || 0;
             return `
-                <div class="result-item" onclick="${isRecipe ? `fillRecipeIngredient('${esc(name)}', ${k}, ${pr}, ${gl}, ${lp})` : `fill('${esc(name)}', ${k}, ${pr}, ${gl}, ${lp})`}">
+                <div class="result-item" onclick="${isRecipe ? `fillRecipeIngredient('${esc(name)}', ${k}, ${pr}, ${gl}, ${lp})` : `fillFood('${esc(name)}', ${k}, ${pr}, ${gl}, ${lp})`}">
                     <div class="result-name">${name}</div>
                     <div class="result-kcal">${k} kcal/100g</div>
                 </div>
@@ -1751,26 +1800,16 @@ function searchSport(val) {
     const resDiv = document.getElementById('search-results');
     resDiv.style.display = 'block';
 
-    const hits = SPORT_DB.filter(s => s.name.toLowerCase().includes(q));
-    resDiv.innerHTML = hits.map(s => {
-        if (s.mode === 'bike') {
-            return `
-                <div class="result-item" onclick="selectBikeMode()">
-                    <div class="result-name">Vélo</div>
-                    <div class="result-kcal burn">Entrer une vitesse</div>
-                </div>
-            `;
-        }
-        return `
-            <div class="result-item" onclick="selectWalk('${esc(s.name)}', ${s.speed})">
-                <div class="result-name">${s.name}</div>
-                <div class="result-kcal burn">${calcWalkKcalPerHour(s.speed)} kcal/h</div>
-            </div>
-        `;
-    }).join('') || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
+    const items = SPORT_DB.filter(s => s.name.toLowerCase().includes(q));
+    resDiv.innerHTML = items.map(s => `
+        <div class="result-item" onclick="${s.mode === 'walk' ? 'selectWalkMode()' : 'selectBikeMode()'}">
+            <div class="result-name">${s.name}</div>
+            <div class="result-kcal burn">${s.mode === 'walk' ? 'vitesse modifiable' : 'vitesse à renseigner'}</div>
+        </div>
+    `).join('') || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
 }
 
-function fill(name, k, pr, gl, lp) {
+function fillFood(name, k, pr, gl, lp) {
     document.getElementById('in-desc').value = name;
     document.getElementById('in-kcal').value = k;
     document.getElementById('in-p').value = pr;
@@ -1784,7 +1823,14 @@ function getEffectiveKcalInput() {
     const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
     const isSport = currentCat === 'Sport';
     const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-    if (isSport && desc === 'vélo') return calcBikeKcalPerHour(raw);
+
+    if (isSport && desc === 'marche') {
+        const speed = parseFloat(document.getElementById('in-speed').value) || 6;
+        return calcWalkKcalPerHour(speed);
+    }
+    if (isSport && desc === 'vélo') {
+        return calcBikeKcalPerHour(raw);
+    }
     return raw;
 }
 
@@ -1800,9 +1846,15 @@ function recalc() {
 
     document.getElementById('calc-res').textContent = total + ' kcal';
 
-    if (isSport && desc === 'vélo') {
+    if (isSport && desc === 'marche') {
+        const speed = parseFloat(document.getElementById('in-speed').value) || 6;
+        const distance = round1(speed * (q / 60));
+        document.getElementById('in-distance').value = distance + ' km';
+        document.getElementById('calc-sub').textContent = `${speed} km/h • ${k} kcal/h`;
+    } else if (isSport && desc === 'vélo') {
         document.getElementById('calc-sub').textContent = `${raw || 0} km/h • ${k} kcal/h`;
     } else {
+        document.getElementById('in-distance').value = '—';
         document.getElementById('calc-sub').textContent = isSport ? `pour ${q} min` : (isDrink ? `pour ${q}ml` : `pour ${q}g`);
     }
 }
@@ -1824,13 +1876,30 @@ function editEntry(id) {
     document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
     document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
     document.getElementById('saved-meal-link').style.display = 'none';
+    document.getElementById('speed-row').style.display = 'none';
 
     document.getElementById('in-desc').value = parsed.label;
     document.getElementById('in-qty').value = qty;
 
     if (isSport) {
+        const label = parsed.label.toLowerCase();
         const perHour = Math.round(entry.val / (qty / 60));
-        document.getElementById('in-kcal').value = perHour || 0;
+
+        if (label === 'marche') {
+            document.getElementById('speed-row').style.display = 'grid';
+            let guessedSpeed = 6;
+            if (perHour <= 180) guessedSpeed = 4;
+            else if (perHour <= 240) guessedSpeed = 5;
+            else if (perHour <= 320) guessedSpeed = 6;
+            else if (perHour <= 360) guessedSpeed = 6.5;
+            else if (perHour <= 400) guessedSpeed = 7;
+            else guessedSpeed = 7.5;
+            document.getElementById('in-speed').value = guessedSpeed;
+            document.getElementById('in-kcal').value = perHour || 0;
+        } else {
+            document.getElementById('in-kcal').value = perHour || 0;
+        }
+
         document.getElementById('in-p').value = '0';
         document.getElementById('in-g').value = '0';
         document.getElementById('in-l').value = '0';
@@ -2283,16 +2352,17 @@ function openRecipePickerCategoryChoice(recipeId) {
     addRecipeToToday(recipeId, category);
 }
 
-function startOfWeek(date) {
+function startOfWeekMondaySunday(date) {
     const d = new Date(date);
-    const day = (d.getDay() + 6) % 7;
-    d.setDate(d.getDate() - day);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
     d.setHours(0,0,0,0);
     return d;
 }
 
-function endOfWeek(date) {
-    const d = startOfWeek(date);
+function endOfWeekMondaySunday(date) {
+    const d = startOfWeekMondaySunday(date);
     d.setDate(d.getDate() + 6);
     d.setHours(23,59,59,999);
     return d;
@@ -2332,33 +2402,65 @@ function daysBetween(start, end) {
     return Math.round((end - start) / 86400000) + 1;
 }
 
+function renderBilanNav(startStr, endStr) {
+    const nav = document.getElementById('bilan-nav');
+    if (bilanRange === 'week') {
+        nav.innerHTML = `
+            <div class="nav-card">
+                <div class="week-nav">
+                    <button class="nav-btn" onclick="moveBilan(-1)">← Semaine préc.</button>
+                    <div class="nav-center">${formatDateFR(startStr, { day:'numeric', month:'short' })} → ${formatDateFR(endStr, { day:'numeric', month:'short' })}</div>
+                    <button class="nav-btn" onclick="moveBilan(1)">Semaine suiv. →</button>
+                </div>
+                <div class="recipe-actions" style="margin-top:10px;">
+                    <button class="nav-btn primary" onclick="resetBilanToToday()">Cette semaine</button>
+                </div>
+            </div>
+        `;
+    } else {
+        nav.innerHTML = `
+            <div class="nav-card">
+                <div class="week-nav">
+                    <button class="nav-btn" onclick="moveBilan(-1)">← Précédent</button>
+                    <div class="nav-center">${formatDateFR(startStr, { day:'numeric', month:'short', year:'numeric' })} → ${formatDateFR(endStr, { day:'numeric', month:'short', year:'numeric' })}</div>
+                    <button class="nav-btn" onclick="moveBilan(1)">Suivant →</button>
+                </div>
+                <div class="recipe-actions" style="margin-top:10px;">
+                    <button class="nav-btn primary" onclick="resetBilanToToday()">Revenir à aujourd'hui</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
 async function loadBilan() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
 
-    const now = new Date();
+    const now = new Date(bilanCursor);
     let start, end, label;
 
     if (bilanRange === 'week') {
-        start = startOfWeek(now);
-        end = endOfWeek(now);
-        label = 'Semaine en cours';
+        start = startOfWeekMondaySunday(now);
+        end = endOfWeekMondaySunday(now);
+        label = 'Semaine';
     } else if (bilanRange === 'month') {
         start = startOfMonth(now);
         end = endOfMonth(now);
-        label = 'Mois en cours';
+        label = 'Mois';
     } else if (bilanRange === 'quarter') {
         start = startOfQuarter(now);
         end = endOfQuarter(now);
-        label = 'Trimestre en cours';
+        label = 'Trimestre';
     } else {
         start = startOfYear(now);
         end = endOfYear(now);
-        label = 'Année en cours';
+        label = 'Année';
     }
 
     const startStr = toDateStr(start);
     const endStr = toDateStr(end);
+    renderBilanNav(startStr, endStr);
 
     const { data, error } = await sb
         .from('entries')
@@ -2438,7 +2540,7 @@ async function loadBilan() {
         detailEl.innerHTML = `
             <div class="summary-card">
                 <div class="summary-title">Détail par jour</div>
-                <div class="summary-sub">Calories ingérées et dépensées chaque jour de la semaine.</div>
+                <div class="summary-sub">Semaine du lundi au dimanche.</div>
             </div>
             ${values.map(([date, v]) => `
                 <div class="day-line">
