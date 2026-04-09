@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
             --bg: #0d0f14;
             --surface: #161921;
@@ -237,7 +236,7 @@
 
         .macro-pill.prot .label { color: var(--accent); }
         .macro-pill.gluc .label { color: var(--orange); }
-        .macro-pill.lip  .label { color: var(--pink); }
+        .macro-pill.lip .label  { color: var(--pink); }
 
         .section-label {
             font-size: 10px;
@@ -271,15 +270,10 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .cat-btn:hover {
-            border-color: var(--border2);
-            background: var(--surface2);
-        }
-
+        .cat-btn:hover  { border-color: var(--border2); background: var(--surface2); }
         .cat-btn:active { transform: scale(0.95); }
 
-        .cat-icon { font-size: 22px; }
-
+        .cat-icon  { font-size: 22px; }
         .cat-label {
             font-size: 9px;
             font-weight: 700;
@@ -364,9 +358,7 @@
             gap: 8px;
         }
 
-        .entry-group-icon {
-            font-size: 16px;
-        }
+        .entry-group-icon { font-size: 16px; }
 
         .entry-group-title {
             font-family: 'Syne', sans-serif;
@@ -382,9 +374,7 @@
             color: var(--accent);
         }
 
-        .entry-group-total.sport {
-            color: var(--orange);
-        }
+        .entry-group-total.sport { color: var(--orange); }
 
         .entry-group-items {
             display: flex;
@@ -406,21 +396,12 @@
 
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .entry-main {
             flex: 1;
             min-width: 0;
-        }
-
-        .entry-cat {
-            font-size: 9px;
-            font-weight: 700;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 3px;
         }
 
         .entry-desc {
@@ -435,7 +416,7 @@
         .entry-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -448,7 +429,7 @@
         .entry-kcal.food { color: var(--accent); }
         .entry-kcal.burn { color: var(--orange); }
 
-        .entry-del {
+        .entry-action {
             background: none;
             border: none;
             color: var(--border2);
@@ -458,7 +439,8 @@
             transition: color 0.15s;
         }
 
-        .entry-del:hover { color: #ff4d4d; }
+        .entry-action:hover { color: var(--text); }
+        .entry-action.delete:hover { color: #ff4d4d; }
 
         .empty-state {
             text-align: center;
@@ -511,7 +493,7 @@
 
         @keyframes slideUp {
             from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+            to   { transform: translateY(0); }
         }
 
         .modal-handle {
@@ -590,14 +572,14 @@
             flex-shrink: 0;
         }
 
-        .search-btn:hover { background: var(--accent2); }
+        .search-btn:hover  { background: var(--accent2); }
         .search-btn:active { transform: scale(0.95); }
 
         #search-results {
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            max-height: 200px;
+            max-height: 220px;
             overflow-y: auto;
             margin-bottom: 16px;
             display: none;
@@ -611,10 +593,7 @@
         }
 
         .result-item:last-child { border-bottom: none; }
-
-        .result-item:hover {
-            background: rgba(91,127,255,0.08);
-        }
+        .result-item:hover { background: rgba(91,127,255,0.08); }
 
         .result-name {
             font-size: 13px;
@@ -677,9 +656,7 @@
             color: var(--text);
         }
 
-        .input-box input::placeholder {
-            color: var(--border2);
-        }
+        .input-box input::placeholder { color: var(--border2); }
 
         input[type=number]::-webkit-outer-spin-button,
         input[type=number]::-webkit-inner-spin-button {
@@ -767,7 +744,7 @@
             transition: all 0.15s;
         }
 
-        .btn-primary:hover { background: var(--accent2); }
+        .btn-primary:hover  { background: var(--accent2); }
         .btn-primary:active { transform: scale(0.98); }
 
         .btn-cancel {
@@ -914,7 +891,7 @@
         <div class="header-date" id="header-date"></div>
     </div>
     <div class="header-btns">
-        <button class="btn-icon" onclick="openSettings()">Réglages</button>
+        <button class="btn-icon" onclick="openSettings()">⚙️ Réglages</button>
         <button class="btn-icon" onclick="logout()">Déconnexion</button>
     </div>
 </header>
@@ -938,19 +915,19 @@
 
         <div class="stats-grid" style="margin-bottom:12px;">
             <div class="stat-box ingere">
-                <div class="s-label">Ingérées</div>
+                <div class="s-label">🍽️ Ingérées</div>
                 <div class="s-val" id="stat-in">0</div>
             </div>
             <div class="stat-box depense">
-                <div class="s-label">Dépensées</div>
+                <div class="s-label">🔥 Dépensées</div>
                 <div class="s-val" id="stat-out">—</div>
             </div>
             <div class="stat-box bmr">
-                <div class="s-label">Métabolisme</div>
+                <div class="s-label">🫀 Métabolisme</div>
                 <div class="s-val" id="stat-bmr">—</div>
             </div>
             <div class="stat-box sport">
-                <div class="s-label">Sport</div>
+                <div class="s-label">🚴 Sport</div>
                 <div class="s-val" id="stat-sport">0</div>
             </div>
         </div>
@@ -972,7 +949,7 @@
     </div>
 
     <div class="meals-section">
-        <div class="section-label">Repas</div>
+        <div class="section-label">🍽️ Repas</div>
         <div class="cat-grid">
             <button class="cat-btn" onclick="openModal('Petit-déjeuner')">
                 <span class="cat-icon">🥐</span><span class="cat-label">P. Déj</span>
@@ -996,13 +973,13 @@
     </div>
 
     <div class="sport-section">
-        <div class="section-label">Activité physique</div>
+        <div class="section-label">🏃 Activité physique</div>
         <button class="sport-btn" onclick="openModal('Sport')">
             <div class="sport-btn-left">
                 <span class="sport-btn-icon">🔥</span>
                 <div class="sport-btn-text">
                     <div class="title">Ajouter une activité</div>
-                    <div class="sub">Marche, vélo, course, musculation…</div>
+                    <div class="sub">Marche et vélo</div>
                 </div>
             </div>
             <span class="sport-btn-arrow">→</span>
@@ -1010,7 +987,7 @@
     </div>
 
     <div class="daily-section">
-        <div class="section-label" id="list-title" style="display:none">Journal du jour</div>
+        <div class="section-label" id="list-title" style="display:none">📋 Journal du jour</div>
         <div id="daily-list"></div>
     </div>
 </main>
@@ -1068,7 +1045,7 @@
             <div class="sub" id="calc-sub">pour 100g</div>
         </div>
 
-        <button class="btn-primary" onclick="submitEntry()">Valider</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitEntry()">Valider</button>
         <button class="btn-cancel" onclick="closeModal()">Annuler</button>
     </div>
 </div>
@@ -1077,48 +1054,48 @@
     <div class="settings-sheet">
         <div class="modal-handle"></div>
         <div class="modal-title-row">
-            <div class="modal-title">Réglages</div>
+            <div class="modal-title">⚙️ Réglages</div>
             <button class="modal-close" onclick="closeSettings()">×</button>
         </div>
 
         <div class="bmr-result-box">
             <div class="bmr-item">
-                <div class="b-label">Métabolisme de base</div>
+                <div class="b-label">🫀 Métabolisme de base</div>
                 <div class="b-val" id="bmr-live">—</div>
                 <div style="font-size:9px;color:var(--muted);margin-top:2px;">kcal/jour</div>
             </div>
             <div class="bmr-item">
-                <div class="b-label">Objectif actuel</div>
+                <div class="b-label">🎯 Objectif actuel</div>
                 <div class="b-val" id="goal-live">—</div>
                 <div style="font-size:9px;color:var(--muted);margin-top:2px;">kcal/jour</div>
             </div>
         </div>
 
         <div class="setting-row">
-            <label>Objectif calorique (kcal/jour)</label>
+            <label>🎯 Objectif calorique (kcal/jour)</label>
             <input id="s-goal" type="number" placeholder="2300" oninput="onSettingChange()">
         </div>
         <div class="setting-row">
-            <label>Poids (kg)</label>
+            <label>⚖️ Poids (kg)</label>
             <input id="s-weight" type="number" placeholder="75" oninput="onSettingChange()">
         </div>
         <div class="setting-row">
-            <label>Taille (cm)</label>
+            <label>📐 Taille (cm)</label>
             <input id="s-height" type="number" placeholder="175" oninput="onSettingChange()">
         </div>
         <div class="setting-row">
-            <label>Âge</label>
+            <label>🎂 Âge</label>
             <input id="s-age" type="number" placeholder="30" oninput="onSettingChange()">
         </div>
         <div class="setting-row">
-            <label>Sexe</label>
+            <label>🚻 Sexe</label>
             <select id="s-sexe" onchange="onSettingChange()">
                 <option value="H">Homme</option>
                 <option value="F">Femme</option>
             </select>
         </div>
 
-        <button class="btn-primary" onclick="saveAndCloseSettings()">Enregistrer</button>
+        <button class="btn-primary" onclick="saveAndCloseSettings()">✓ Enregistrer</button>
         <button class="btn-cancel" onclick="closeSettings()">Annuler</button>
     </div>
 </div>
@@ -1145,46 +1122,36 @@ let userWeight = 75;
 let userHeight = 175;
 let userAge = 30;
 let userSexe = "H";
+let editingId = null;
+let currentEntries = [];
 
 const ALCOHOL_DB = [
-    { name: "Vin rouge (12°)", k: 85, pr: 0.1, gl: 2.6, lp: 0 },
-    { name: "Vin blanc sec (12°)", k: 82, pr: 0.1, gl: 1.6, lp: 0 },
-    { name: "Vin blanc moelleux", k: 95, pr: 0.1, gl: 5.0, lp: 0 },
-    { name: "Vin rosé (12°)", k: 83, pr: 0.1, gl: 2.1, lp: 0 },
-    { name: "Champagne / Prosecco", k: 80, pr: 0.3, gl: 3.8, lp: 0 },
-    { name: "Bière blonde (5°)", k: 43, pr: 0.4, gl: 3.6, lp: 0 },
-    { name: "Bière brune (6°)", k: 55, pr: 0.5, gl: 4.5, lp: 0 },
-    { name: "Bière sans alcool", k: 18, pr: 0.4, gl: 3.5, lp: 0 },
-    { name: "Whisky (40°)", k: 250, pr: 0, gl: 0, lp: 0 },
-    { name: "Vodka (40°)", k: 230, pr: 0, gl: 0, lp: 0 },
-    { name: "Gin (40°)", k: 230, pr: 0, gl: 0, lp: 0 },
-    { name: "Rhum (40°)", k: 230, pr: 0, gl: 0, lp: 0 },
-    { name: "Tequila (38°)", k: 220, pr: 0, gl: 0, lp: 0 },
-    { name: "Porto / Muscat", k: 160, pr: 0.2, gl: 12, lp: 0 },
-    { name: "Cidre brut (5°)", k: 36, pr: 0, gl: 1.6, lp: 0 },
-    { name: "Mojito", k: 72, pr: 0, gl: 9, lp: 0 },
-    { name: "Sangria", k: 75, pr: 0.1, gl: 7, lp: 0 },
-    { name: "Amaretto", k: 310, pr: 0, gl: 35, lp: 0 }
+    { name:"Vin rouge (12°)", k:85, pr:0.1, gl:2.6, lp:0 },
+    { name:"Vin blanc sec (12°)", k:82, pr:0.1, gl:1.6, lp:0 },
+    { name:"Vin blanc moelleux", k:95, pr:0.1, gl:5.0, lp:0 },
+    { name:"Vin rosé (12°)", k:83, pr:0.1, gl:2.1, lp:0 },
+    { name:"Champagne / Prosecco", k:80, pr:0.3, gl:3.8, lp:0 },
+    { name:"Bière blonde (5°)", k:43, pr:0.4, gl:3.6, lp:0 },
+    { name:"Bière brune (6°)", k:55, pr:0.5, gl:4.5, lp:0 },
+    { name:"Bière sans alcool", k:18, pr:0.4, gl:3.5, lp:0 },
+    { name:"Whisky (40°)", k:250, pr:0, gl:0, lp:0 },
+    { name:"Vodka (40°)", k:230, pr:0, gl:0, lp:0 },
+    { name:"Gin (40°)", k:230, pr:0, gl:0, lp:0 },
+    { name:"Rhum (40°)", k:230, pr:0, gl:0, lp:0 },
+    { name:"Tequila (38°)", k:220, pr:0, gl:0, lp:0 },
+    { name:"Porto / Muscat", k:160, pr:0.2, gl:12, lp:0 },
+    { name:"Cidre brut (5°)", k:36, pr:0, gl:1.6, lp:0 },
+    { name:"Mojito", k:72, pr:0, gl:9, lp:0 },
+    { name:"Sangria", k:75, pr:0.1, gl:7, lp:0 },
+    { name:"Amaretto", k:310, pr:0, gl:35, lp:0 }
 ];
 
 const SPORT_DB = [
-    { name: "Course à pied (10 km/h)", k: 600 },
-    { name: "Course à pied (12 km/h)", k: 750 },
-    { name: "Marche rapide", k: 280 },
-    { name: "Marche normale", k: 200 },
-    { name: "Cyclisme modéré", k: 450 },
-    { name: "Cyclisme intense", k: 650 },
-    { name: "Natation", k: 550 },
-    { name: "Musculation / Fitness", k: 350 },
-    { name: "HIIT", k: 700 },
-    { name: "Yoga / Pilates", k: 180 },
-    { name: "Football", k: 520 },
-    { name: "Tennis", k: 480 },
-    { name: "Corde à sauter", k: 700 },
-    { name: "Elliptique", k: 450 },
-    { name: "Escalade", k: 500 },
-    { name: "Danse", k: 350 },
-    { name: "Ski / Snowboard", k: 430 }
+    { name:"Marche 5 km/h",          k:240 },
+    { name:"Marche 6 km/h",          k:320 },
+    { name:"Vélo intensité faible",  k:350 },
+    { name:"Vélo intensité modérée", k:450 },
+    { name:"Vélo intensité forte",   k:650 }
 ];
 
 function calcBMR(w, h, a, s) {
@@ -1233,7 +1200,6 @@ function updateBMRLive() {
     const a = parseInt(document.getElementById('s-age').value, 10) || userAge;
     const s = document.getElementById('s-sexe').value;
     const g = parseInt(document.getElementById('s-goal').value, 10) || userGoal;
-
     const bmr = calcBMR(w, h, a, s);
     document.getElementById('bmr-live').textContent = bmr;
     document.getElementById('goal-live').textContent = g;
@@ -1254,22 +1220,28 @@ document.getElementById('modal-settings').addEventListener('click', function (e)
     if (e.target === this) closeSettings();
 });
 
-function openModal(cat) {
-    currentCat = cat;
-    const isSport = cat === 'Sport';
-
-    document.getElementById('modal-title').textContent = isSport ? 'Sport' : cat;
-
+function resetForm() {
+    editingId = null;
+    document.getElementById('submit-btn').textContent = 'Valider';
     document.getElementById('in-desc').value = '';
     document.getElementById('in-kcal').value = '';
     document.getElementById('in-p').value = '0';
     document.getElementById('in-g').value = '0';
     document.getElementById('in-l').value = '0';
-    document.getElementById('in-qty').value = isSport ? '30' : '100';
+    document.getElementById('in-qty').value = currentCat === 'Sport' ? '30' : '100';
     document.getElementById('calc-res').textContent = '0 kcal';
-    document.getElementById('calc-sub').textContent = isSport ? 'dépensées' : 'pour 100g';
+    document.getElementById('calc-sub').textContent = currentCat === 'Sport' ? 'dépensées' : 'pour 100g';
     document.getElementById('search-results').style.display = 'none';
     document.getElementById('search-results').innerHTML = '';
+}
+
+function openModal(cat) {
+    currentCat = cat;
+    const isSport = cat === 'Sport';
+
+    document.getElementById('modal-title').textContent = isSport ? '🔥 Sport' : '+ ' + cat;
+
+    resetForm();
 
     document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : 'Quantité (g)';
     document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
@@ -1284,6 +1256,8 @@ function openModal(cat) {
 
 function closeModal() {
     document.getElementById('modal-add').classList.remove('open');
+    editingId = null;
+    document.getElementById('submit-btn').textContent = 'Valider';
 }
 
 document.getElementById('modal-add').addEventListener('click', function (e) {
@@ -1315,18 +1289,14 @@ function startSearch() {
         if (currentCat === 'Sport') showAllSports();
         return;
     }
-
-    if (currentCat === 'Sport') {
-        searchSport(val);
-    } else {
-        searchFood(val);
-    }
+    if (currentCat === 'Sport') searchSport(val);
+    else searchFood(val);
 }
 
 async function searchFood(val) {
     const resDiv = document.getElementById('search-results');
     resDiv.style.display = 'block';
-    resDiv.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Recherche…</div></div>`;
+    resDiv.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">⏳ Recherche…</div></div>`;
 
     const lowerVal = val.toLowerCase();
     const localHits = ALCOHOL_DB.filter(a => a.name.toLowerCase().includes(lowerVal));
@@ -1346,16 +1316,10 @@ async function searchFood(val) {
         const offHTML = (data.products || []).map(p => {
             const name = (p.product_name_fr || p.product_name || '').trim();
             if (!name) return '';
-
-            const k = Math.round(
-                p.nutriments?.['energy-kcal_100g'] ||
-                (p.nutriments?.['energy-kj_100g'] / 4.184) ||
-                0
-            );
+            const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
             const pr = p.nutriments?.proteins_100g || 0;
             const gl = p.nutriments?.carbohydrates_100g || 0;
             const lp = p.nutriments?.fat_100g || 0;
-
             return `
                 <div class="result-item" onclick="fill('${esc(name)}', ${k}, ${pr}, ${gl}, ${lp})">
                     <div class="result-name">${name}</div>
@@ -1364,36 +1328,22 @@ async function searchFood(val) {
             `;
         }).join('');
 
-        resDiv.innerHTML = localHTML + offHTML || `
-            <div class="result-item">
-                <div class="result-name" style="color:var(--muted)">Aucun résultat — saisie manuelle possible</div>
-            </div>
-        `;
-    } catch (err) {
-        resDiv.innerHTML = localHTML || `
-            <div class="result-item">
-                <div class="result-name" style="color:var(--muted)">Erreur réseau</div>
-            </div>
-        `;
+        resDiv.innerHTML = localHTML + offHTML || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat — saisie manuelle possible</div></div>`;
+    } catch {
+        resDiv.innerHTML = localHTML || `<div class="result-item"><div class="result-name" style="color:var(--muted)">❌ Erreur réseau</div></div>`;
     }
 }
 
 function searchSport(val) {
     const resDiv = document.getElementById('search-results');
     resDiv.style.display = 'block';
-
     const hits = SPORT_DB.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
-
     resDiv.innerHTML = hits.map(s => `
         <div class="result-item" onclick="fill('${esc(s.name)}', ${s.k}, 0, 0, 0)">
             <div class="result-name">${s.name}</div>
             <div class="result-kcal burn">${s.k} kcal/h</div>
         </div>
-    `).join('') || `
-        <div class="result-item">
-            <div class="result-name" style="color:var(--muted)">Saisie libre possible</div>
-        </div>
-    `;
+    `).join('') || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
 }
 
 function fill(name, k, pr, gl, lp) {
@@ -1415,6 +1365,64 @@ function recalc() {
 
     document.getElementById('calc-res').textContent = total + ' kcal';
     document.getElementById('calc-sub').textContent = isSport ? `pour ${q} min` : `pour ${q}g`;
+}
+
+function parseDesc(desc) {
+    const match = String(desc).match(/^(.*)\s\(([\d.,]+)\s*(g|min)\)$/i);
+    if (!match) {
+        return { label: desc, qty: null, unit: null };
+    }
+    return {
+        label: match[1].trim(),
+        qty: parseFloat(match[2].replace(',', '.')),
+        unit: match[3].toLowerCase()
+    };
+}
+
+function editEntry(id) {
+    const entry = currentEntries.find(e => e.id === id);
+    if (!entry) return;
+
+    editingId = entry.id;
+    currentCat = entry.category;
+
+    const isSport = entry.type === 'burn';
+    const parsed = parseDesc(entry.desc);
+    const qty = parsed.qty || (isSport ? 30 : 100);
+
+    document.getElementById('modal-title').textContent = isSport ? '✏️ Modifier activité' : '✏️ Modifier aliment';
+    document.getElementById('submit-btn').textContent = 'Mettre à jour';
+
+    document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : 'Quantité (g)';
+    document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
+    document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+    document.getElementById('in-desc').placeholder = isSport ? 'Rechercher un sport...' : 'Rechercher un aliment...';
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
+
+    document.getElementById('in-desc').value = parsed.label;
+    document.getElementById('in-qty').value = qty;
+
+    if (isSport) {
+        const kcalHour = qty > 0 ? Math.round((entry.val / qty) * 60) : entry.val;
+        document.getElementById('in-kcal').value = kcalHour;
+        document.getElementById('in-p').value = 0;
+        document.getElementById('in-g').value = 0;
+        document.getElementById('in-l').value = 0;
+    } else {
+        const kcal100 = qty > 0 ? Math.round((entry.val / qty) * 100) : entry.val;
+        const prot100 = qty > 0 ? Math.round(((entry.prot || 0) / qty) * 100) : 0;
+        const gluc100 = qty > 0 ? Math.round(((entry.gluc || 0) / qty) * 100) : 0;
+        const lip100 = qty > 0 ? Math.round(((entry.lip || 0) / qty) * 100) : 0;
+
+        document.getElementById('in-kcal').value = kcal100;
+        document.getElementById('in-p').value = prot100;
+        document.getElementById('in-g').value = gluc100;
+        document.getElementById('in-l').value = lip100;
+    }
+
+    recalc();
+    document.getElementById('modal-add').classList.add('open');
 }
 
 async function submitEntry() {
@@ -1442,7 +1450,7 @@ async function submitEntry() {
     const g = parseFloat(document.getElementById('in-g').value) || 0;
     const l = parseFloat(document.getElementById('in-l').value) || 0;
 
-    const { error } = await sb.from('entries').insert([{
+    const payload = {
         user_id: user.id,
         type: isSport ? 'burn' : 'food',
         category: currentCat,
@@ -1452,7 +1460,15 @@ async function submitEntry() {
         gluc: Math.round(g * factor),
         lip: Math.round(l * factor),
         date: new Date().toISOString().split('T')[0]
-    }]);
+    };
+
+    let error = null;
+
+    if (editingId) {
+        ({ error } = await sb.from('entries').update(payload).eq('id', editingId));
+    } else {
+        ({ error } = await sb.from('entries').insert([payload]));
+    }
 
     if (error) {
         console.error(error);
@@ -1487,6 +1503,7 @@ async function loadData() {
     let tL = 0;
 
     const entries = (data || []).sort((a, b) => b.id - a.id);
+    currentEntries = entries;
 
     entries.forEach(e => {
         if (e.type === 'food') {
@@ -1541,12 +1558,7 @@ async function loadData() {
 
     if (!entries.length) {
         titleEl.style.display = 'none';
-        listEl.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">🥗</div>
-                Aucun aliment enregistré aujourd'hui
-            </div>
-        `;
+        listEl.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>Aucun aliment enregistré aujourd'hui</div>`;
         return;
     }
 
@@ -1567,11 +1579,8 @@ async function loadData() {
     ORDER.forEach(cat => { groups[cat] = []; });
 
     entries.forEach(e => {
-        if (groups[e.category] !== undefined) {
-            groups[e.category].push(e);
-        } else {
-            groups['Autre'].push(e);
-        }
+        if (groups[e.category] !== undefined) groups[e.category].push(e);
+        else groups['Autre'].push(e);
     });
 
     let html = '';
@@ -1605,7 +1614,8 @@ async function loadData() {
                                 <span class="entry-kcal ${e.type}">
                                     ${e.type === 'burn' ? '−' : '+'}${e.val} kcal
                                 </span>
-                                <button class="entry-del" onclick="del(${e.id})">✕</button>
+                                <button class="entry-action" onclick="editEntry(${e.id})">✎</button>
+                                <button class="entry-action delete" onclick="del(${e.id})">✕</button>
                             </div>
                         </div>
                     `).join('')}
@@ -1629,11 +1639,7 @@ async function handleAuth() {
 
     errEl.style.display = 'none';
 
-    const { error } = await sb.auth.signInWithPassword({
-        email,
-        password: pass
-    });
-
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
         errEl.style.display = 'block';
     } else {
