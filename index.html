@@ -2,286 +2,706 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BioTrack Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>BioTrack</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.3); }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0d0f14;
+            --surface: #161921;
+            --surface2: #1e2330;
+            --border: rgba(255,255,255,0.07);
+            --border2: rgba(255,255,255,0.12);
+            --text: #f0f2f8;
+            --muted: #7a8098;
+            --accent: #5b7fff;
+            --accent2: #7c5cfa;
+            --orange: #ff7c4d;
+            --green: #3dd68c;
+            --radius: 20px;
+            --radius-sm: 12px;
+        }
+        html { background: var(--bg); }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            padding-bottom: 32px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, .mono { font-family: 'Syne', sans-serif; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+        /* Header */
+        header {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px;
+            background: rgba(13,15,20,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+        .logo span { color: var(--accent); }
+        .header-date { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: capitalize; }
+        .btn-logout {
+            font-size: 11px; font-weight: 500; color: var(--muted);
+            background: var(--surface); border: 1px solid var(--border);
+            padding: 6px 14px; border-radius: 100px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { color: var(--text); border-color: var(--border2); }
+
+        /* Main */
+        main { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+
+        /* Kcal Card */
+        .kcal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 32px 24px 28px;
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .kcal-card::before {
+            content: '';
+            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(91,127,255,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .kcal-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 72px; font-weight: 800;
+            letter-spacing: -4px; line-height: 1;
+            background: linear-gradient(135deg, #fff 30%, #7a8098);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .kcal-label { font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; margin-top: 8px; }
+        .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px; }
+        .macro-pill {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 8px;
+        }
+        .macro-pill .label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+        .macro-pill .val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+        .macro-pill.prot .label { color: var(--accent); }
+        .macro-pill.gluc .label { color: var(--orange); }
+        .macro-pill.lip .label { color: #fa5ccd; }
+
+        /* Progress bar */
+        .progress-wrap { margin-top: 20px; }
+        .progress-bar-bg { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.5s ease; }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+        /* Category Grid */
+        .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .cat-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; transition: all 0.18s; position: relative; overflow: hidden;
+        }
+        .cat-btn:hover, .cat-btn:active { border-color: var(--border2); background: var(--surface2); transform: scale(0.97); }
+        .cat-icon { font-size: 22px; }
+        .cat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+        .cat-btn.sport { background: linear-gradient(135deg, #ff7c4d22, #ff4d7c11); border-color: rgba(255,124,77,0.25); }
+        .cat-btn.sport .cat-label { color: var(--orange); }
+
+        /* Daily List */
+        #daily-list { display: flex; flex-direction: column; gap: 8px; }
+        .entry-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            animation: fadeUp 0.3s ease;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .entry-cat { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px; }
+        .entry-desc { font-size: 13px; font-weight: 400; color: var(--text); }
+        .entry-right { display: flex; align-items: center; gap: 12px; }
+        .entry-kcal { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+        .entry-kcal.food { color: var(--accent); }
+        .entry-kcal.burn { color: var(--orange); }
+        .entry-del { background: none; border: none; color: var(--border2); font-size: 14px; cursor: pointer; padding: 4px; transition: color 0.15s; }
+        .entry-del:hover { color: #ff4d4d; }
+
+        .section-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+
+        /* Modal */
+        #modal-add {
+            position: fixed; inset: 0; z-index: 60;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: none; align-items: flex-end; justify-content: center;
+        }
+        #modal-add.open { display: flex; }
+        .modal-sheet {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 28px 28px 0 0;
+            width: 100%; max-width: 480px;
+            padding: 24px 20px 40px;
+            max-height: 90dvh;
+            overflow-y: auto;
+            animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+
+        /* Search */
+        .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search-input {
+            flex: 1; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 12px 16px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+            color: var(--text); outline: none; transition: border-color 0.2s;
+        }
+        .search-input::placeholder { color: var(--muted); }
+        .search-input:focus { border-color: var(--accent); }
+        .search-btn {
+            background: var(--accent); color: white;
+            border: none; border-radius: var(--radius-sm);
+            padding: 12px 16px; cursor: pointer; font-size: 16px;
+            transition: all 0.15s; flex-shrink: 0;
+        }
+        .search-btn:hover { background: var(--accent2); }
+        .search-btn:active { transform: scale(0.95); }
+
+        #search-results {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            max-height: 220px; overflow-y: auto;
+            margin-bottom: 16px; display: none;
+        }
+        .result-item {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: background 0.15s;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: rgba(91,127,255,0.08); }
+        .result-name { font-size: 13px; font-weight: 500; }
+        .result-kcal { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .result-kcal.burn { color: var(--orange); }
+        .result-tag { display: inline-block; font-size: 9px; padding: 2px 6px; background: rgba(91,127,255,0.15); color: var(--accent); border-radius: 4px; margin-bottom: 2px; }
+
+        /* Inputs Grid */
+        .inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .input-box {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 12px 14px;
+        }
+        .input-box label { display: block; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+        .input-box input {
+            width: 100%; background: none; border: none; outline: none;
+            font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700;
+            color: var(--text);
+        }
+        .input-box input::placeholder { color: var(--border2); }
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .macros-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+        .macro-input {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;
+        }
+        .macro-input label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .macro-input input { width: 100%; background: none; border: none; outline: none; text-align: center; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+        .macro-input.prot label { color: var(--accent); }
+        .macro-input.gluc label { color: var(--orange); }
+        .macro-input.lip label { color: #fa5ccd; }
+
+        /* Calc result */
+        .calc-result {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px; text-align: center;
+            margin-bottom: 16px;
+        }
+        .calc-result .big { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; color: var(--text); }
+        .calc-result .sub { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%; background: var(--accent);
+            border: none; border-radius: var(--radius-sm);
+            padding: 16px; color: white;
+            font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-primary:hover { background: var(--accent2); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-cancel {
+            width: 100%; background: none; border: none;
+            padding: 12px; color: var(--muted);
+            font-size: 11px; font-weight: 500; cursor: pointer;
+            transition: color 0.15s; margin-top: 8px;
+        }
+        .btn-cancel:hover { color: var(--text); }
+
+        /* Auth */
+        #auth-screen {
+            position: fixed; inset: 0; z-index: 100;
+            background: var(--bg);
+            display: none; align-items: center; justify-content: center; padding: 32px;
+        }
+        .auth-card {
+            background: var(--surface); border: 1px solid var(--border2);
+            border-radius: 28px; padding: 40px 32px; width: 100%; max-width: 360px;
+        }
+        .auth-logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+        .auth-logo span { color: var(--accent); }
+        .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+        .auth-input {
+            width: 100%; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 14px 16px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            color: var(--text); outline: none; margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .auth-input:focus { border-color: var(--accent); }
+        .auth-input::placeholder { color: var(--muted); }
+        .auth-error { font-size: 12px; color: #ff6b6b; margin-bottom: 10px; display: none; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+        .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
     </style>
 </head>
-<body class="pb-24">
+<body>
 
-    <script>
-        const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE"; 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<header>
+    <div>
+        <div class="logo">Bio<span>Track</span></div>
+        <div class="header-date" id="header-date"></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+</header>
 
-        // Favoris Sport
-        const sportsDB = [
-            { name: "Course à pied (10km/h)", kcal: 600 },
-            { name: "Marche active", kcal: 280 },
-            { name: "Cyclisme (modéré)", kcal: 450 },
-            { name: "Natation", kcal: 550 },
-            { name: "Musculation / Fitness", kcal: 350 },
-            { name: "Yoga / Pilates", kcal: 180 }
-        ];
-    </script>
-
-    <header class="sticky top-0 z-50 glass p-5 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-black tracking-tighter text-blue-600 uppercase italic">Biotrack</h1>
-            <p id="header-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"></p>
-        </div>
-        <button onclick="logout()" class="text-[10px] bg-slate-100 px-3 py-1 rounded-full font-bold text-slate-500 uppercase">Sortir</button>
-    </header>
-
-    <main class="max-w-md mx-auto p-4">
-        <div class="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-blue-900/10 mb-6 text-center border border-slate-50">
-            <span id="kcal-left" class="text-7xl font-black tracking-tighter text-slate-800">2300</span>
-            <p class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">Kcal restantes</p>
-            
-            <div class="grid grid-cols-3 gap-3 mt-8">
-                <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
-                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase">Prot</p>
-                    <p id="total-p" class="font-bold text-sm text-slate-700">0g</p>
-                </div>
-                <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100">
-                    <p class="text-[9px] font-black text-orange-500 mb-1 uppercase">Gluc</p>
-                    <p id="total-g" class="font-bold text-sm text-slate-700">0g</p>
-                </div>
-                <div class="bg-pink-50/50 p-3 rounded-2xl border border-pink-100">
-                    <p class="text-[9px] font-black text-pink-500 mb-1 uppercase">Lip</p>
-                    <p id="total-l" class="font-bold text-sm text-slate-700">0g</p>
-                </div>
+<main>
+    <!-- Kcal Card -->
+    <div class="kcal-card">
+        <div class="kcal-number" id="kcal-left">2300</div>
+        <div class="kcal-label">kcal restantes</div>
+        <div class="macro-grid">
+            <div class="macro-pill prot">
+                <div class="label">Protéines</div>
+                <div class="val" id="total-p">0g</div>
+            </div>
+            <div class="macro-pill gluc">
+                <div class="label">Glucides</div>
+                <div class="val" id="total-g">0g</div>
+            </div>
+            <div class="macro-pill lip">
+                <div class="label">Lipides</div>
+                <div class="val" id="total-l">0g</div>
             </div>
         </div>
-
-        <div class="grid grid-cols-3 gap-3 mb-8">
-            <button onclick="openModal('Petit-déjeuner')" class="bg-white p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col items-center">🥐<p class="text-[9px] font-black mt-2 uppercase">P.Déj</p></button>
-            <button onclick="openModal('Déjeuner')" class="bg-white p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col items-center">🍽️<p class="text-[9px] font-black mt-2 uppercase">Déj</p></button>
-            <button onclick="openModal('Dîner')" class="bg-white p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col items-center">🌃<p class="text-[9px] font-black mt-2 uppercase">Dîner</p></button>
-            <button onclick="openModal('Boissons')" class="bg-white p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col items-center">🥤<p class="text-[9px] font-black mt-2 uppercase">Boisson</p></button>
-            <button onclick="openModal('Autre')" class="bg-white p-4 rounded-2xl border border-slate-50 shadow-sm flex flex-col items-center">🍏<p class="text-[9px] font-black mt-2 uppercase">Autre</p></button>
-            <button onclick="openModal('Sport')" class="bg-orange-500 p-4 rounded-2xl shadow-lg text-white flex flex-col items-center">🚲<p class="text-[9px] font-black mt-2 uppercase">Sport</p></button>
-        </div>
-
-        <div id="daily-list" class="space-y-4"></div>
-    </main>
-
-    <div id="modal-add" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-[60] backdrop-blur-sm">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
-            
-            <div class="flex gap-2 mb-4">
-                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100">
-                <button onclick="startSearch()" class="bg-blue-600 text-white px-5 rounded-2xl shadow-md active:scale-95 transition-transform">🔍</button>
-            </div>
-
-            <div id="search-results" class="max-h-[200px] overflow-y-auto mb-4 hidden border border-slate-100 rounded-2xl bg-white shadow-inner"></div>
-            
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label id="label-qty" class="text-[8px] font-black text-slate-400 uppercase">Quantité</label>
-                    <input id="in-qty" type="number" value="100" class="w-full bg-transparent font-bold text-blue-600 outline-none" oninput="recalc()">
-                </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal / unité</label>
-                    <input id="in-kcal" type="number" placeholder="0" class="w-full bg-transparent font-bold outline-none" oninput="recalc()">
-                </div>
-            </div>
-
-            <div id="macro-fields" class="grid grid-cols-3 gap-2 mb-6">
-                <div class="text-center bg-blue-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot</label>
-                    <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
-                </div>
-                <div class="text-center bg-orange-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc</label>
-                    <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
-                </div>
-                <div class="text-center bg-pink-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip</label>
-                    <input id="in-l" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
-                </div>
-            </div>
-
-            <div id="calc-res" class="text-3xl font-black text-center mb-6 text-slate-800">0 kcal</div>
-            
-            <button onclick="submitEntry()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:bg-blue-700">VALIDER</button>
-            <button onclick="closeModal()" class="w-full mt-4 text-[10px] text-slate-300 font-bold uppercase text-center">Annuler</button>
+        <div class="progress-wrap">
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+            <div class="progress-labels"><span id="progress-eaten">0 mangé</span><span id="progress-goal">0 objectif</span></div>
         </div>
     </div>
 
-    <div id="auth-screen" class="fixed inset-0 bg-blue-600 z-[100] hidden items-center justify-center p-8">
-        <div class="bg-white rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl">
-            <h2 class="text-3xl font-black text-blue-600 italic mb-8 uppercase tracking-tighter">BioTrack</h2>
-            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 font-bold outline-none border border-slate-100">
-            <input id="auth-pass" type="password" placeholder="Mot de passe" class="w-full bg-slate-50 p-4 rounded-2xl mb-6 font-bold outline-none border border-slate-100">
-            <button onclick="handleAuth()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-transform">Se connecter</button>
-        </div>
+    <!-- Category Buttons -->
+    <div class="cat-grid">
+        <button class="cat-btn" onclick="openModal('Petit-déjeuner')"><span class="cat-icon">🥐</span><span class="cat-label">P. Déj</span></button>
+        <button class="cat-btn" onclick="openModal('Déjeuner')"><span class="cat-icon">🍽️</span><span class="cat-label">Déjeuner</span></button>
+        <button class="cat-btn" onclick="openModal('Dîner')"><span class="cat-icon">🌙</span><span class="cat-label">Dîner</span></button>
+        <button class="cat-btn" onclick="openModal('Boissons')"><span class="cat-icon">🥤</span><span class="cat-label">Boisson</span></button>
+        <button class="cat-btn" onclick="openModal('Autre')"><span class="cat-icon">🍎</span><span class="cat-label">Autre</span></button>
+        <button class="cat-btn sport" onclick="openModal('Sport')"><span class="cat-icon">🔥</span><span class="cat-label">Sport</span></button>
     </div>
 
-    <script>
-        let currentCat = ""; let goal = 2300;
+    <!-- Daily List -->
+    <div class="section-title" id="list-title" style="display:none">Aujourd'hui</div>
+    <div id="daily-list"></div>
+</main>
 
-        async function init() {
-            document.getElementById('header-date').innerText = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) { document.getElementById('auth-screen').style.display = 'flex'; } 
-            else { document.getElementById('auth-screen').style.display = 'none'; loadData(); }
-        }
+<!-- Modal -->
+<div id="modal-add">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="modal-title">Ajouter</div>
 
-        async function handleAuth() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-pass').value;
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Accès refusé"); else init();
-        }
+        <div class="search-row">
+            <input id="in-desc" class="search-input" type="text" placeholder="Rechercher un aliment..." autocomplete="off"
+                onkeydown="if(event.key==='Enter') startSearch()">
+            <button class="search-btn" onclick="startSearch()">↵</button>
+        </div>
 
-        function logout() { supabaseClient.auth.signOut().then(() => location.reload()); }
+        <div id="search-results"></div>
 
-        function startSearch() {
-            const val = document.getElementById('in-desc').value;
-            if (currentCat === 'Sport') searchSport(val); else searchFood(val);
-        }
+        <div class="inputs-grid">
+            <div class="input-box">
+                <label id="label-qty">Quantité (g)</label>
+                <input id="in-qty" type="number" value="100" oninput="recalc()">
+            </div>
+            <div class="input-box">
+                <label id="label-kcal">Kcal / 100g</label>
+                <input id="in-kcal" type="number" placeholder="0" oninput="recalc()">
+            </div>
+        </div>
 
-        async function searchFood(val) {
-            const resDiv = document.getElementById('search-results');
-            if (val.length < 2) return;
-            resDiv.classList.remove('hidden');
-            resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche...</div>`;
+        <div class="macros-row" id="macro-fields">
+            <div class="macro-input prot">
+                <label>Prot.</label>
+                <input id="in-p" type="number" value="0" placeholder="0" oninput="recalc()">
+            </div>
+            <div class="macro-input gluc">
+                <label>Gluc.</label>
+                <input id="in-g" type="number" value="0" placeholder="0" oninput="recalc()">
+            </div>
+            <div class="macro-input lip">
+                <label>Lip.</label>
+                <input id="in-l" type="number" value="0" placeholder="0" oninput="recalc()">
+            </div>
+        </div>
 
-            try {
-                // URL OPTIMISÉE POUR L'ALCOOL ET LES BOISSONS
-                const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=24&action=process&sort_by=unique_scans_n`;
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (!data.products || data.products.length === 0) {
-                    resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun résultat</div>`;
-                    return;
-                }
+        <div class="calc-result">
+            <div class="big" id="calc-res">0 kcal</div>
+            <div class="sub" id="calc-sub">pour 100g</div>
+        </div>
 
-                resDiv.innerHTML = data.products.map(p => {
-                    const n = (p.product_name_fr || p.product_name || "Inconnu").replace(/'/g, "\\'");
-                    let k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
-                    
-                    // Correction Manuelle pour les alcools sans calories dans la base
-                    const lowerN = n.toLowerCase();
-                    if (k === 0) {
-                        if (lowerN.includes('vin')) k = 80;
-                        else if (lowerN.includes('bière') || lowerN.includes('biere')) k = 45;
-                    }
+        <button class="btn-primary" onclick="submitEntry()">Valider</button>
+        <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+    </div>
+</div>
 
-                    const pr = p.nutriments?.proteins_100g || 0;
-                    const gl = p.nutriments?.carbohydrates_100g || 0;
-                    const lp = p.nutriments?.fat_100g || 0;
+<!-- Auth -->
+<div id="auth-screen">
+    <div class="auth-card">
+        <div class="auth-logo">Bio<span>Track</span></div>
+        <div class="auth-sub">Suivi nutritionnel quotidien</div>
+        <input id="auth-email" class="auth-input" type="email" placeholder="Email">
+        <input id="auth-pass" class="auth-input" type="password" placeholder="Mot de passe"
+            onkeydown="if(event.key==='Enter') handleAuth()">
+        <div class="auth-error" id="auth-error">Email ou mot de passe incorrect</div>
+        <button class="btn-primary" onclick="handleAuth()" style="margin-top:8px">Se connecter</button>
+    </div>
+</div>
 
-                    return `<div onclick="fill('${n}', ${k}, ${pr}, ${gl}, ${lp})" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-blue-50 bg-white">
-                        <p class="font-bold text-xs text-slate-800">${n}</p>
-                        <p class="text-[9px] text-blue-500 font-black mt-1 uppercase">${k} kcal / 100g</p>
-                    </div>`;
-                }).join('');
-            } catch (err) {
-                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur réseau</div>`;
-            }
-        }
+<script>
+const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function searchSport(val) {
-            const resDiv = document.getElementById('search-results');
-            resDiv.classList.remove('hidden');
-            const filtered = sportsDB.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
-            resDiv.innerHTML = filtered.map(s => `
-                <div onclick="fill('${s.name}', ${s.kcal}, 0, 0, 0)" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-orange-50 bg-white">
-                    <p class="font-bold text-xs text-slate-800">${s.name}</p>
-                    <p class="text-[9px] text-orange-500 font-black mt-1 uppercase">${s.kcal} kcal / heure</p>
-                </div>
-            `).join('') || `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Saisie libre</div>`;
-        }
+const GOAL = 2300;
+let currentCat = "";
 
-        function fill(n, k, pr, gl, lp) {
-            document.getElementById('in-desc').value = n;
-            document.getElementById('in-kcal').value = k;
-            document.getElementById('in-p').value = pr;
-            document.getElementById('search-results').classList.add('hidden');
-            recalc();
-        }
+// ── Base locale alcool (toujours prioritaire) ──
+const ALCOHOL_DB = [
+    { name: "Vin rouge (12°)",        k: 85,  pr: 0.1, gl: 2.6, lp: 0 },
+    { name: "Vin blanc sec (12°)",     k: 82,  pr: 0.1, gl: 1.6, lp: 0 },
+    { name: "Vin blanc moelleux",      k: 95,  pr: 0.1, gl: 5.0, lp: 0 },
+    { name: "Vin rosé (12°)",          k: 83,  pr: 0.1, gl: 2.1, lp: 0 },
+    { name: "Champagne / Prosecco",    k: 80,  pr: 0.3, gl: 3.8, lp: 0 },
+    { name: "Bière blonde (5°)",       k: 43,  pr: 0.4, gl: 3.6, lp: 0 },
+    { name: "Bière brune (6°)",        k: 55,  pr: 0.5, gl: 4.5, lp: 0 },
+    { name: "Bière sans alcool",       k: 18,  pr: 0.4, gl: 3.5, lp: 0 },
+    { name: "Whisky (40°)",            k: 250, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Cognac / Armagnac (40°)", k: 235, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Vodka (40°)",             k: 230, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Gin (40°)",               k: 230, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Rhum (40°)",              k: 230, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Tequila (38°)",           k: 220, pr: 0,   gl: 0,   lp: 0 },
+    { name: "Porto / Muscat",          k: 160, pr: 0.2, gl: 12,  lp: 0 },
+    { name: "Cidre brut (5°)",         k: 36,  pr: 0,   gl: 1.6, lp: 0 },
+    { name: "Pastis 51 dilué",         k: 98,  pr: 0,   gl: 1.5, lp: 0 },
+    { name: "Mojito",                  k: 72,  pr: 0,   gl: 9,   lp: 0 },
+    { name: "Sangria",                 k: 75,  pr: 0.1, gl: 7,   lp: 0 },
+    { name: "Amaretto",                k: 310, pr: 0,   gl: 35,  lp: 0 },
+];
 
-        function recalc() {
-            const q = parseFloat(document.getElementById('in-qty').value) || 0;
-            const k = parseFloat(document.getElementById('in-kcal').value) || 0;
-            const factor = (currentCat === 'Sport') ? (q / 60) : (q / 100);
-            document.getElementById('calc-res').innerText = Math.round(k * factor) + " kcal";
-        }
+// ── Base Sport ──
+const SPORT_DB = [
+    { name: "Course à pied (10 km/h)",  k: 600 },
+    { name: "Course à pied (12 km/h)",  k: 750 },
+    { name: "Marche rapide",            k: 280 },
+    { name: "Cyclisme modéré",          k: 450 },
+    { name: "Cyclisme intense",         k: 650 },
+    { name: "Natation",                 k: 550 },
+    { name: "Musculation / Fitness",    k: 350 },
+    { name: "HIIT",                     k: 700 },
+    { name: "Yoga / Pilates",           k: 180 },
+    { name: "Football",                 k: 520 },
+    { name: "Tennis",                   k: 480 },
+    { name: "Corde à sauter",           k: 700 },
+    { name: "Elliptique",               k: 450 },
+    { name: "Escalade",                 k: 500 },
+];
 
-        async function submitEntry() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            const q = parseFloat(document.getElementById('in-qty').value) || 0;
-            const k = parseFloat(document.getElementById('in-kcal').value) || 0;
-            const d = document.getElementById('in-desc').value;
-            if(!d || !user) return;
-            const factor = (currentCat === 'Sport') ? (q / 60) : (q / 100);
+// ── Init ──
+async function init() {
+    document.getElementById('header-date').textContent =
+        new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
-            await supabaseClient.from('entries').insert([{
-                user_id: user.id,
-                type: currentCat === 'Sport' ? 'burn' : 'food',
-                category: currentCat,
-                desc: `${d} (${q}${currentCat === 'Sport' ? 'min' : 'g'})`,
-                val: Math.round(k * factor),
-                date: new Date().toISOString().split('T')[0]
-            }]);
-            closeModal(); loadData();
-        }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        document.getElementById('auth-screen').style.display = 'flex';
+    } else {
+        document.getElementById('auth-screen').style.display = 'none';
+        loadData();
+    }
+}
 
-        async function loadData() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
-            const today = new Date().toISOString().split('T')[0];
-            const { data } = await supabaseClient.from('entries').select('*').eq('user_id', user.id).eq('date', today);
+// ── Auth ──
+async function handleAuth() {
+    const email = document.getElementById('auth-email').value;
+    const pass  = document.getElementById('auth-pass').value;
+    const errEl = document.getElementById('auth-error');
+    errEl.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { errEl.style.display = 'block'; }
+    else { init(); }
+}
 
-            let html = ""; let tIn = 0, tOut = 0;
-            (data || []).sort((a,b) => b.id - a.id).forEach(e => {
-                if(e.type === 'food') tIn += e.val; else tOut += e.val;
-                html += `<div class="bg-white p-5 rounded-[1.5rem] flex justify-between items-center shadow-sm border border-slate-50">
-                    <div>
-                        <span class="text-[9px] font-black ${e.type === 'food' ? 'text-slate-400' : 'text-orange-400'} uppercase tracking-widest">${e.category}</span>
-                        <p class="font-bold text-[11px] text-slate-700">${e.desc}</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <span class="font-black text-sm ${e.type === 'food' ? 'text-blue-600' : 'text-orange-500'}">${e.type === 'burn' ? '-' : ''}${e.val} kcal</span>
-                        <button onclick="del(${e.id})" class="p-2 text-slate-200">✕</button>
-                    </div>
+function logout() { sb.auth.signOut().then(() => location.reload()); }
+
+// ── Modal ──
+function openModal(cat) {
+    currentCat = cat;
+    document.getElementById('modal-title').textContent = cat === 'Sport' ? '🔥 Sport' : '+ ' + cat;
+    document.getElementById('in-desc').value = '';
+    document.getElementById('in-kcal').value = '';
+    document.getElementById('in-p').value = '0';
+    document.getElementById('in-g').value = '0';
+    document.getElementById('in-l').value = '0';
+    document.getElementById('in-qty').value = cat === 'Sport' ? '30' : '100';
+    document.getElementById('calc-res').textContent = '0 kcal';
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
+
+    const isSport = cat === 'Sport';
+    document.getElementById('label-qty').textContent  = isSport ? 'Durée (min)' : 'Quantité (g)';
+    document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
+    document.getElementById('calc-sub').textContent   = isSport ? 'dépensées' : 'pour cette portion';
+    document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+
+    document.getElementById('in-desc').placeholder = isSport ? 'Rechercher un sport...' : 'Rechercher un aliment...';
+    document.getElementById('modal-add').classList.add('open');
+    setTimeout(() => document.getElementById('in-desc').focus(), 200);
+}
+
+function closeModal() {
+    document.getElementById('modal-add').classList.remove('open');
+}
+
+// Fermer en cliquant le fond
+document.getElementById('modal-add').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ── Recherche ──
+function startSearch() {
+    const val = document.getElementById('in-desc').value.trim();
+    if (val.length < 1) return;
+    if (currentCat === 'Sport') searchSport(val);
+    else searchFood(val);
+}
+
+async function searchFood(val) {
+    const resDiv = document.getElementById('search-results');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Recherche en cours...</div></div>`;
+
+    // 1. Base locale alcool (prioritaire, toujours visible en premier)
+    const lowerVal = val.toLowerCase();
+    const localHits = ALCOHOL_DB.filter(a => a.name.toLowerCase().includes(lowerVal));
+
+    let localHTML = localHits.map(a => `
+        <div class="result-item" onclick="fill('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})">
+            <div><span class="result-tag">Base locale</span></div>
+            <div class="result-name">${a.name}</div>
+            <div class="result-kcal">${a.k} kcal / 100ml</div>
+        </div>`).join('');
+
+    // 2. Open Food Facts
+    try {
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=20&action=process&sort_by=unique_scans_n`;
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        let offHTML = '';
+        if (data.products && data.products.length > 0) {
+            offHTML = data.products.map(p => {
+                const name = (p.product_name_fr || p.product_name || '').trim();
+                if (!name) return '';
+                const nameEsc = esc(name);
+                let k = Math.round(
+                    p.nutriments?.['energy-kcal_100g'] ||
+                    (p.nutriments?.['energy-kj_100g'] / 4.184) || 0
+                );
+                const pr = p.nutriments?.proteins_100g || 0;
+                const gl = p.nutriments?.carbohydrates_100g || 0;
+                const lp = p.nutriments?.fat_100g || 0;
+
+                return `<div class="result-item" onclick="fill('${nameEsc}', ${k}, ${pr}, ${gl}, ${lp})">
+                    <div class="result-name">${name}</div>
+                    <div class="result-kcal">${k} kcal / 100g</div>
                 </div>`;
-            });
-            document.getElementById('daily-list').innerHTML = html;
-            document.getElementById('kcal-left').innerText = (goal + tOut) - tIn;
+            }).join('');
         }
 
-        async function del(id) {
-            await supabaseClient.from('entries').delete().eq('id', id);
-            loadData();
-        }
+        resDiv.innerHTML = localHTML + offHTML ||
+            `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat — saisie manuelle possible</div></div>`;
 
-        function openModal(c) { 
-            currentCat = c; 
-            document.getElementById('modal-add').classList.remove('hidden');
-            if (c === 'Sport') {
-                document.getElementById('label-qty').innerText = "Durée (min)";
-                document.getElementById('label-kcal').innerText = "Kcal / Heure";
-                document.getElementById('macro-fields').classList.add('hidden');
-            } else {
-                document.getElementById('label-qty').innerText = "Quantité (g)";
-                document.getElementById('label-kcal').innerText = "Kcal / 100g";
-                document.getElementById('macro-fields').classList.remove('hidden');
-            }
-        }
+    } catch {
+        resDiv.innerHTML = localHTML ||
+            `<div class="result-item"><div class="result-name" style="color:var(--muted)">Erreur réseau</div></div>`;
+    }
+}
 
-        function closeModal() { document.getElementById('modal-add').classList.add('hidden'); }
-        init();
-    </script>
+function searchSport(val) {
+    const resDiv = document.getElementById('search-results');
+    resDiv.style.display = 'block';
+    const lowerVal = val.toLowerCase();
+    const hits = SPORT_DB.filter(s => s.name.toLowerCase().includes(lowerVal));
+    resDiv.innerHTML = hits.map(s => `
+        <div class="result-item" onclick="fill('${esc(s.name)}', ${s.k}, 0, 0, 0)">
+            <div class="result-name">${s.name}</div>
+            <div class="result-kcal burn">${s.k} kcal / heure</div>
+        </div>`).join('') ||
+        `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
+}
+
+function esc(str) { return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function fill(name, k, pr, gl, lp) {
+    document.getElementById('in-desc').value  = name;
+    document.getElementById('in-kcal').value  = k;
+    document.getElementById('in-p').value     = pr;
+    document.getElementById('in-g').value     = gl;
+    document.getElementById('in-l').value     = lp;
+    document.getElementById('search-results').style.display = 'none';
+    recalc();
+}
+
+function recalc() {
+    const q      = parseFloat(document.getElementById('in-qty').value)  || 0;
+    const k      = parseFloat(document.getElementById('in-kcal').value) || 0;
+    const factor = currentCat === 'Sport' ? q / 60 : q / 100;
+    document.getElementById('calc-res').textContent = Math.round(k * factor) + ' kcal';
+    document.getElementById('calc-sub').textContent =
+        currentCat === 'Sport' ? `pour ${q} min` : `pour ${q}g`;
+}
+
+// ── Submit ──
+async function submitEntry() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+
+    const desc = document.getElementById('in-desc').value.trim();
+    const q    = parseFloat(document.getElementById('in-qty').value)  || 0;
+    const k    = parseFloat(document.getElementById('in-kcal').value) || 0;
+    if (!desc) { document.getElementById('in-desc').focus(); return; }
+
+    const isSport = currentCat === 'Sport';
+    const factor  = isSport ? q / 60 : q / 100;
+    const val     = Math.round(k * factor);
+    const p       = parseFloat(document.getElementById('in-p').value) || 0;
+    const g       = parseFloat(document.getElementById('in-g').value) || 0;
+    const l       = parseFloat(document.getElementById('in-l').value) || 0;
+
+    await sb.from('entries').insert([{
+        user_id:  user.id,
+        type:     isSport ? 'burn' : 'food',
+        category: currentCat,
+        desc:     `${desc} (${q}${isSport ? 'min' : 'g'})`,
+        val,
+        prot:     Math.round(p * factor * 10) / 10,
+        gluc:     Math.round(g * factor * 10) / 10,
+        lip:      Math.round(l * factor * 10) / 10,
+        date:     new Date().toISOString().split('T')[0]
+    }]);
+
+    closeModal();
+    loadData();
+}
+
+// ── Load ──
+async function loadData() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', today);
+
+    let tIn = 0, tOut = 0, tP = 0, tG = 0, tL = 0;
+    const entries = (data || []).sort((a, b) => b.id - a.id);
+
+    entries.forEach(e => {
+        if (e.type === 'food') {
+            tIn += e.val;
+            tP  += e.prot || 0;
+            tG  += e.gluc || 0;
+            tL  += e.lip  || 0;
+        } else {
+            tOut += e.val;
+        }
+    });
+
+    const remaining = (GOAL + tOut) - tIn;
+    document.getElementById('kcal-left').textContent  = remaining;
+    document.getElementById('total-p').textContent    = Math.round(tP) + 'g';
+    document.getElementById('total-g').textContent    = Math.round(tG) + 'g';
+    document.getElementById('total-l').textContent    = Math.round(tL) + 'g';
+
+    const pct = Math.min(100, Math.round((tIn / GOAL) * 100));
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-eaten').textContent = tIn + ' mangé';
+    document.getElementById('progress-goal').textContent  = GOAL + ' objectif';
+
+    const listEl    = document.getElementById('daily-list');
+    const titleEl   = document.getElementById('list-title');
+
+    if (entries.length === 0) {
+        titleEl.style.display = 'none';
+        listEl.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>Aucun aliment enregistré aujourd'hui</div>`;
+        return;
+    }
+
+    titleEl.style.display = 'block';
+    listEl.innerHTML = entries.map(e => `
+        <div class="entry-item">
+            <div>
+                <div class="entry-cat">${e.category}</div>
+                <div class="entry-desc">${e.desc}</div>
+            </div>
+            <div class="entry-right">
+                <span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val} kcal</span>
+                <button class="entry-del" onclick="del(${e.id})">✕</button>
+            </div>
+        </div>`).join('');
+}
+
+async function del(id) {
+    await sb.from('entries').delete().eq('id', id);
+    loadData();
+}
+
+init();
+</script>
 </body>
 </html>
