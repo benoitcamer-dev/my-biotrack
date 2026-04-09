@@ -9,118 +9,107 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Styles extraits de ton document html-calories.docx */
+        /* Styles fusionnés de ton document original */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #0d0f14; --surface: #161921; --surface2: #1e2330; --surface3: #252c3c;
-            --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+            --bg: #0d0f14; --surface: #161921; --surface2: #1e2330;
             --text: #f0f2f8; --muted: #7a8098; --accent: #5b7fff; --accent2: #7c5cfa;
-            --orange: #ff7c4d; --green: #3dd68c; --pink: #fa5ccd; --danger: #ff6b6b;
-            --radius: 20px; --radius-sm: 12px;
         }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding-bottom: 32px; }
-        h1, h2, h3 { font-family: 'Syne', sans-serif; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        input { width: 100%; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 14px; border-radius: 12px; margin-bottom: 10px; font-size: 16px; }
+        .btn-primary { width: 100%; background: var(--accent); border: none; border-radius: 12px; padding: 16px; color: white; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
         
-        /* Styles spécifiques pour le scanner */
-        #interactive.viewport { width: 100%; height: 250px; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 20px; position: relative; }
-        #interactive.viewport video, #interactive.viewport canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; }
+        /* Layout */
+        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+        .kcal-card { background: var(--surface); border-radius: 28px; padding: 30px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .kcal-number { font-family: 'Syne'; font-size: 50px; font-weight: 800; color: var(--accent); }
 
-        /* ... On garde tout le reste de ton CSS ... */
-        header { position: sticky; top: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(13,15,20,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
-        .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
-        .logo span { color: var(--accent); }
-        .page { display: none; }
-        .page.active { display: block; }
-        .kcal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 28px; padding: 28px 20px 24px; margin-bottom: 16px; text-align: center; }
-        .kcal-number { font-family: 'Syne', sans-serif; font-size: 68px; font-weight: 800; }
-        .btn-primary { width: 100%; background: var(--accent); border: none; border-radius: 12px; padding: 16px; color: white; font-family: 'Syne', sans-serif; font-weight: 700; text-transform: uppercase; cursor: pointer; }
-        
-        /* Modal Style */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        /* Scanner */
+        #interactive.viewport { width: 100%; height: 250px; border-radius: 15px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        #interactive.viewport video, canvas { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal.open { display: flex; }
-        .modal-sheet { background: var(--surface); width: 100%; max-width: 480px; border-radius: 28px; padding: 24px; position: relative; }
-        .fav-item { background: var(--surface2); padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; cursor: pointer; }
+        .modal-content { background: var(--surface); width: 100%; max-width: 400px; border-radius: 24px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
 
 <div id="auth-screen" style="display:flex; flex-direction: column; padding: 40px; justify-content: center; min-height: 100vh;">
-    <div class="logo" style="font-size: 32px; margin-bottom: 20px;">Bio<span>Track</span></div>
-    <input type="email" id="auth-email" placeholder="Email" style="width:100%; padding:14px; background:var(--surface2); border:1px solid var(--border); color:white; border-radius:12px; margin-bottom:10px;">
-    <input type="password" id="auth-pass" placeholder="Mot de passe" style="width:100%; padding:14px; background:var(--surface2); border:1px solid var(--border); color:white; border-radius:12px; margin-bottom:20px;">
-    <button class="btn-primary" onclick="handleAuth()">Se connecter</button>
+    <h1 style="font-family: 'Syne'; font-size: 32px; margin-bottom: 20px;">Bio<span style="color:var(--accent)">Track</span></h1>
+    <p style="color:var(--muted); margin-bottom: 20px;">Connectez-vous pour synchroniser vos données</p>
+    <input type="email" id="auth-email" placeholder="Email">
+    <input type="password" id="auth-pass" placeholder="Mot de passe">
+    <button class="btn-primary" onclick="handleAuth('login')">Se connecter</button>
+    <button class="btn-primary" style="background:transparent; color:var(--accent); margin-top:10px;" onclick="handleAuth('signup')">Créer un compte</button>
 </div>
 
-<div id="app" style="display:none;">
-    <header>
-        <div class="logo">Bio<span>Track</span></div>
-        <div id="header-date" style="font-size: 11px; color: var(--muted);"></div>
-    </header>
+<div id="app" style="display:none;" class="container">
+    <div class="kcal-card">
+        <div class="kcal-number" id="kcal-left">0</div>
+        <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px;">kcal consommées</div>
+    </div>
 
-    <main style="max-width: 480px; margin: 0 auto; padding: 20px;">
-        <div class="kcal-card">
-            <div class="kcal-number" id="kcal-left">0</div>
-            <div style="font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px;">kcal restantes</div>
-        </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+        <button class="btn-primary" onclick="openScanner()">📷 Scanner</button>
+        <button class="btn-primary" style="background: var(--surface2)" onclick="openManual()">✍️ Manuel</button>
+    </div>
+    <button class="btn-primary" style="background: var(--accent2)" onclick="openFavs()">⭐ Mes Favoris Cloud</button>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-            <button class="btn-primary" onclick="openScanner()">📷 Scanner</button>
-            <button class="btn-primary" style="background: var(--surface2)" onclick="openManual()">✍️ Manuel</button>
-        </div>
-        
-        <button class="btn-primary" style="background: var(--accent2); margin-bottom: 30px;" onclick="openFavs()">⭐ Mes Favoris Cloud</button>
-
-        <div class="section-label" style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 15px;">Aujourd'hui</div>
-        <div id="daily-list"></div>
-    </main>
+    <h3 style="margin: 25px 0 15px; font-family: 'Syne';">Journal du jour</h3>
+    <div id="daily-list"></div>
+    <button onclick="logout()" style="background:none; border:none; color:var(--muted); width:100%; margin-top:40px; cursor:pointer;">Se déconnecter</button>
 </div>
 
-<div id="modal-add" class="modal">
-    <div class="modal-sheet">
-        <h3 id="modal-title" style="margin-bottom: 20px;">Ajouter un aliment</h3>
+<div id="modal-food" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-title" style="margin-bottom:15px;">Ajouter</h3>
+        <div id="scanner-container" style="display:none;"><div id="interactive" class="viewport"></div></div>
         
-        <div id="scanner-container" style="display:none;">
-            <div id="interactive" class="viewport"></div>
+        <input type="text" id="f-desc" placeholder="Nom">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="number" id="f-kcal" placeholder="Kcal/100g">
+            <input type="number" id="f-qty" value="100" placeholder="Quantité (g)">
         </div>
-
-        <input type="text" id="in-desc" placeholder="Nom de l'aliment" style="width:100%; padding:12px; background:var(--surface2); border:1px solid var(--border); color:white; border-radius:10px; margin-bottom:10px;">
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-            <div><label style="font-size:9px; color:var(--muted)">Kcal/100g</label><input type="number" id="in-kcal" style="width:100%; padding:10px; background:var(--surface2); border:none; color:white; border-radius:8px;"></div>
-            <div><label style="font-size:9px; color:var(--muted)">Quantité (g)</label><input type="number" id="in-qty" value="100" style="width:100%; padding:10px; background:var(--surface2); border:none; color:white; border-radius:8px;"></div>
+        <div style="display: flex; gap: 10px; margin-top:15px;">
+            <button class="btn-primary" onclick="saveEntry()">Valider</button>
+            <button class="btn-primary" style="background: #ff7c4d; width: 60px;" onclick="saveFav()">⭐</button>
         </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn-primary" onclick="submitEntry()">Valider</button>
-            <button class="btn-primary" style="background: var(--orange); width: 80px;" onclick="saveToCloudFav()">⭐</button>
-        </div>
-        <button class="btn-cancel" style="width:100%; background:none; border:none; color:var(--muted); margin-top:15px; cursor:pointer;" onclick="closeModal()">Annuler</button>
+        <button class="btn-primary" style="background:transparent; color:var(--muted)" onclick="closeModal()">Annuler</button>
     </div>
 </div>
 
 <div id="modal-favs" class="modal">
-    <div class="modal-sheet">
-        <h3>Mes Favoris Cloud</h3>
-        <div id="favs-list" style="margin: 20px 0; max-height: 300px; overflow-y: auto;"></div>
+    <div class="modal-content">
+        <h3>Favoris Cloud</h3>
+        <div id="favs-list" style="margin: 15px 0; max-height: 300px; overflow-y: auto;"></div>
         <button class="btn-primary" onclick="closeModal()">Fermer</button>
     </div>
 </div>
 
 <script>
-    // --- TES DONNÉES SUPABASE (Insérées automatiquement) ---
-    const SB_URL = "https://votre-url-supabase.supabase.co"; // Remplacé
-    const SB_KEY = "votre-cle-anon-supabase"; // Remplacé
-    const sb = supabase.createClient(SB_URL, SB_KEY);
-
+    // --- TES CLÉS ---
+    const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
+    
+    // Initialisation robuste
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let user = null;
 
-    // --- INITIALISATION & AUTH ---
-    async function handleAuth() {
+    // --- AUTH ---
+    async function handleAuth(type) {
         const email = document.getElementById('auth-email').value;
-        const pass = document.getElementById('auth-pass').value;
-        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-        if (error) alert("Erreur : " + error.message);
-        else init();
+        const password = document.getElementById('auth-pass').value;
+        try {
+            const { data, error } = (type === 'login') 
+                ? await sb.auth.signInWithPassword({ email, password })
+                : await sb.auth.signUp({ email, password });
+            if (error) throw error;
+            if (type === 'signup') alert("Compte créé !");
+            init();
+        } catch (e) { alert(e.message); }
     }
 
     async function init() {
@@ -129,113 +118,106 @@
             user = session.user;
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
-            document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
             loadData();
         }
     }
 
-    // --- RÉCUPÉRATION DU JOURNAL ---
+    // --- DATA ---
     async function loadData() {
         const today = new Date().toISOString().split('T')[0];
-        const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', today);
-        
-        const listEl = document.getElementById('daily-list');
-        let total = 0;
-        listEl.innerHTML = "";
+        const { data, error } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', today);
+        if (error) { console.error(error); return; }
 
-        data?.forEach(e => {
+        const list = document.getElementById('daily-list');
+        let total = 0;
+        list.innerHTML = data.length ? "" : "<p style='color:var(--muted)'>Rien aujourd'hui</p>";
+        
+        data.forEach(e => {
             total += e.val;
-            listEl.innerHTML += `
-                <div style="background:var(--surface); border:1px solid var(--border); padding:15px; border-radius:16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><div style="font-weight:700">${e.desc}</div><div style="font-size:10px; color:var(--muted)">${e.qty || 100}g</div></div>
-                    <div style="font-family:'Syne'; color:var(--accent); font-weight:800">${e.val} kcal</div>
-                </div>`;
+            list.innerHTML += `<div style="background:var(--surface); padding:15px; border-radius:15px; margin-bottom:10px; display:flex; justify-content:space-between; border:1px solid rgba(255,255,255,0.05);">
+                <span>${e.desc}</span><span style="font-weight:bold; color:var(--accent)">${e.val} kcal</span>
+            </div>`;
         });
         document.getElementById('kcal-left').textContent = total;
     }
 
-    // --- ENREGISTREMENT ---
-    async function submitEntry() {
-        const kcal100 = parseFloat(document.getElementById('in-kcal').value);
-        const qty = parseFloat(document.getElementById('in-qty').value);
-        const finalKcal = Math.round((kcal100 * qty) / 100);
-
-        await sb.from('entries').insert([{
+    async function saveEntry() {
+        const factor = document.getElementById('f-qty').value / 100;
+        const payload = {
             user_id: user.id,
-            desc: document.getElementById('in-desc').value,
-            val: finalKcal,
-            qty: qty,
+            desc: document.getElementById('f-desc').value,
+            val: Math.round(document.getElementById('f-kcal').value * factor),
             date: new Date().toISOString().split('T')[0]
-        }]);
-
-        closeModal();
-        loadData();
+        };
+        const { error } = await sb.from('entries').insert([payload]);
+        if (error) alert(error.message);
+        else { closeModal(); loadData(); }
     }
 
-    // --- FAVORIS ---
-    async function saveToCloudFav() {
+    // --- FAVS ---
+    async function saveFav() {
         await sb.from('favorites').insert([{
             user_id: user.id,
-            name: document.getElementById('in-desc').value,
-            kcal100: document.getElementById('in-kcal').value
+            name: document.getElementById('f-desc').value,
+            kcal100: document.getElementById('f-kcal').value
         }]);
-        alert("Ajouté aux favoris !");
+        alert("Sauvegardé !");
     }
 
     async function openFavs() {
+        document.getElementById('modal-favs').classList.add('open');
         const { data } = await sb.from('favorites').select('*').eq('user_id', user.id);
         const list = document.getElementById('favs-list');
-        list.innerHTML = data?.length ? "" : "<div style='color:var(--muted)'>Aucun favori</div>";
+        list.innerHTML = "";
         data?.forEach(f => {
-            const div = document.createElement('div');
-            div.className = "fav-item";
-            div.innerHTML = `<span>${f.name}</span><strong>${f.kcal100} kcal</strong>`;
-            div.onclick = () => {
-                document.getElementById('in-desc').value = f.name;
-                document.getElementById('in-kcal').value = f.kcal100;
-                document.getElementById('modal-favs').classList.remove('open');
-                document.getElementById('modal-add').classList.add('open');
+            const d = document.createElement('div');
+            d.style.padding="10px"; d.style.background="var(--surface2)"; d.style.borderRadius="10px"; d.style.marginBottom="5px"; d.style.cursor="pointer";
+            d.innerHTML = `<b>${f.name}</b> - ${f.kcal100} kcal`;
+            d.onclick = () => {
+                document.getElementById('f-desc').value = f.name;
+                document.getElementById('f-kcal').value = f.kcal100;
+                closeModal();
+                document.getElementById('modal-food').classList.add('open');
             };
-            list.appendChild(div);
+            list.appendChild(d);
         });
-        document.getElementById('modal-favs').classList.add('open');
     }
 
-    // --- SCANNER ---
+    // --- SCAN ---
     function openScanner() {
         document.getElementById('scanner-container').style.display = 'block';
-        document.getElementById('modal-add').classList.add('open');
+        document.getElementById('modal-food').classList.add('open');
         Quagga.init({
             inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive') },
             decoder: { readers: ["ean_reader", "ean_8_reader"] }
         }, (err) => { 
-            if(err) return console.error(err);
+            if(err) { alert("Erreur caméra : Vérifiez les permissions HTTPS."); return; }
             Quagga.start(); 
         });
 
-        Quagga.onDetected(async (data) => {
+        Quagga.onDetected(async (res) => {
             Quagga.stop();
             document.getElementById('scanner-container').style.display = 'none';
-            const code = data.codeResult.code;
-            const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`).then(r => r.json());
-            if(res.status === 1) {
-                document.getElementById('in-desc').value = res.product.product_name;
-                document.getElementById('in-kcal').value = res.product.nutriments['energy-kcal_100g'] || 0;
-            } else {
-                alert("Produit inconnu");
+            const code = res.codeResult.code;
+            const r = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`).then(res => res.json());
+            if(r.status === 1) {
+                document.getElementById('f-desc').value = r.product.product_name;
+                document.getElementById('f-kcal').value = r.product.nutriments['energy-kcal_100g'] || 0;
             }
         });
     }
 
     function openManual() {
         document.getElementById('scanner-container').style.display = 'none';
-        document.getElementById('modal-add').classList.add('open');
+        document.getElementById('modal-food').classList.add('open');
     }
 
     function closeModal() {
         document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
-        if (typeof Quagga !== 'undefined') Quagga.stop();
+        if(typeof Quagga !== 'undefined') Quagga.stop();
     }
+
+    function logout() { sb.auth.signOut().then(() => location.reload()); }
 
     init();
 </script>
