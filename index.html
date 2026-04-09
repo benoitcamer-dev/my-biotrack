@@ -10,20 +10,27 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.3); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="pb-24">
 
     <script>
+        // CONFIGURATION SUPABASE
         const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE"; 
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-        });
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // BASE DE DONNÉES SPORT LOCALE (Favoris)
+        const sportsDB = [
+            { name: "Course à pied (Lent)", kcal: 400 },
+            { name: "Course à pied (Rapide)", kcal: 700 },
+            { name: "Cyclisme", kcal: 500 },
+            { name: "Natation", kcal: 600 },
+            { name: "Musculation", kcal: 300 },
+            { name: "Marche active", kcal: 250 },
+            { name: "Yoga", kcal: 150 }
+        ];
     </script>
 
     <header class="sticky top-0 z-50 glass p-5 flex justify-between items-center">
@@ -69,53 +76,58 @@
 
     <div id="modal-add" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-[60] backdrop-blur-sm">
         <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <input id="in-desc" type="text" placeholder="Rechercher (ex: Spaghetti)..." class="w-full bg-slate-50 p-4 rounded-2xl mb-4 font-bold outline-none border border-slate-100" oninput="debounceSearch(this.value)">
-            <div id="search-results" class="max-h-[200px] overflow-y-auto mb-4 hidden border border-slate-100 rounded-2xl bg-white"></div>
+            
+            <div class="flex gap-2 mb-4">
+                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100">
+                <button onclick="startSearch()" class="bg-blue-600 text-white px-5 rounded-2xl shadow-md active:scale-95 transition-transform">🔍</button>
+            </div>
+
+            <div id="search-results" class="max-h-[200px] overflow-y-auto mb-4 hidden border border-slate-100 rounded-2xl bg-white shadow-inner"></div>
             
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label class="text-[8px] font-black text-slate-400 uppercase">Quantité (g)</label>
+                    <label id="label-qty" class="text-[8px] font-black text-slate-400 uppercase">Quantité (g/min)</label>
                     <input id="in-qty" type="number" value="100" class="w-full bg-transparent font-bold text-blue-600 outline-none" oninput="recalc()">
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label class="text-[8px] font-black text-slate-400 uppercase">Kcal/100g</label>
+                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal/Unité</label>
                     <input id="in-kcal" type="number" placeholder="0" class="w-full bg-transparent font-bold outline-none" oninput="recalc()">
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 mb-6">
+            <div id="macro-fields" class="grid grid-cols-3 gap-2 mb-6">
                 <div class="text-center bg-blue-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot/100g</label>
-                    <input id="in-p" type="number" placeholder="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
+                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot</label>
+                    <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-orange-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc/100g</label>
-                    <input id="in-g" type="number" placeholder="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
+                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc</label>
+                    <input id="in-g" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-pink-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip/100g</label>
-                    <input id="in-l" type="number" placeholder="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
+                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip</label>
+                    <input id="in-l" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
             </div>
 
             <div id="calc-res" class="text-3xl font-black text-center mb-6 text-slate-800 tracking-tighter">0 kcal</div>
             
-            <button onclick="submitEntry()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg">VALIDER</button>
-            <button onclick="closeModal()" class="w-full mt-4 text-[10px] text-slate-300 font-bold uppercase text-center">Fermer</button>
+            <button onclick="submitEntry()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:bg-blue-700">VALIDER</button>
+            <button onclick="closeModal()" class="w-full mt-4 text-[10px] text-slate-300 font-bold uppercase text-center">Annuler</button>
         </div>
     </div>
 
     <div id="auth-screen" class="fixed inset-0 bg-blue-600 z-[100] hidden items-center justify-center p-8">
         <div class="bg-white rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl">
             <h2 class="text-3xl font-black text-blue-600 italic mb-8 uppercase tracking-tighter">BioTrack</h2>
-            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 font-bold outline-none">
-            <input id="auth-pass" type="password" placeholder="Mot de passe" class="w-full bg-slate-50 p-4 rounded-2xl mb-6 font-bold outline-none">
-            <button onclick="handleAuth()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs">Se connecter</button>
+            <input id="auth-email" type="email" placeholder="Email" class="w-full bg-slate-50 p-4 rounded-2xl mb-3 font-bold outline-none border border-slate-100">
+            <input id="auth-pass" type="password" placeholder="Mot de passe" class="w-full bg-slate-50 p-4 rounded-2xl mb-6 font-bold outline-none border border-slate-100">
+            <button onclick="handleAuth()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-transform">Se connecter</button>
         </div>
     </div>
 
     <script>
-        let currentCat = ""; let searchTimer; let goal = 2300;
+        let currentCat = ""; let goal = 2300;
 
         async function init() {
             document.getElementById('header-date').innerText = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -128,52 +140,64 @@
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-pass').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Erreur : " + error.message); else init();
+            if (error) alert("Erreur d'accès : " + error.message); else init();
         }
 
         function logout() { supabaseClient.auth.signOut().then(() => location.reload()); }
 
-        // RECHERCHE AMÉLIORÉE
-        function debounceSearch(val) {
-            const resDiv = document.getElementById('search-results');
-            clearTimeout(searchTimer);
+        function startSearch() {
+            const val = document.getElementById('in-desc').value;
+            if (currentCat === 'Sport') { searchSport(val); } 
+            else { searchFood(val); }
+        }
 
-            if (val.length < 2) {
-                resDiv.classList.add('hidden');
+        // --- LOGIQUE FOOD (API) ---
+        async function searchFood(val) {
+            const resDiv = document.getElementById('search-results');
+            if (val.length < 2) return;
+            resDiv.classList.remove('hidden');
+            resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche aliments...</div>`;
+
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=10`);
+                const data = await res.json();
+                if (!data.products || data.products.length === 0) {
+                    resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun produit trouvé</div>`;
+                    return;
+                }
+                resDiv.innerHTML = data.products
+                    .filter(p => p.nutriments && (p.nutriments['energy-kcal_100g'] || p.nutriments['energy-kj_100g']))
+                    .map(p => {
+                        const n = (p.product_name_fr || p.product_name || "Produit inconnu").replace(/'/g, "\\'");
+                        const k = Math.round(p.nutriments['energy-kcal_100g'] || (p.nutriments['energy-kj_100g'] / 4.184));
+                        const pr = p.nutriments.proteins_100g || 0, gl = p.nutriments.carbohydrates_100g || 0, lp = p.nutriments.fat_100g || 0;
+                        return `<div onclick="fill('${n}', ${k}, ${pr}, ${gl}, ${lp})" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-blue-50 bg-white">
+                            <p class="font-bold text-xs text-slate-800">${p.product_name_fr || p.product_name}</p>
+                            <p class="text-[9px] text-blue-500 font-black mt-1 uppercase">${k} kcal / 100g</p>
+                        </div>`;
+                    }).join('');
+            } catch (err) {
+                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur Réseau API</div>`;
+            }
+        }
+
+        // --- LOGIQUE SPORT (BASE LOCALE) ---
+        function searchSport(val) {
+            const resDiv = document.getElementById('search-results');
+            resDiv.classList.remove('hidden');
+            const filtered = sportsDB.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
+            
+            if (filtered.length === 0) {
+                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Pas dans vos favoris ? Remplissez manuellement ci-dessous.</div>`;
                 return;
             }
 
-            resDiv.classList.remove('hidden');
-            resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche en cours...</div>`;
-
-            searchTimer = setTimeout(async () => {
-                try {
-                    const res = await fetch(`https://fr.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=8`);
-                    const data = await res.json();
-                    
-                    if (!data.products || data.products.length === 0) {
-                        resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun résultat</div>`;
-                        return;
-                    }
-
-                    resDiv.innerHTML = data.products
-                        .filter(p => p.nutriments && p.nutriments['energy-kcal_100g'])
-                        .map(p => {
-                            const n = (p.product_name_fr || p.product_name || "Produit inconnu").replace(/'/g, "\\'");
-                            const k = Math.round(p.nutriments['energy-kcal_100g']);
-                            const pr = p.nutriments.proteins_100g || 0;
-                            const gl = p.nutriments.carbohydrates_100g || 0;
-                            const lp = p.nutriments.fat_100g || 0;
-                            
-                            return `<div onclick="fill('${n}', ${k}, ${pr}, ${gl}, ${lp})" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-blue-50 bg-white active:bg-blue-100">
-                                <p class="font-bold text-xs text-slate-800">${p.product_name_fr || p.product_name}</p>
-                                <p class="text-[9px] text-blue-500 font-black mt-1 uppercase">${k} kcal / 100g</p>
-                            </div>`;
-                        }).join('');
-                } catch (err) {
-                    resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur réseau</div>`;
-                }
-            }, 500);
+            resDiv.innerHTML = filtered.map(s => `
+                <div onclick="fill('${s.name}', ${s.kcal}, 0, 0, 0)" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-orange-50 bg-white">
+                    <p class="font-bold text-xs text-slate-800">${s.name}</p>
+                    <p class="text-[9px] text-orange-500 font-black mt-1 uppercase">${s.kcal} kcal / heure</p>
+                </div>
+            `).join('');
         }
 
         function fill(n, k, pr, gl, lp) {
@@ -189,24 +213,28 @@
         function recalc() {
             const q = parseFloat(document.getElementById('in-qty').value) || 0;
             const k = parseFloat(document.getElementById('in-kcal').value) || 0;
-            document.getElementById('calc-res').innerText = Math.round((k/100)*q) + " kcal";
+            const factor = (currentCat === 'Sport') ? (q / 60) : (q / 100);
+            document.getElementById('calc-res').innerText = Math.round(k * factor) + " kcal";
         }
 
         async function submitEntry() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             const q = parseFloat(document.getElementById('in-qty').value) || 0;
+            const k = parseFloat(document.getElementById('in-kcal').value) || 0;
             const d = document.getElementById('in-desc').value;
             if(!d || !user) return;
+
+            const factor = (currentCat === 'Sport') ? (q / 60) : (q / 100);
 
             const { error } = await supabaseClient.from('entries').insert([{
                 user_id: user.id,
                 type: currentCat === 'Sport' ? 'burn' : 'food',
                 category: currentCat,
-                desc: `${d} (${q}g)`,
-                val: Math.round((parseFloat(document.getElementById('in-kcal').value)/100)*q),
-                prot: Math.round((parseFloat(document.getElementById('in-p').value)/100)*q),
-                gluc: Math.round((parseFloat(document.getElementById('in-g').value)/100)*q),
-                lip: Math.round((parseFloat(document.getElementById('in-l').value)/100)*q),
+                desc: `${d} (${q}${currentCat === 'Sport' ? 'min' : 'g'})`,
+                val: Math.round(k * factor),
+                prot: Math.round((parseFloat(document.getElementById('in-p').value) || 0) * factor),
+                gluc: Math.round((parseFloat(document.getElementById('in-g').value) || 0) * factor),
+                lip: Math.round((parseFloat(document.getElementById('in-l').value) || 0) * factor),
                 date: new Date().toISOString().split('T')[0]
             }]);
 
@@ -219,21 +247,19 @@
             const today = new Date().toISOString().split('T')[0];
             const { data } = await supabaseClient.from('entries').select('*').eq('user_id', user.id).eq('date', today);
 
-            let html = ""; let tIn = 0; let tOut = 0; let tp = 0; let tg = 0; let tl = 0;
-            (data || []).forEach(e => {
+            let html = ""; let tIn = 0, tOut = 0, tp = 0, tg = 0, tl = 0;
+            (data || []).sort((a,b) => b.id - a.id).forEach(e => {
                 if(e.type === 'food') { tIn += e.val; tp += e.prot || 0; tg += e.gluc || 0; tl += e.lip || 0; }
                 else { tOut += e.val; }
                 
                 html += `<div class="bg-white p-5 rounded-[1.5rem] flex justify-between items-center shadow-sm border border-slate-50">
                     <div>
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">${e.category}</span>
+                        <span class="text-[9px] font-black ${e.type === 'food' ? 'text-slate-400' : 'text-orange-400'} uppercase tracking-widest mb-1">${e.category}</span>
                         <p class="font-bold text-[11px] text-slate-700">${e.desc}</p>
                     </div>
                     <div class="flex items-center gap-4">
                         <span class="font-black text-sm ${e.type === 'food' ? 'text-blue-600' : 'text-orange-500'} tracking-tighter">${e.type === 'burn' ? '-' : ''}${e.val} kcal</span>
-                        <button onclick="del(${e.id})" class="p-2 text-slate-300 hover:text-red-500 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <button onclick="del(${e.id})" class="p-2 text-slate-200 hover:text-red-500 transition-colors">✕</button>
                     </div>
                 </div>`;
             });
@@ -245,22 +271,35 @@
         }
 
         async function del(id) {
-            if (!confirm("Supprimer cet élément ?")) return;
-            const { error } = await supabaseClient.from('entries').delete().eq('id', id);
-            if (error) alert("Erreur lors de la suppression : " + error.message);
-            else loadData();
+            if (!confirm("Supprimer ?")) return;
+            await supabaseClient.from('entries').delete().eq('id', id);
+            loadData();
         }
 
         function openModal(c) { 
             currentCat = c; 
+            document.getElementById('modal-add').classList.remove('hidden');
             document.getElementById('in-desc').value = ""; 
             document.getElementById('in-kcal').value = "";
-            document.getElementById('in-p').value = "";
-            document.getElementById('in-g').value = "";
-            document.getElementById('in-l').value = "";
-            document.getElementById('calc-res').innerText = "0 kcal";
-            document.getElementById('modal-add').classList.remove('hidden'); 
+            document.getElementById('in-p').value = "0";
+            document.getElementById('in-g').value = "0";
+            document.getElementById('in-l').value = "0";
+            document.getElementById('search-results').classList.add('hidden');
+            
+            if (c === 'Sport') {
+                document.getElementById('label-qty').innerText = "Durée (min)";
+                document.getElementById('label-kcal').innerText = "Kcal / Heure";
+                document.getElementById('macro-fields').classList.add('hidden');
+                document.getElementById('in-qty').value = "30";
+            } else {
+                document.getElementById('label-qty').innerText = "Quantité (g)";
+                document.getElementById('label-kcal').innerText = "Kcal / 100g";
+                document.getElementById('macro-fields').classList.remove('hidden');
+                document.getElementById('in-qty').value = "100";
+            }
+            recalc();
         }
+
         function closeModal() { document.getElementById('modal-add').classList.add('hidden'); }
         init();
     </script>
