@@ -8,28 +8,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.3); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="pb-24">
 
     <script>
-        // CONFIGURATION SUPABASE
         const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE"; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // BASE DE DONNÉES SPORT LOCALE (Favoris)
         const sportsDB = [
-            { name: "Course à pied (Lent)", kcal: 400 },
-            { name: "Course à pied (Rapide)", kcal: 700 },
-            { name: "Cyclisme", kcal: 500 },
-            { name: "Natation", kcal: 600 },
-            { name: "Musculation", kcal: 300 },
-            { name: "Marche active", kcal: 250 },
-            { name: "Yoga", kcal: 150 }
+            { name: "Course à pied (10km/h)", kcal: 600 },
+            { name: "Marche active", kcal: 280 },
+            { name: "Cyclisme (modéré)", kcal: 450 },
+            { name: "Natation", kcal: 550 },
+            { name: "Musculation / Fitness", kcal: 350 },
+            { name: "Yoga / Pilates", kcal: 180 },
+            { name: "Football / Tennis", kcal: 600 }
         ];
     </script>
 
@@ -48,16 +47,16 @@
             
             <div class="grid grid-cols-3 gap-3 mt-8">
                 <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
-                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase">Prot</p>
-                    <p id="total-p" class="font-bold text-sm text-slate-700">0g</p>
+                    <p class="text-[9px] font-black text-blue-500 mb-1 uppercase text-center">Prot</p>
+                    <p id="total-p" class="font-bold text-sm text-slate-700 text-center">0g</p>
                 </div>
                 <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100">
-                    <p class="text-[9px] font-black text-orange-500 mb-1 uppercase">Gluc</p>
-                    <p id="total-g" class="font-bold text-sm text-slate-700">0g</p>
+                    <p class="text-[9px] font-black text-orange-500 mb-1 uppercase text-center">Gluc</p>
+                    <p id="total-g" class="font-bold text-sm text-slate-700 text-center">0g</p>
                 </div>
                 <div class="bg-pink-50/50 p-3 rounded-2xl border border-pink-100">
-                    <p class="text-[9px] font-black text-pink-500 mb-1 uppercase">Lip</p>
-                    <p id="total-l" class="font-bold text-sm text-slate-700">0g</p>
+                    <p class="text-[9px] font-black text-pink-500 mb-1 uppercase text-center">Lip</p>
+                    <p id="total-l" class="font-bold text-sm text-slate-700 text-center">0g</p>
                 </div>
             </div>
         </div>
@@ -75,10 +74,10 @@
     </main>
 
     <div id="modal-add" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-[60] backdrop-blur-sm">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
             
             <div class="flex gap-2 mb-4">
-                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100">
+                <input id="in-desc" type="text" placeholder="Rechercher..." class="flex-1 bg-slate-50 p-4 rounded-2xl font-bold outline-none border border-slate-100" onkeypress="if(event.key === 'Enter') startSearch()">
                 <button onclick="startSearch()" class="bg-blue-600 text-white px-5 rounded-2xl shadow-md active:scale-95 transition-transform">🔍</button>
             </div>
 
@@ -86,26 +85,26 @@
             
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label id="label-qty" class="text-[8px] font-black text-slate-400 uppercase">Quantité (g/min)</label>
+                    <label id="label-qty" class="text-[8px] font-black text-slate-400 uppercase">Quantité</label>
                     <input id="in-qty" type="number" value="100" class="w-full bg-transparent font-bold text-blue-600 outline-none" oninput="recalc()">
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal/Unité</label>
+                    <label id="label-kcal" class="text-[8px] font-black text-slate-400 uppercase">Kcal / 100g ou h</label>
                     <input id="in-kcal" type="number" placeholder="0" class="w-full bg-transparent font-bold outline-none" oninput="recalc()">
                 </div>
             </div>
 
             <div id="macro-fields" class="grid grid-cols-3 gap-2 mb-6">
                 <div class="text-center bg-blue-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot</label>
+                    <label class="text-[8px] font-black text-blue-400 uppercase">Prot/100g</label>
                     <input id="in-p" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-orange-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc</label>
+                    <label class="text-[8px] font-black text-orange-400 uppercase">Gluc/100g</label>
                     <input id="in-g" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
                 <div class="text-center bg-pink-50/30 p-2 rounded-xl">
-                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip</label>
+                    <label class="text-[8px] font-black text-pink-400 uppercase">Lip/100g</label>
                     <input id="in-l" type="number" value="0" class="w-full bg-transparent text-center font-bold outline-none text-xs" oninput="recalc()">
                 </div>
             </div>
@@ -140,64 +139,64 @@
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-pass').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Erreur d'accès : " + error.message); else init();
+            if (error) alert("Email ou mot de passe incorrect"); else init();
         }
 
         function logout() { supabaseClient.auth.signOut().then(() => location.reload()); }
 
         function startSearch() {
             const val = document.getElementById('in-desc').value;
-            if (currentCat === 'Sport') { searchSport(val); } 
-            else { searchFood(val); }
+            if (currentCat === 'Sport') searchSport(val); else searchFood(val);
         }
 
-        // --- LOGIQUE FOOD (API) ---
         async function searchFood(val) {
             const resDiv = document.getElementById('search-results');
             if (val.length < 2) return;
             resDiv.classList.remove('hidden');
-            resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche aliments...</div>`;
+            resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase animate-pulse text-center">Recherche...</div>`;
 
             try {
-                const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=10`);
+                const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=15`);
                 const data = await res.json();
+                
                 if (!data.products || data.products.length === 0) {
                     resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Aucun produit trouvé</div>`;
                     return;
                 }
-                resDiv.innerHTML = data.products
-                    .filter(p => p.nutriments && (p.nutriments['energy-kcal_100g'] || p.nutriments['energy-kj_100g']))
-                    .map(p => {
-                        const n = (p.product_name_fr || p.product_name || "Produit inconnu").replace(/'/g, "\\'");
-                        const k = Math.round(p.nutriments['energy-kcal_100g'] || (p.nutriments['energy-kj_100g'] / 4.184));
-                        const pr = p.nutriments.proteins_100g || 0, gl = p.nutriments.carbohydrates_100g || 0, lp = p.nutriments.fat_100g || 0;
-                        return `<div onclick="fill('${n}', ${k}, ${pr}, ${gl}, ${lp})" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-blue-50 bg-white">
-                            <p class="font-bold text-xs text-slate-800">${p.product_name_fr || p.product_name}</p>
-                            <p class="text-[9px] text-blue-500 font-black mt-1 uppercase">${k} kcal / 100g</p>
-                        </div>`;
-                    }).join('');
+
+                resDiv.innerHTML = data.products.map(p => {
+                    const n = (p.product_name_fr || p.product_name || "Inconnu").replace(/'/g, "\\'");
+                    let k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
+                    
+                    // Correction Vin : si calories absentes et mot "vin" présent
+                    const isWine = n.toLowerCase().includes('vin');
+                    if (k === 0 && isWine) k = 80;
+
+                    const pr = p.nutriments?.proteins_100g || 0;
+                    const gl = p.nutriments?.carbohydrates_100g || 0;
+                    const lp = p.nutriments?.fat_100g || 0;
+
+                    return `<div onclick="fill('${n}', ${k}, ${pr}, ${gl}, ${lp})" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-blue-50 bg-white">
+                        <p class="font-bold text-xs text-slate-800">${n}</p>
+                        <p class="text-[9px] text-blue-500 font-black mt-1 uppercase">${k} kcal / 100g</p>
+                    </div>`;
+                }).join('');
             } catch (err) {
-                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur Réseau API</div>`;
+                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-red-400 uppercase text-center">Erreur réseau API</div>`;
             }
         }
 
-        // --- LOGIQUE SPORT (BASE LOCALE) ---
         function searchSport(val) {
             const resDiv = document.getElementById('search-results');
             resDiv.classList.remove('hidden');
             const filtered = sportsDB.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
             
-            if (filtered.length === 0) {
-                resDiv.innerHTML = `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Pas dans vos favoris ? Remplissez manuellement ci-dessous.</div>`;
-                return;
-            }
-
-            resDiv.innerHTML = filtered.map(s => `
+            resDiv.innerHTML = filtered.length > 0 ? filtered.map(s => `
                 <div onclick="fill('${s.name}', ${s.kcal}, 0, 0, 0)" class="p-4 border-b border-slate-50 cursor-pointer hover:bg-orange-50 bg-white">
                     <p class="font-bold text-xs text-slate-800">${s.name}</p>
                     <p class="text-[9px] text-orange-500 font-black mt-1 uppercase">${s.kcal} kcal / heure</p>
                 </div>
-            `).join('');
+            `).join('') : `<div class="p-4 text-[10px] font-bold text-slate-400 uppercase text-center">Remplissez les Kcal manuellement</div>`;
         }
 
         function fill(n, k, pr, gl, lp) {
@@ -238,12 +237,13 @@
                 date: new Date().toISOString().split('T')[0]
             }]);
 
-            if (error) alert("Erreur Supabase : " + error.message);
+            if (error) alert("Erreur base de données");
             else { closeModal(); loadData(); }
         }
 
         async function loadData() {
             const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return;
             const today = new Date().toISOString().split('T')[0];
             const { data } = await supabaseClient.from('entries').select('*').eq('user_id', user.id).eq('date', today);
 
@@ -263,7 +263,7 @@
                     </div>
                 </div>`;
             });
-            document.getElementById('daily-list').innerHTML = html || `<div class="py-20 text-center opacity-20 font-black italic uppercase text-xs">Rien au compteur...</div>`;
+            document.getElementById('daily-list').innerHTML = html || `<div class="py-20 text-center opacity-20 font-black italic uppercase text-xs">Aucune entrée aujourd'hui</div>`;
             document.getElementById('kcal-left').innerText = (goal + tOut) - tIn;
             document.getElementById('total-p').innerText = Math.round(tp) + 'g';
             document.getElementById('total-g').innerText = Math.round(tg) + 'g';
