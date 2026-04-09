@@ -285,42 +285,6 @@
         }
 
         .meals-section { margin-bottom: 20px; }
-        .meal-block { margin-bottom: 14px; }
-
-        .meal-headline {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .meal-mini-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Syne', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .meal-save-btn {
-            border: 1px solid rgba(91,127,255,0.22);
-            background: rgba(91,127,255,0.10);
-            color: var(--accent);
-            border-radius: 999px;
-            padding: 8px 12px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .meal-save-btn:hover {
-            background: rgba(91,127,255,0.16);
-        }
 
         .cat-grid {
             display: grid;
@@ -438,6 +402,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
             margin-bottom: 8px;
             padding: 0 2px;
         }
@@ -446,6 +411,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 0;
         }
 
         .entry-group-icon { font-size: 16px; }
@@ -457,6 +423,14 @@
             color: var(--text);
         }
 
+        .entry-group-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .entry-group-total {
             font-family: 'Syne', sans-serif;
             font-size: 13px;
@@ -465,6 +439,24 @@
         }
 
         .entry-group-total.sport { color: var(--orange); }
+
+        .meal-save-btn {
+            border: 1px solid rgba(91,127,255,0.22);
+            background: rgba(91,127,255,0.10);
+            color: var(--accent);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .meal-save-btn:hover {
+            background: rgba(91,127,255,0.16);
+        }
 
         .entry-group-items {
             display: flex;
@@ -674,7 +666,8 @@
         .search-btn:hover { background: var(--accent2); }
         .search-btn:active { transform: scale(0.95); }
 
-        #search-results {
+        #search-results,
+        #re-search-results {
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
@@ -1007,6 +1000,7 @@
         }
 
         .builder-main { min-width: 0; flex: 1; }
+
         .builder-title {
             font-size: 13px;
             font-weight: 500;
@@ -1014,6 +1008,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .builder-sub {
             font-size: 10px;
             color: var(--muted);
@@ -1156,118 +1151,72 @@
         <div class="meals-section">
             <div class="section-label">🍽️ Repas</div>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">🥐 Petit-déjeuner</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Petit-déjeuner')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Petit-déjeuner')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">🥐</span>
-                            <div>
-                                <div class="cat-label">Ajouter un aliment</div>
-                                <div class="cat-sub">Petit-déjeuner</div>
-                            </div>
+            <div class="cat-grid">
+                <button class="cat-btn" onclick="openModal('Petit-déjeuner')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">🥐</span>
+                        <div>
+                            <div class="cat-label">Ajouter un aliment</div>
+                            <div class="cat-sub">Petit-déjeuner</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
-            </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">🍽️ Déjeuner</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Déjeuner')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Déjeuner')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">🍽️</span>
-                            <div>
-                                <div class="cat-label">Ajouter un aliment</div>
-                                <div class="cat-sub">Déjeuner</div>
-                            </div>
+                <button class="cat-btn" onclick="openModal('Déjeuner')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">🍽️</span>
+                        <div>
+                            <div class="cat-label">Ajouter un aliment</div>
+                            <div class="cat-sub">Déjeuner</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
-            </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">🌙 Dîner</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Dîner')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Dîner')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">🌙</span>
-                            <div>
-                                <div class="cat-label">Ajouter un aliment</div>
-                                <div class="cat-sub">Dîner</div>
-                            </div>
+                <button class="cat-btn" onclick="openModal('Dîner')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">🌙</span>
+                        <div>
+                            <div class="cat-label">Ajouter un aliment</div>
+                            <div class="cat-sub">Dîner</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
-            </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">🥤 Boissons</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Boissons')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Boissons')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">🥤</span>
-                            <div>
-                                <div class="cat-label">Ajouter une boisson</div>
-                                <div class="cat-sub">Boissons</div>
-                            </div>
+                <button class="cat-btn" onclick="openModal('Boissons')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">🥤</span>
+                        <div>
+                            <div class="cat-label">Ajouter une boisson</div>
+                            <div class="cat-sub">Boissons</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
-            </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">🍎 Snack</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Snack')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Snack')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">🍎</span>
-                            <div>
-                                <div class="cat-label">Ajouter un snack</div>
-                                <div class="cat-sub">Snack</div>
-                            </div>
+                <button class="cat-btn" onclick="openModal('Snack')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">🍎</span>
+                        <div>
+                            <div class="cat-label">Ajouter un snack</div>
+                            <div class="cat-sub">Snack</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
-            </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
 
-            <div class="meal-block">
-                <div class="meal-headline">
-                    <div class="meal-mini-title">➕ Autre</div>
-                    <button class="meal-save-btn" onclick="openLinkMealModal('Autre')">Ajouter à une recette</button>
-                </div>
-                <div class="cat-grid">
-                    <button class="cat-btn" onclick="openModal('Autre')">
-                        <div class="cat-btn-left">
-                            <span class="cat-icon">➕</span>
-                            <div>
-                                <div class="cat-label">Ajouter un aliment</div>
-                                <div class="cat-sub">Autre</div>
-                            </div>
+                <button class="cat-btn" onclick="openModal('Autre')">
+                    <div class="cat-btn-left">
+                        <span class="cat-icon">➕</span>
+                        <div>
+                            <div class="cat-label">Ajouter un aliment</div>
+                            <div class="cat-sub">Autre</div>
                         </div>
-                        <span class="cat-arrow">→</span>
-                    </button>
-                </div>
+                    </div>
+                    <span class="cat-arrow">→</span>
+                </button>
             </div>
         </div>
 
@@ -1293,14 +1242,14 @@
 
     <section class="page" id="page-recipes">
         <div class="section-label">📚 Repas sauvegardés</div>
-        <div class="helper-line">Crée des recettes depuis zéro puis ajoute-les plus tard en un seul geste.</div>
+        <div class="helper-line">Crée des recettes depuis zéro en choisissant les ingrédients un par un.</div>
 
         <div class="recipe-form">
             <div class="search-row" style="margin-bottom:10px;">
                 <input id="recipe-new-name" class="search-input" type="text" placeholder="Nom de la nouvelle recette">
                 <button class="search-btn" onclick="openRecipeEditorNew()">＋</button>
             </div>
-            <div class="helper-line" style="margin:0;">Tu vas ensuite choisir les ingrédients un par un.</div>
+            <div class="helper-line" style="margin:0;">Exemple : Déjeuner poulet riz légumes</div>
         </div>
 
         <div id="recipes-list"></div>
@@ -1440,7 +1389,7 @@
             <button class="search-btn" onclick="searchRecipeFood()">↵</button>
         </div>
 
-        <div id="re-search-results" style="display:none;"></div>
+        <div id="re-search-results"></div>
 
         <div class="inputs-grid">
             <div class="input-box">
@@ -1632,7 +1581,6 @@ function updateBMRLive() {
     const a = parseInt(document.getElementById('s-age').value, 10) || userAge;
     const s = document.getElementById('s-sexe').value;
     const g = parseInt(document.getElementById('s-goal').value, 10) || userGoal;
-
     const bmr = calcBMR(w, h, a, s);
     document.getElementById('bmr-live').textContent = bmr;
     document.getElementById('goal-live').textContent = g;
@@ -1671,9 +1619,7 @@ function round1(n) {
 
 function parseDesc(desc) {
     const match = String(desc).match(/^(.*)\s\(([\d.,]+)\s*(g|min)\)$/i);
-    if (!match) {
-        return { label: desc, qty: null, unit: null };
-    }
+    if (!match) return { label: desc, qty: null, unit: null };
     return {
         label: match[1].trim(),
         qty: parseFloat(match[2].replace(',', '.')),
@@ -1727,9 +1673,7 @@ function openModal(cat) {
     document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
     document.getElementById('calc-sub').textContent = isSport ? 'pour 30 min' : 'pour 100g';
 
-    if (isSport) {
-        showAllSports();
-    }
+    if (isSport) showAllSports();
 
     recalc();
     document.getElementById('modal-add').classList.add('open');
@@ -1877,7 +1821,6 @@ function getEffectiveKcalInput() {
     const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
     const isSport = currentCat === 'Sport';
     const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-
     if (isSport && desc === 'vélo') return calcBikeKcalPerHour(raw);
     return raw;
 }
@@ -1911,50 +1854,31 @@ function editEntry(id) {
     const parsed = parseDesc(entry.desc);
     const qty = parsed.qty || (isSport ? 30 : 100);
 
-    document.getElementById('modal-title').textContent = isSport ? '✏️ Modifier activité' : '✏️ Modifier aliment';
-    document.getElementById('submit-btn').textContent = 'Mettre à jour';
-    document.getElementById('cancel-edit-btn').style.display = 'block';
-    document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'inline-block';
-    document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+    document.getElementById('modal-title').textContent = isSport ? 'Modifier activité' : 'Modifier aliment';
     document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : 'Quantité (g)';
-    document.getElementById('search-results').style.display = 'none';
-    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
+    document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+    document.getElementById('saved-meal-link').style.display = 'none';
 
     document.getElementById('in-desc').value = parsed.label;
     document.getElementById('in-qty').value = qty;
 
     if (isSport) {
-        if (parsed.label.toLowerCase().startsWith('vélo ')) {
-            const speedMatch = parsed.label.match(/vélo\s+([\d.,]+)/i);
-            const speed = speedMatch ? parseFloat(speedMatch[1].replace(',', '.')) : 0;
-            document.getElementById('in-desc').value = 'Vélo';
-            document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
-            document.getElementById('in-kcal').placeholder = 'Ex: 18';
-            document.getElementById('in-kcal').value = speed || '';
-        } else {
-            const kcalHour = qty > 0 ? Math.round((entry.val / qty) * 60) : entry.val;
-            document.getElementById('label-kcal').textContent = 'Kcal / heure';
-            document.getElementById('in-kcal').placeholder = '0';
-            document.getElementById('in-kcal').value = kcalHour;
-        }
-
-        document.getElementById('in-p').value = 0;
-        document.getElementById('in-g').value = 0;
-        document.getElementById('in-l').value = 0;
+        const perHour = Math.round(entry.val / (qty / 60));
+        document.getElementById('in-kcal').value = perHour || 0;
+        document.getElementById('in-p').value = '0';
+        document.getElementById('in-g').value = '0';
+        document.getElementById('in-l').value = '0';
     } else {
-        const kcal100 = qty > 0 ? Math.round((entry.val / qty) * 100) : entry.val;
-        const prot100 = qty > 0 ? round1((entry.prot || 0) / qty * 100) : 0;
-        const gluc100 = qty > 0 ? round1((entry.gluc || 0) / qty * 100) : 0;
-        const lip100  = qty > 0 ? round1((entry.lip  || 0) / qty * 100) : 0;
-
-        document.getElementById('label-kcal').textContent = 'Kcal / 100g';
-        document.getElementById('in-kcal').placeholder = '0';
-        document.getElementById('in-kcal').value = kcal100;
-        document.getElementById('in-p').value = prot100;
-        document.getElementById('in-g').value = gluc100;
-        document.getElementById('in-l').value = lip100;
+        const per100 = Math.round(entry.val / (qty / 100));
+        document.getElementById('in-kcal').value = per100 || 0;
+        document.getElementById('in-p').value = Math.round((entry.prot || 0) / (qty / 100));
+        document.getElementById('in-g').value = Math.round((entry.gluc || 0) / (qty / 100));
+        document.getElementById('in-l').value = Math.round((entry.lip || 0) / (qty / 100));
     }
 
+    document.getElementById('submit-btn').textContent = 'Enregistrer';
+    document.getElementById('cancel-edit-btn').style.display = 'block';
     recalc();
     document.getElementById('modal-add').classList.add('open');
 }
@@ -1963,51 +1887,46 @@ async function submitEntry() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
 
-    const baseDesc = document.getElementById('in-desc').value.trim();
+    const desc = document.getElementById('in-desc').value.trim();
     const q = parseFloat(document.getElementById('in-qty').value) || 0;
-    const rawK = parseFloat(document.getElementById('in-kcal').value) || 0;
 
-    if (!baseDesc) {
+    if (!desc) {
         document.getElementById('in-desc').focus();
         return;
     }
     if (q <= 0) {
-        alert('Indique une quantité ou durée.');
+        alert('Indique une quantité ou une durée.');
         return;
     }
 
     const isSport = currentCat === 'Sport';
+    const k = getEffectiveKcalInput();
     const factor = isSport ? q / 60 : q / 100;
-    const effectiveK = getEffectiveKcalInput();
-    const val = Math.round(effectiveK * factor);
-
+    const val = Math.round(k * factor);
     const p = parseFloat(document.getElementById('in-p').value) || 0;
     const g = parseFloat(document.getElementById('in-g').value) || 0;
     const l = parseFloat(document.getElementById('in-l').value) || 0;
-
-    let finalDesc = baseDesc;
-    if (isSport && baseDesc.toLowerCase() === 'vélo') {
-        finalDesc = `Vélo ${String(rawK).replace('.', ',')} km/h`;
-    }
 
     const payload = {
         user_id: user.id,
         type: isSport ? 'burn' : 'food',
         category: currentCat,
-        desc: `${finalDesc} (${q}${isSport ? 'min' : 'g'})`,
+        desc: `${desc} (${q}${isSport ? 'min' : 'g'})`,
         val,
-        prot: Math.round(p * factor),
-        gluc: Math.round(g * factor),
-        lip: Math.round(l * factor),
+        prot: isSport ? 0 : round1(p * factor),
+        gluc: isSport ? 0 : round1(g * factor),
+        lip: isSport ? 0 : round1(l * factor),
         date: todayStr()
     };
 
     let error = null;
 
     if (editingId) {
-        ({ error } = await sb.from('entries').update(payload).eq('id', editingId));
+        const res = await sb.from('entries').update(payload).eq('id', editingId);
+        error = res.error;
     } else {
-        ({ error } = await sb.from('entries').insert([payload]));
+        const res = await sb.from('entries').insert([payload]);
+        error = res.error;
     }
 
     if (error) {
@@ -2020,57 +1939,212 @@ async function submitEntry() {
     loadData();
 }
 
-async function del(id) {
-    await sb.from('entries').delete().eq('id', id);
+function getMealEntries(category) {
+    return currentEntries.filter(e => e.type === 'food' && e.category === category);
+}
+
+function cloneRecipeItemFromEntry(entry) {
+    const parsed = parseDesc(entry.desc);
+    return {
+        id: Date.now() + Math.random(),
+        desc: parsed.label,
+        qty: parsed.qty || 100,
+        kcal100: Math.round(entry.val / ((parsed.qty || 100) / 100)),
+        prot100: round1((entry.prot || 0) / ((parsed.qty || 100) / 100)),
+        gluc100: round1((entry.gluc || 0) / ((parsed.qty || 100) / 100)),
+        lip100: round1((entry.lip || 0) / ((parsed.qty || 100) / 100)),
+        val: entry.val,
+        prot: entry.prot || 0,
+        gluc: entry.gluc || 0,
+        lip: entry.lip || 0
+    };
+}
+
+function recipeTotals(items) {
+    return items.reduce((acc, item) => {
+        acc.kcal += item.val || 0;
+        acc.prot += item.prot || 0;
+        acc.gluc += item.gluc || 0;
+        acc.lip += item.lip || 0;
+        return acc;
+    }, { kcal: 0, prot: 0, gluc: 0, lip: 0 });
+}
+
+function openLinkMealModal(category) {
+    recipePickerTargetCategory = category;
+    const items = getMealEntries(category);
+
+    document.getElementById('recipe-link-title').textContent = `Ajouter ${category} à une recette`;
+    const box = document.getElementById('recipe-link-content');
+
+    if (!items.length) {
+        box.innerHTML = `
+            <div class="recipe-link-card">
+                <div class="recipe-name">${category}</div>
+                <div class="recipe-meta">Aucun aliment dans cette catégorie aujourd'hui.</div>
+            </div>
+        `;
+        document.getElementById('modal-recipe-link').classList.add('open');
+        return;
+    }
+
+    const totals = recipeTotals(items.map(cloneRecipeItemFromEntry));
+
+    box.innerHTML = `
+        <div class="recipe-link-card">
+            <div class="recipe-name">${category}</div>
+            <div class="recipe-meta">${items.length} ingrédient(s) • ${Math.round(totals.kcal)} kcal</div>
+            <div class="recipe-items">
+                ${items.map(i => `• ${i.desc}`).join('<br>')}
+            </div>
+            <div class="recipe-actions">
+                <button class="recipe-btn primary" onclick="openRecipePickerForCategory('${esc(category)}')">Ajouter à une recette existante</button>
+                <button class="recipe-btn" onclick="createRecipeFromCategory('${esc(category)}')">Créer une nouvelle recette</button>
+            </div>
+        </div>
+    `;
+    document.getElementById('modal-recipe-link').classList.add('open');
+}
+
+function closeRecipeLinkModal() {
+    document.getElementById('modal-recipe-link').classList.remove('open');
+}
+
+function openRecipePickerForCategory(category) {
+    recipePickerTargetCategory = category;
+    closeRecipeLinkModal();
+    renderRecipePicker();
+    document.getElementById('modal-recipe-picker').classList.add('open');
+}
+
+function closeRecipePicker() {
+    document.getElementById('modal-recipe-picker').classList.remove('open');
+}
+
+function openRecipePickerToAdd() {
+    recipePickerTargetCategory = currentCat;
+    renderRecipePicker(true);
+    document.getElementById('modal-recipe-picker').classList.add('open');
+}
+
+function renderRecipePicker(fromAddModal = false) {
+    const el = document.getElementById('recipe-picker-list');
+
+    if (!savedRecipes.length) {
+        el.innerHTML = `
+            <div class="recipe-card">
+                <div class="recipe-name">Aucune recette enregistrée</div>
+                <div class="recipe-meta">Crée d'abord une recette dans l'onglet dédié.</div>
+            </div>
+        `;
+        return;
+    }
+
+    el.innerHTML = savedRecipes.map(r => {
+        const totals = recipeTotals(r.items || []);
+        const action = fromAddModal
+            ? `addSavedRecipeToCurrentMeal(${r.id})`
+            : `appendCategoryToRecipe(${r.id}, '${esc(recipePickerTargetCategory)}')`;
+
+        return `
+            <div class="recipe-card">
+                <div class="recipe-name">${r.name}</div>
+                <div class="recipe-meta">${(r.items || []).length} ingrédient(s) • ${Math.round(totals.kcal)} kcal</div>
+                <div class="recipe-actions">
+                    <button class="recipe-btn primary" onclick="${action}">Choisir</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function addSavedRecipeToCurrentMeal(recipeId) {
+    const recipe = savedRecipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+
+    const rows = (recipe.items || []).map(item => ({
+        user_id: user.id,
+        type: 'food',
+        category: currentCat,
+        desc: `${item.desc} (${item.qty}g)`,
+        val: item.val,
+        prot: item.prot,
+        gluc: item.gluc,
+        lip: item.lip,
+        date: todayStr()
+    }));
+
+    if (!rows.length) return;
+
+    const { error } = await sb.from('entries').insert(rows);
+    if (error) {
+        alert('Erreur : ' + error.message);
+        return;
+    }
+
+    closeRecipePicker();
+    closeModal();
     loadData();
+}
+
+function createRecipeFromCategory(category) {
+    const entries = getMealEntries(category);
+    if (!entries.length) return;
+
+    recipeBuilder = entries.map(cloneRecipeItemFromEntry);
+    editingRecipeId = null;
+    document.getElementById('re-name').value = category;
+    document.getElementById('recipe-editor-title').textContent = `Nouvelle recette à partir de ${category}`;
+    clearRecipeDraftFields();
+    renderRecipeBuilder();
+    closeRecipeLinkModal();
+    document.getElementById('modal-recipe-editor').classList.add('open');
+}
+
+function appendCategoryToRecipe(recipeId, category) {
+    const recipe = savedRecipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    const entries = getMealEntries(category);
+    if (!entries.length) return;
+
+    const appended = entries.map(cloneRecipeItemFromEntry);
+    recipe.items = [...(recipe.items || []), ...appended];
+    recipe.updatedAt = new Date().toISOString();
+    saveRecipes();
+    renderRecipesPage();
+    closeRecipePicker();
 }
 
 function openRecipeEditorNew() {
     const name = document.getElementById('recipe-new-name').value.trim();
-    editingRecipeId = null;
     recipeBuilder = [];
-    document.getElementById('recipe-editor-title').textContent = 'Nouvelle recette';
+    editingRecipeId = null;
     document.getElementById('re-name').value = name;
-    resetRecipeDraftFields();
-    renderRecipeBuilder();
-    document.getElementById('modal-recipe-editor').classList.add('open');
-}
-
-function openRecipeEditorEdit(recipeId) {
-    const recipe = savedRecipes.find(r => r.id === recipeId);
-    if (!recipe) return;
-    editingRecipeId = recipe.id;
-    recipeBuilder = recipe.items.map(it => ({ ...it }));
-    document.getElementById('recipe-editor-title').textContent = 'Modifier la recette';
-    document.getElementById('re-name').value = recipe.name;
-    resetRecipeDraftFields();
+    document.getElementById('recipe-editor-title').textContent = 'Nouvelle recette';
+    clearRecipeDraftFields();
     renderRecipeBuilder();
     document.getElementById('modal-recipe-editor').classList.add('open');
 }
 
 function closeRecipeEditor() {
     document.getElementById('modal-recipe-editor').classList.remove('open');
-    document.getElementById('recipe-new-name').value = '';
 }
 
-function resetRecipeDraftFields() {
+function clearRecipeDraftFields() {
     document.getElementById('re-desc').value = '';
     document.getElementById('re-kcal').value = '';
     document.getElementById('re-p').value = '0';
     document.getElementById('re-g').value = '0';
     document.getElementById('re-l').value = '0';
     document.getElementById('re-qty').value = '100';
+    document.getElementById('re-calc').textContent = '0 kcal';
+    document.getElementById('re-calc-sub').textContent = 'pour 100g';
     document.getElementById('re-search-results').style.display = 'none';
     document.getElementById('re-search-results').innerHTML = '';
-    recalcRecipeDraft();
-}
-
-function recalcRecipeDraft() {
-    const q = parseFloat(document.getElementById('re-qty').value) || 0;
-    const k = parseFloat(document.getElementById('re-kcal').value) || 0;
-    const total = Math.round(k * q / 100);
-    document.getElementById('re-calc').textContent = total + ' kcal';
-    document.getElementById('re-calc-sub').textContent = `pour ${q}g`;
 }
 
 function searchRecipeFood() {
@@ -2089,13 +2163,21 @@ function fillRecipeIngredient(name, k, pr, gl, lp) {
     recalcRecipeDraft();
 }
 
+function recalcRecipeDraft() {
+    const q = parseFloat(document.getElementById('re-qty').value) || 0;
+    const k = parseFloat(document.getElementById('re-kcal').value) || 0;
+    const total = Math.round(k * (q / 100));
+    document.getElementById('re-calc').textContent = total + ' kcal';
+    document.getElementById('re-calc-sub').textContent = `pour ${q}g`;
+}
+
 function addIngredientToRecipeBuilder() {
     const desc = document.getElementById('re-desc').value.trim();
     const qty = parseFloat(document.getElementById('re-qty').value) || 0;
     const kcal100 = parseFloat(document.getElementById('re-kcal').value) || 0;
-    const p100 = parseFloat(document.getElementById('re-p').value) || 0;
-    const g100 = parseFloat(document.getElementById('re-g').value) || 0;
-    const l100 = parseFloat(document.getElementById('re-l').value) || 0;
+    const prot100 = parseFloat(document.getElementById('re-p').value) || 0;
+    const gluc100 = parseFloat(document.getElementById('re-g').value) || 0;
+    const lip100 = parseFloat(document.getElementById('re-l').value) || 0;
 
     if (!desc) {
         document.getElementById('re-desc').focus();
@@ -2108,45 +2190,57 @@ function addIngredientToRecipeBuilder() {
 
     const factor = qty / 100;
     recipeBuilder.push({
-        category: 'Autre',
-        desc: `${desc} (${qty}g)`,
+        id: Date.now() + Math.random(),
+        desc,
+        qty,
+        kcal100,
+        prot100,
+        gluc100,
+        lip100,
         val: Math.round(kcal100 * factor),
-        prot: Math.round(p100 * factor),
-        gluc: Math.round(g100 * factor),
-        lip: Math.round(l100 * factor)
+        prot: round1(prot100 * factor),
+        gluc: round1(gluc100 * factor),
+        lip: round1(lip100 * factor)
     });
 
     renderRecipeBuilder();
-    resetRecipeDraftFields();
+    clearRecipeDraftFields();
+    document.getElementById('re-desc').focus();
 }
 
-function removeRecipeBuilderItem(index) {
-    recipeBuilder.splice(index, 1);
+function removeBuilderIngredient(id) {
+    recipeBuilder = recipeBuilder.filter(i => i.id !== id);
     renderRecipeBuilder();
 }
 
 function renderRecipeBuilder() {
-    const box = document.getElementById('recipe-builder-list');
+    const el = document.getElementById('recipe-builder-list');
 
     if (!recipeBuilder.length) {
-        box.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>Aucun ingrédient dans la recette</div>`;
+        el.innerHTML = `
+            <div class="builder-item">
+                <div class="builder-main">
+                    <div class="builder-title">Aucun ingrédient</div>
+                    <div class="builder-sub">Ajoute des aliments pour composer la recette.</div>
+                </div>
+            </div>
+        `;
         return;
     }
 
-    box.innerHTML = recipeBuilder.map((item, idx) => `
+    el.innerHTML = recipeBuilder.map(item => `
         <div class="builder-item">
             <div class="builder-main">
                 <div class="builder-title">${item.desc}</div>
-                <div class="builder-sub">${item.val} kcal • P ${item.prot || 0}g • G ${item.gluc || 0}g • L ${item.lip || 0}g</div>
+                <div class="builder-sub">${item.qty}g • ${item.val} kcal • P ${round1(item.prot)}g • G ${round1(item.gluc)}g • L ${round1(item.lip)}g</div>
             </div>
-            <button class="recipe-btn danger" onclick="removeRecipeBuilderItem(${idx})">Supprimer</button>
+            <button class="entry-action delete" onclick="removeBuilderIngredient(${item.id})">✕</button>
         </div>
     `).join('');
 }
 
 function saveRecipeFromBuilder() {
     const name = document.getElementById('re-name').value.trim();
-
     if (!name) {
         document.getElementById('re-name').focus();
         return;
@@ -2157,10 +2251,10 @@ function saveRecipeFromBuilder() {
     }
 
     const payload = {
-        id: editingRecipeId || String(Date.now()),
+        id: editingRecipeId || Date.now(),
         name,
-        createdAt: editingRecipeId ? (savedRecipes.find(r => r.id === editingRecipeId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
-        items: recipeBuilder.map(it => ({ ...it }))
+        items: recipeBuilder.map(i => ({ ...i })),
+        updatedAt: new Date().toISOString()
     };
 
     if (editingRecipeId) {
@@ -2170,266 +2264,100 @@ function saveRecipeFromBuilder() {
     }
 
     saveRecipes();
+    document.getElementById('recipe-new-name').value = '';
     closeRecipeEditor();
     renderRecipesPage();
-    renderRecipePicker();
+    showPage('recipes');
 }
 
-function recipeTotals(recipe) {
-    return {
-        kcal: recipe.items.reduce((s, it) => s + (it.val || 0), 0),
-        prot: recipe.items.reduce((s, it) => s + (it.prot || 0), 0),
-        gluc: recipe.items.reduce((s, it) => s + (it.gluc || 0), 0),
-        lip: recipe.items.reduce((s, it) => s + (it.lip || 0), 0)
-    };
-}
-
-function renderRecipesPage() {
-    const box = document.getElementById('recipes-list');
-
-    if (!savedRecipes.length) {
-        box.innerHTML = `<div class="empty-state"><div class="icon">🍱</div>Aucune recette sauvegardée</div>`;
-        return;
-    }
-
-    box.innerHTML = savedRecipes.map(recipe => {
-        const totals = recipeTotals(recipe);
-        return `
-            <div class="recipe-card">
-                <div class="recipe-name">${recipe.name}</div>
-                <div class="recipe-meta">${recipe.items.length} ingrédient(s) • ${totals.kcal} kcal • P ${totals.prot}g • G ${totals.gluc}g • L ${totals.lip}g</div>
-                <div class="recipe-items">${recipe.items.map(it => `• ${it.desc}`).join('<br>')}</div>
-                <div class="recipe-actions">
-                    <button class="recipe-btn primary" onclick="openRecipePickerToInsert('${esc(recipe.id)}')">Ajouter au journal</button>
-                    <button class="recipe-btn" onclick="openRecipeEditorEdit('${esc(recipe.id)}')">Modifier</button>
-                    <button class="recipe-btn danger" onclick="deleteRecipe('${esc(recipe.id)}')">Supprimer</button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function deleteRecipe(recipeId) {
-    if (!confirm('Supprimer cette recette ?')) return;
-    savedRecipes = savedRecipes.filter(r => r.id !== recipeId);
-    saveRecipes();
-    renderRecipesPage();
-    renderRecipePicker();
-}
-
-function openRecipePickerToInsert(recipeId = null) {
-    recipePickerTargetCategory = null;
-    renderRecipePicker(recipeId);
-    document.getElementById('modal-recipe-picker').classList.add('open');
-}
-
-function openRecipePickerToAdd() {
-    recipePickerTargetCategory = currentCat;
-    renderRecipePicker();
-    document.getElementById('modal-recipe-picker').classList.add('open');
-}
-
-function closeRecipePicker() {
-    document.getElementById('modal-recipe-picker').classList.remove('open');
-}
-
-function renderRecipePicker(highlightRecipeId = null) {
-    const box = document.getElementById('recipe-picker-list');
-
-    if (!savedRecipes.length) {
-        box.innerHTML = `<div class="empty-state"><div class="icon">🍱</div>Aucune recette sauvegardée</div>`;
-        return;
-    }
-
-    box.innerHTML = savedRecipes.map(recipe => {
-        const totals = recipeTotals(recipe);
-        const action = recipePickerTargetCategory
-            ? `addRecipeToCategory('${esc(recipe.id)}', '${esc(recipePickerTargetCategory)}')`
-            : `pickRecipeCategoryAndAdd('${esc(recipe.id)}')`;
-
-        return `
-            <div class="recipe-card" style="${highlightRecipeId && recipe.id === highlightRecipeId ? 'border-color:rgba(91,127,255,0.35);' : ''}">
-                <div class="recipe-name">${recipe.name}</div>
-                <div class="recipe-meta">${recipe.items.length} ingrédient(s) • ${totals.kcal} kcal</div>
-                <div class="recipe-actions">
-                    <button class="recipe-btn primary" onclick="${action}">
-                        ${recipePickerTargetCategory ? 'Ajouter à ' + recipePickerTargetCategory : 'Choisir cette recette'}
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function pickRecipeCategoryAndAdd(recipeId) {
-    const recipe = savedRecipes.find(r => r.id === recipeId);
+function editRecipe(id) {
+    const recipe = savedRecipes.find(r => r.id === id);
     if (!recipe) return;
 
-    const html = ['Petit-déjeuner','Déjeuner','Dîner','Snack','Boissons','Autre'].map(cat => `
-        <div class="recipe-link-card">
-            <div class="recipe-name">${cat}</div>
-            <div class="recipe-actions">
-                <button class="recipe-btn primary" onclick="addRecipeToCategory('${esc(recipe.id)}','${esc(cat)}')">Ajouter ici</button>
-            </div>
-        </div>
-    `).join('');
-
-    document.getElementById('recipe-picker-list').innerHTML = `
-        <div class="helper-line" style="margin:0 0 12px 2px;">Choisis dans quelle catégorie ajouter <strong>${recipe.name}</strong>.</div>
-        ${html}
-    `;
-}
-
-async function addRecipeToCategory(recipeId, category) {
-    const recipe = savedRecipes.find(r => r.id === recipeId);
-    if (!recipe) return;
-
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-
-    const rows = recipe.items.map(item => ({
-        user_id: user.id,
-        type: 'food',
-        category,
-        desc: item.desc,
-        val: item.val,
-        prot: item.prot || 0,
-        gluc: item.gluc || 0,
-        lip: item.lip || 0,
-        date: todayStr()
-    }));
-
-    const { error } = await sb.from('entries').insert(rows);
-    if (error) {
-        alert('Erreur : ' + error.message);
-        return;
-    }
-
-    closeRecipePicker();
-    closeModal();
-    showPage('journal');
-    loadData();
-}
-
-function getFoodEntriesByCategory(category) {
-    return currentEntries.filter(e => e.type === 'food' && e.category === category);
-}
-
-function openLinkMealModal(category) {
-    const items = getFoodEntriesByCategory(category);
-    const box = document.getElementById('recipe-link-content');
-    document.getElementById('recipe-link-title').textContent = `Ajouter ${category} à une recette`;
-
-    if (!items.length) {
-        box.innerHTML = `<div class="empty-state"><div class="icon">🍽️</div>Aucun ingrédient dans ${category} aujourd'hui</div>`;
-        document.getElementById('modal-recipe-link').classList.add('open');
-        return;
-    }
-
-    const itemsHtml = items.map(it => `• ${it.desc}`).join('<br>');
-
-    let recipesHtml = '';
-    if (savedRecipes.length) {
-        recipesHtml = savedRecipes.map(recipe => `
-            <div class="recipe-link-card">
-                <div class="recipe-name">${recipe.name}</div>
-                <div class="recipe-meta">${recipe.items.length} ingrédient(s)</div>
-                <div class="recipe-actions">
-                    <button class="recipe-btn primary" onclick="appendCategoryItemsToRecipe('${esc(category)}','${esc(recipe.id)}')">Ajouter à cette recette</button>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        recipesHtml = `<div class="empty-state"><div class="icon">🍱</div>Aucune recette existante</div>`;
-    }
-
-    box.innerHTML = `
-        <div class="recipe-link-card">
-            <div class="recipe-name">Ingrédients de ${category}</div>
-            <div class="recipe-items">${itemsHtml}</div>
-            <div class="recipe-actions">
-                <button class="recipe-btn" onclick="createRecipeFromCategory('${esc(category)}')">Créer une nouvelle recette avec ces ingrédients</button>
-            </div>
-        </div>
-        ${recipesHtml}
-    `;
-
-    document.getElementById('modal-recipe-link').classList.add('open');
-}
-
-function closeRecipeLinkModal() {
-    document.getElementById('modal-recipe-link').classList.remove('open');
-}
-
-function createRecipeFromCategory(category) {
-    const items = getFoodEntriesByCategory(category);
-    if (!items.length) return;
-
-    editingRecipeId = null;
-    recipeBuilder = items.map(it => ({
-        category: category,
-        desc: it.desc,
-        val: it.val,
-        prot: it.prot || 0,
-        gluc: it.gluc || 0,
-        lip: it.lip || 0
-    }));
-
-    document.getElementById('re-name').value = category + ' ' + new Date().toLocaleDateString('fr-FR');
-    document.getElementById('recipe-editor-title').textContent = 'Nouvelle recette depuis le journal';
+    editingRecipeId = recipe.id;
+    recipeBuilder = (recipe.items || []).map(i => ({ ...i, id: i.id || (Date.now() + Math.random()) }));
+    document.getElementById('re-name').value = recipe.name;
+    document.getElementById('recipe-editor-title').textContent = 'Modifier la recette';
+    clearRecipeDraftFields();
     renderRecipeBuilder();
-    resetRecipeDraftFields();
-    closeRecipeLinkModal();
     document.getElementById('modal-recipe-editor').classList.add('open');
 }
 
-function appendCategoryItemsToRecipe(category, recipeId) {
-    const recipe = savedRecipes.find(r => r.id === recipeId);
-    const items = getFoodEntriesByCategory(category);
-    if (!recipe || !items.length) return;
-
-    recipe.items.push(...items.map(it => ({
-        category: category,
-        desc: it.desc,
-        val: it.val,
-        prot: it.prot || 0,
-        gluc: it.gluc || 0,
-        lip: it.lip || 0
-    })));
-
+function deleteRecipe(id) {
+    if (!confirm('Supprimer cette recette ?')) return;
+    savedRecipes = savedRecipes.filter(r => r.id !== id);
     saveRecipes();
-    closeRecipeLinkModal();
     renderRecipesPage();
-    renderRecipePicker();
+}
+
+async function addRecipeToJournal(id) {
+    const recipe = savedRecipes.find(r => r.id === id);
+    if (!recipe) return;
+
+    currentCat = 'Déjeuner';
+    openModal('Déjeuner');
+    closeRecipePicker();
+}
+
+function renderRecipesPage() {
+    const el = document.getElementById('recipes-list');
+
+    if (!savedRecipes.length) {
+        el.innerHTML = `
+            <div class="recipe-card">
+                <div class="recipe-name">Aucune recette enregistrée</div>
+                <div class="recipe-meta">Crée ta première recette dans le bloc ci-dessus.</div>
+            </div>
+        `;
+        return;
+    }
+
+    el.innerHTML = savedRecipes.map(recipe => {
+        const totals = recipeTotals(recipe.items || []);
+        return `
+            <div class="recipe-card">
+                <div class="recipe-name">${recipe.name}</div>
+                <div class="recipe-meta">${(recipe.items || []).length} ingrédient(s) • ${Math.round(totals.kcal)} kcal • P ${round1(totals.prot)}g • G ${round1(totals.gluc)}g • L ${round1(totals.lip)}g</div>
+                <div class="recipe-items">
+                    ${(recipe.items || []).map(i => `• ${i.desc} (${i.qty}g)`).join('<br>')}
+                </div>
+                <div class="recipe-actions">
+                    <button class="recipe-btn" onclick="editRecipe(${recipe.id})">Modifier</button>
+                    <button class="recipe-btn danger" onclick="deleteRecipe(${recipe.id})">Supprimer</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 async function loadData() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await sb
-        .from('entries')
+    const today = todayStr();
+    const { data, error } = await sb.from('entries')
         .select('*')
         .eq('user_id', user.id)
-        .eq('date', todayStr());
+        .eq('date', today)
+        .order('id', { ascending: false });
 
     if (error) {
         console.error(error);
         return;
     }
 
-    let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
-    const entries = (data || []).sort((a, b) => b.id - a.id);
-    currentEntries = entries;
+    currentEntries = data || [];
 
-    entries.forEach(e => {
+    let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
+
+    currentEntries.forEach(e => {
         if (e.type === 'food') {
-            tIn += e.val;
+            tIn += e.val || 0;
             tP += e.prot || 0;
             tG += e.gluc || 0;
             tL += e.lip || 0;
         } else {
-            tSport += e.val;
+            tSport += e.val || 0;
         }
     });
 
@@ -2439,36 +2367,39 @@ async function loadData() {
     const pct = userGoal > 0 ? Math.min(100, Math.round((tIn / userGoal) * 100)) : 0;
 
     document.getElementById('kcal-left').textContent = Math.max(0, remaining);
-    document.getElementById('stat-in').textContent = tIn;
-    document.getElementById('stat-out').textContent = totalOut;
-    document.getElementById('stat-bmr').textContent = bmr;
-    document.getElementById('stat-sport').textContent = tSport;
+    document.getElementById('stat-in').textContent = Math.round(tIn);
+    document.getElementById('stat-out').textContent = Math.round(totalOut);
+    document.getElementById('stat-bmr').textContent = Math.round(bmr);
+    document.getElementById('stat-sport').textContent = Math.round(tSport);
     document.getElementById('total-p').textContent = Math.round(tP) + 'g';
     document.getElementById('total-g').textContent = Math.round(tG) + 'g';
     document.getElementById('total-l').textContent = Math.round(tL) + 'g';
     document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('progress-eaten').textContent = tIn + ' mangé';
+    document.getElementById('progress-eaten').textContent = Math.round(tIn) + ' mangé';
     document.getElementById('progress-goal').textContent = userGoal + ' objectif';
 
     const bar = document.getElementById('progress-fill');
-    if (pct >= 95) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
-    else if (pct >= 75) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
+    if (pct > 95) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
+    else if (pct > 75) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
     else bar.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
 
     const kcalEl = document.getElementById('kcal-left');
-    if (remaining < 200) kcalEl.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
-    else if (remaining < 500) kcalEl.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
-    else kcalEl.style.background = 'linear-gradient(135deg,#fff 30%,#7a8098)';
+    if (remaining < 200) {
+        kcalEl.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
+    } else if (remaining < 500) {
+        kcalEl.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
+    } else {
+        kcalEl.style.background = 'linear-gradient(135deg,#fff 30%,#7a8098)';
+    }
     kcalEl.style.webkitBackgroundClip = 'text';
     kcalEl.style.webkitTextFillColor = 'transparent';
 
     const listEl = document.getElementById('daily-list');
     const titleEl = document.getElementById('list-title');
 
-    if (!entries.length) {
+    if (!currentEntries.length) {
         titleEl.style.display = 'none';
         listEl.innerHTML = `<div class="empty-state"><div class="icon">🥗</div>Aucun aliment enregistré aujourd'hui</div>`;
-        renderRecipesPage();
         return;
     }
 
@@ -2487,8 +2418,7 @@ async function loadData() {
 
     const groups = {};
     ORDER.forEach(cat => groups[cat] = []);
-
-    entries.forEach(e => {
+    currentEntries.forEach(e => {
         if (groups[e.category] !== undefined) groups[e.category].push(e);
         else groups['Autre'].push(e);
     });
@@ -2499,7 +2429,7 @@ async function loadData() {
         const items = groups[cat];
         if (!items.length) return;
 
-        const subtotal = items.reduce((sum, e) => sum + e.val, 0);
+        const subtotal = items.reduce((sum, e) => sum + (e.val || 0), 0);
         const isSport = cat === 'Sport';
 
         html += `
@@ -2509,22 +2439,25 @@ async function loadData() {
                         <span class="entry-group-icon">${ICONS[cat]}</span>
                         <span class="entry-group-title">${cat}</span>
                     </div>
-                    <span class="entry-group-total ${isSport ? 'sport' : ''}">
-                        ${isSport ? '−' : '+'}${subtotal} kcal
-                    </span>
+                    <div class="entry-group-actions">
+                        ${!isSport ? `
+                            <button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">
+                                Ajouter à une recette
+                            </button>
+                        ` : ''}
+                        <span class="entry-group-total ${isSport ? 'sport' : ''}">
+                            ${isSport ? '−' : '+'}${Math.round(subtotal)} kcal
+                        </span>
+                    </div>
                 </div>
-
                 <div class="entry-group-items">
                     ${items.map(e => `
                         <div class="entry-item">
-                            <div class="entry-main">
+                            <div class="entry-main" onclick="editEntry(${e.id})" style="cursor:pointer;">
                                 <div class="entry-desc">${e.desc}</div>
                             </div>
                             <div class="entry-right">
-                                <span class="entry-kcal ${e.type}">
-                                    ${e.type === 'burn' ? '−' : '+'}${e.val} kcal
-                                </span>
-                                <button class="entry-action" onclick="editEntry(${e.id})">✎</button>
+                                <span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${Math.round(e.val || 0)} kcal</span>
                                 <button class="entry-action delete" onclick="del(${e.id})">✕</button>
                             </div>
                         </div>
@@ -2535,7 +2468,15 @@ async function loadData() {
     });
 
     listEl.innerHTML = html;
-    renderRecipesPage();
+}
+
+async function del(id) {
+    const { error } = await sb.from('entries').delete().eq('id', id);
+    if (error) {
+        alert('Erreur : ' + error.message);
+        return;
+    }
+    loadData();
 }
 
 async function handleAuth() {
@@ -2545,8 +2486,11 @@ async function handleAuth() {
     errEl.style.display = 'none';
 
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) errEl.style.display = 'block';
-    else init();
+    if (error) {
+        errEl.style.display = 'block';
+    } else {
+        init();
+    }
 }
 
 function logout() {
@@ -2555,17 +2499,17 @@ function logout() {
 
 async function init() {
     document.getElementById('header-date').textContent =
-        new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+        new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
 
     loadSettings();
     loadRecipes();
 
     const { data: { session } } = await sb.auth.getSession();
-
     if (!session) {
         document.getElementById('auth-screen').style.display = 'flex';
     } else {
         document.getElementById('auth-screen').style.display = 'none';
+        renderRecipesPage();
         loadData();
     }
 }
