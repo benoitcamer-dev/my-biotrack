@@ -9,310 +9,426 @@
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 
-<meta name="theme-color" content="#2563eb">
-
 <style>
-body { background:#f8fafc; font-family:sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+* { font-family: 'Inter', sans-serif; }
+body { 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+  min-height: 100vh;
+}
+.glass { 
+  background: rgba(255,255,255,0.95); 
+  backdrop-filter: blur(20px); 
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.card { 
+  @apply bg-white/80 backdrop-blur-xl rounded-2xl p-4 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 border border-white/50;
+}
+.btn-primary { 
+  @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200;
+}
+.btn-secondary { 
+  @apply bg-white/50 backdrop-blur-xl text-slate-800 font-medium py-2 px-4 rounded-xl hover:bg-white hover:shadow-lg transition-all duration-200;
+}
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in-up { animation: fadeInUp 0.5s ease-out; }
 </style>
 </head>
 
 <body class="pb-24">
-
 <script>
 const SUPABASE_URL = "TON_URL";
 const SUPABASE_KEY = "TA_CLE";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let userWeight = 84;
-let goal = 2300;
-let currentCat = "";
+let currentCat = "", scanner = null, userWeight = 84;
+const goalDefault = 2300;
 
-// 🏃 sports
 const sportsDB = [
-    { name:"Marche lente (4 km/h)", met:2.8 },
-    { name:"Marche normale (5 km/h)", met:3.5 },
-    { name:"Marche rapide (6 km/h)", met:4.3 },
-    { name:"Course (10 km/h)", met:10 },
-    { name:"Vélo appart léger", met:4 },
-    { name:"Vélo appart modéré", met:6 },
-    { name:"Vélo appart intense", met:8 },
-    { name:"Musculation", met:5 },
-    { name:"Natation", met:8 }
+  { name:"Marche lente (4 km/h)", met:2.8 },
+  { name:"Marche normale (5 km/h)", met:3.5 },
+  { name:"Marche rapide (6 km/h)", met:4.3 },
+  { name:"Course (10 km/h)", met:10 },
+  { name:"Vélo léger", met:4 },
+  { name:"Vélo modéré", met:6 },
+  { name:"Vélo intense", met:8 },
+  { name:"Musculation", met:5 },
+  { name:"Natation", met:8 }
 ];
 </script>
 
-<header class="p-4 bg-white shadow flex justify-between">
-<div>
-<h1 class="font-black text-blue-600">Biotrack</h1>
-<p id="date"></p>
-</div>
-<button onclick="logout()">Sortir</button>
+<header class="sticky top-0 glass p-6 flex justify-between items-center z-50 shadow-2xl">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+      <span class="text-2xl">📊</span>
+    </div>
+    <div>
+      <h1 class="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">BioTrack</h1>
+      <p id="date" class="text-xs text-slate-500 font-medium"></p>
+    </div>
+  </div>
+  <button onclick="logout()" class="btn-secondary text-sm">Déconnexion</button>
 </header>
 
-<main class="max-w-md mx-auto p-4">
+<main class="max-w-sm mx-auto p-6">
+  
+  <!-- CARD PRINCIPALE -->
+  <div class="glass rounded-3xl p-8 shadow-2xl text-center mb-8 fade-in-up">
+    <div class="text-5xl md:text-6xl font-black bg-gradient-to-r from-emerald-500 to-blue-500 bg-clip-text text-transparent mb-2" id="kcalLeft">0</div>
+    <p class="text-sm font-semibold text-slate-600 uppercase tracking-wide">kcal restantes</p>
+    
+    <div class="mt-6 flex justify-center gap-6 items-center">
+      <div class="text-xs text-slate-500">
+        🎯 <input id="goalInput" value="2300" class="w-20 text-center bg-transparent border-b-2 border-slate-200 focus:border-blue-400 outline-none font-bold text-lg">
+      </div>
+      <div class="text-xs text-slate-500">
+        ⚖️ <input id="weightInput" value="84" class="w-16 text-center bg-transparent border-b-2 border-slate-200 focus:border-blue-400 outline-none font-bold text-lg">
+      </div>
+    </div>
+  </div>
 
-<div class="bg-white p-4 rounded-xl text-center mb-4">
-<div class="text-3xl font-black">
-<span id="kcal-left">0</span> kcal
-</div>
+  <!-- BOUTONS RAPIDES -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <button onclick="openModal('Petit-déjeuner')" class="card flex flex-col items-center gap-2 text-lg" title="Petit-déjeuner">🥐 <span class="text-xs">Déj</span></button>
+    <button onclick="openModal('Déjeuner')" class="card flex flex-col items-center gap-2 text-lg" title="Déjeuner">🍽️ <span class="text-xs">Déj</span></button>
+    <button onclick="openModal('Dîner')" class="card flex flex-col items-center gap-2 text-lg" title="Dîner">🌙 <span class="text-xs">Dîner</span></button>
+    <button onclick="openModal('Boissons')" class="card flex flex-col items-center gap-2 text-lg" title="Boissons">🥤 <span class="text-xs">Boissons</span></button>
+    <button onclick="openModal('Autre')" class="card flex flex-col items-center gap-2 text-lg" title="Autre">🍏 <span class="text-xs">Autre</span></button>
+    <button onclick="openModal('Sport')" class="card bg-gradient-to-br from-orange-400 to-red-500 text-white flex flex-col items-center gap-2 text-lg shadow-orange-500/50" title="Sport">🚴 <span class="text-xs font-bold">SPORT</span></button>
+  </div>
 
-<div class="mt-2 text-xs">
-objectif :
-<input id="goal-input" type="number" value="2300" class="w-20 border text-center">
-</div>
+  <!-- HISTORIQUE -->
+  <div class="glass rounded-2xl p-5 mb-6 fade-in-up" style="animation-delay: 0.1s;">
+    <p class="text-sm font-bold text-slate-600 mb-4 flex items-center gap-2">📜 Historique rapide</p>
+    <div id="history" class="flex gap-2 flex-wrap"></div>
+  </div>
 
-<div class="mt-2 text-xs">
-poids :
-<input id="weight-input" type="number" value="84" class="w-20 border text-center">
-</div>
-</div>
-
-<div class="grid grid-cols-3 gap-2 mb-4">
-<button onclick="openModal('Petit-déjeuner')">🥐</button>
-<button onclick="openModal('Déjeuner')">🍽️</button>
-<button onclick="openModal('Dîner')">🌙</button>
-<button onclick="openModal('Boissons')">🥤</button>
-<button onclick="openModal('Autre')">🍏</button>
-<button onclick="openModal('Sport')">🚴</button>
-</div>
-
-<h2 class="font-bold mb-2">Historique rapide</h2>
-<div id="history" class="flex gap-2 overflow-x-auto mb-4"></div>
-
-<div id="daily-list"></div>
+  <!-- LISTE DU JOUR -->
+  <div id="dailyList" class="space-y-3"></div>
 
 </main>
 
-<!-- MODAL -->
-<div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center">
-<div class="bg-white p-4 rounded-xl w-full max-w-sm">
+<!-- MODAL MODERNE -->
+<div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+  <div class="glass rounded-3xl p-6 w-full max-w-md max-h-[90vh] overflow-hidden fade-in-up">
+    
+    <div class="flex items-center justify-between mb-1">
+      <h3 id="modalTitle" class="text-xl font-bold text-slate-800"></h3>
+      <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600">×</button>
+    </div>
 
-<input id="desc" placeholder="Rechercher..." class="w-full border p-2 mb-2">
-<button onclick="startSearch()">🔍</button>
-<button onclick="startScan()">📷</button>
+    <div class="flex gap-2 mb-4">
+      <input id="desc" class="flex-1 p-4 bg-slate-50/80 rounded-2xl border border-slate-200 focus:border-blue-400 focus:outline-none transition-all" placeholder="Rechercher un aliment...">
+      <button onclick="startSearch()" class="p-4 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all" title="Rechercher">🔍</button>
+      <button id="scanBtn" onclick="startScan()" class="p-4 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl shadow-lg transition-all" title="Scanner">📷</button>
+    </div>
 
-<div id="results" class="max-h-40 overflow-y-auto"></div>
+    <div id="results" class="max-h-48 overflow-y-auto bg-slate-50 rounded-2xl p-3 mb-4 space-y-1"></div>
 
-<input id="qty" type="number" value="100" class="w-full border mt-2">
-<input id="kcal" type="number" placeholder="kcal ou MET" class="w-full border mt-2">
+    <div class="space-y-3">
+      <input id="qty" value="100" class="w-full p-4 bg-slate-50/80 rounded-2xl border border-slate-200 focus:border-blue-400 focus:outline-none text-lg font-bold text-center" placeholder="Quantité (g)">
+      
+      <div class="relative">
+        <input id="kcal" class="w-full p-4 bg-slate-50/80 rounded-2xl border border-slate-200 focus:border-blue-400 focus:outline-none text-lg font-bold text-right pr-20" placeholder="kcal/100g ou MET">
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">/100g</span>
+      </div>
 
-<div id="calc" class="text-center font-bold mt-2">0 kcal</div>
+      <div id="calc" class="text-center font-black text-3xl bg-gradient-to-r from-emerald-500 to-blue-500 bg-clip-text text-transparent p-4 rounded-2xl bg-slate-50/50">0 kcal</div>
+    </div>
 
-<button onclick="save()" class="w-full bg-blue-600 text-white p-2 mt-3">Valider</button>
-<button onclick="closeModal()" class="w-full mt-2">Annuler</button>
+    <div class="flex gap-3 mt-6 pt-6 border-t border-slate-200">
+      <button onclick="save()" class="flex-1 btn-primary text-lg shadow-xl">✅ VALIDER</button>
+      <button onclick="closeModal()" class="flex-1 btn-secondary text-lg">❌ Annuler</button>
+    </div>
 
-<div id="reader" class="mt-3"></div>
-
-</div>
+    <div id="reader" class="mt-4 rounded-2xl overflow-hidden hidden"></div>
+  </div>
 </div>
 
 <script>
+// Éléments DOM
+const elements = {
+  date: document.getElementById('date'),
+  kcalLeft: document.getElementById('kcalLeft'),
+  goalInput: document.getElementById('goalInput'),
+  weightInput: document.getElementById('weightInput'),
+  modal: document.getElementById('modal'),
+  modalTitle: document.getElementById('modalTitle'),
+  desc: document.getElementById('desc'),
+  qty: document.getElementById('qty'),
+  kcal: document.getElementById('kcal'),
+  calc: document.getElementById('calc'),
+  results: document.getElementById('results'),
+  history: document.getElementById('history'),
+  dailyList: document.getElementById('dailyList'),
+  reader: document.getElementById('reader'),
+  scanBtn: document.getElementById('scanBtn')
+};
 
-function init(){
-document.getElementById('date').innerText = new Date().toLocaleDateString();
-load();
-loadHistory();
+// INIT
+async function init() {
+  elements.date.textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  elements.goalInput.addEventListener('input', updateGoal);
+  elements.weightInput.addEventListener('input', updateWeight);
+  elements.qty.addEventListener('input', calc);
+  elements.kcal.addEventListener('input', calc);
+  
+  await load();
+  await loadHistory();
 }
 
-// 🔎 FOOD SEARCH
-async function searchFood(val){
-const res = document.getElementById('results');
-
-const urls = [
-`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${val}&json=1&page_size=10`,
-`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${val}&json=1&page_size=10&categories_tags=beverages`
-];
-
-const results = await Promise.all(urls.map(u=>fetch(u).then(r=>r.json())));
-let products = [...results[0].products,...results[1].products];
-
-res.innerHTML = products.slice(0,15).map(p=>{
-let name = p.product_name_fr || p.product_name || "Inconnu";
-let kcal = p.nutriments?.['energy-kcal_100g'] || 0;
-
-if(kcal===0){
-if(name.toLowerCase().includes("vin")) kcal=80;
-if(name.toLowerCase().includes("biere")) kcal=45;
+// UPDATE PARAMS
+function updateGoal() { localStorage.setItem('goal', elements.goalInput.value); load(); }
+function updateWeight() { 
+  userWeight = parseFloat(elements.weightInput.value) || 84;
+  localStorage.setItem('weight', userWeight.toString());
+  calc();
 }
 
-return `<div onclick="fill('${name}',${kcal})" class="p-2 border-b">${name}</div>`;
-}).join('');
+// SEARCH FOOD
+async function searchFood(query) {
+  try {
+    const urls = [
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=10`,
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=10&categories_tags=beverages`
+    ];
+    
+    const [res1, res2] = await Promise.all(urls.map(url => fetch(url).then(r => r.json())));
+    let products = [...(res1.products || []), ...(res2.products || [])].slice(0, 15);
+
+    elements.results.innerHTML = products.map(p => {
+      const name = p.product_name_fr || p.product_name || "Inconnu";
+      let kcal = p.nutriments?.['energy-kcal_100g'] || 0;
+      
+      if (kcal === 0) {
+        if (name.toLowerCase().includes("vin")) kcal = 80;
+        if (name.toLowerCase().includes("bière") || name.toLowerCase().includes("biere")) kcal = 45;
+      }
+      
+      return `<div onclick="fill('${name.replace(/'/g, "\\'")}', ${kcal})" class="p-3 rounded-xl hover:bg-white cursor-pointer transition-all flex justify-between items-center">
+        <span>${name}</span>
+        <span class="font-bold text-sm">${kcal ? Math.round(kcal) : '?'} kcal</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    elements.results.innerHTML = '<div class="p-4 text-center text-slate-500">Erreur de recherche</div>';
+  }
 }
 
-// 🏃 SPORT SEARCH
-function searchSport(val){
-const v = val.toLowerCase();
-
-const res = sportsDB.filter(s =>
-s.name.toLowerCase().includes(v) ||
-v.includes("velo") || v.includes("vélo") ||
-v.includes("marche")
-);
-
-document.getElementById('results').innerHTML =
-res.map(s=>`<div onclick="fill('${s.name}',${s.met})" class="p-2 border-b">${s.name}</div>`).join('');
+// SEARCH SPORT
+function searchSport(query) {
+  const results = sportsDB.filter(s => 
+    s.name.toLowerCase().includes(query.toLowerCase()) ||
+    query.toLowerCase().includes("vélo") || query.toLowerCase().includes("velo") ||
+    query.toLowerCase().includes("marche")
+  );
+  
+  elements.results.innerHTML = results.map(s => 
+    `<div onclick="fill('${s.name.replace(/'/g, "\\'")}', ${s.met})" class="p-3 rounded-xl hover:bg-white cursor-pointer transition-all flex justify-between items-center">
+      <span>${s.name}</span>
+      <span class="font-bold text-sm">${s.met} MET</span>
+    </div>`
+  ).join('');
 }
 
-// 🚀 START SEARCH
-function startSearch(){
-const v = document.getElementById('desc').value;
-if(currentCat==="Sport") searchSport(v);
-else searchFood(v);
+function startSearch() {
+  const query = elements.desc.value.trim();
+  if (!query) return;
+  
+  if (currentCat === "Sport") searchSport(query);
+  else searchFood(query);
 }
 
-// 📷 SCAN
-function startScan(){
-const html5QrCode = new Html5Qrcode("reader");
-
-html5QrCode.start(
-{ facingMode: "environment" },
-{ fps: 10 },
-async (decodedText)=>{
-html5QrCode.stop();
-
-const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
-const data = await res.json();
-
-if(data.product){
-let name = data.product.product_name || "Produit";
-let kcal = data.product.nutriments?.['energy-kcal_100g'] || 0;
-fill(name,kcal);
-}
-}
-);
-}
-
-// ✏️ FILL
-function fill(name,k){
-document.getElementById('desc').value = name;
-document.getElementById('kcal').value = k;
-calc();
-}
-
-// 🔥 CALC
-function calc(){
-userWeight = parseFloat(document.getElementById('weight-input').value)||84;
-
-let q = parseFloat(qty.value)||0;
-let k = parseFloat(kcal.value)||0;
-
-let total = currentCat==="Sport"
-? k * userWeight * 0.0175 * q
-: k * (q/100);
-
-calc.innerText = Math.round(total)+" kcal";
+// SCAN QR
+async function startScan() {
+  try {
+    if (scanner) scanner.stop();
+    
+    scanner = new Html5Qrcode(elements.reader);
+    elements.reader.classList.remove('hidden');
+    elements.scanBtn.textContent = '⏹️';
+    elements.scanBtn.onclick = stopScan;
+    
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      async (decodedText) => {
+        stopScan();
+        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
+        const data = await res.json();
+        if (data.product) {
+          fill(data.product.product_name || 'Produit', data.product.nutriments?.['energy-kcal_100g'] || 0);
+        }
+      },
+      (error) => {}
+    );
+  } catch(e) {
+    alert('Erreur scanner: ' + e);
+  }
 }
 
-qty.oninput = calc;
-kcal.oninput = calc;
-
-// 💾 SAVE
-async function save(){
-let q = parseFloat(qty.value)||0;
-let k = parseFloat(kcal.value)||0;
-let d = desc.value;
-
-if(!d) return;
-
-let val = currentCat==="Sport"
-? k * userWeight * 0.0175 * q
-: k * (q/100);
-
-await supabaseClient.from('entries').insert([{
-category:currentCat,
-desc:d,
-val:Math.round(val),
-type:currentCat==="Sport"?"burn":"food",
-date:new Date().toISOString().split('T')[0]
-}]);
-
-closeModal();
-load();
-loadHistory();
+function stopScan() {
+  if (scanner) {
+    scanner.stop().then(() => {
+      scanner = null;
+      elements.reader.classList.add('hidden');
+      elements.scanBtn.textContent = '📷';
+      elements.scanBtn.onclick = startScan;
+    });
+  }
 }
 
-// 📊 LOAD
-async function load(){
-goal = parseInt(goal-input.value)||2300;
-
-const today = new Date().toISOString().split('T')[0];
-
-const { data } = await supabaseClient
-.from('entries')
-.select('*')
-.eq('date',today);
-
-let tIn=0,tOut=0;
-
-const groups = {"Petit-déjeuner":[],"Déjeuner":[],"Dîner":[],"Boissons":[],"Autre":[]};
-
-data.forEach(e=>{
-if(e.type==="food") tIn+=e.val; else tOut+=e.val;
-if(groups[e.category]) groups[e.category].push(e);
-});
-
-let html="";
-for(const cat in groups){
-if(!groups[cat].length) continue;
-html+=`<h3 class="font-bold">${cat}</h3>`;
-groups[cat].forEach(e=>{
-html+=`<div class="flex justify-between bg-white p-2 mb-1">
-<span>${e.desc}</span><span>${e.val}</span>
-</div>`;
-});
+// FILL FIELDS
+function fill(name, kcalValue) {
+  elements.desc.value = name;
+  elements.kcal.value = kcalValue;
+  calc();
 }
 
-daily-list.innerHTML = html;
-kcal-left.innerText = (goal+tOut)-tIn;
+// CALCULATE
+function calc() {
+  const qty = parseFloat(elements.qty.value) || 0;
+  const kcalVal = parseFloat(elements.kcal.value) || 0;
+  
+  let total = currentCat === "Sport" 
+    ? kcalVal * userWeight * 0.0175 * qty / 60  // MET * poids * 0.0175 * minutes
+    : kcalVal * (qty / 100);
+  
+  elements.calc.textContent = Math.round(total) + " kcal";
 }
 
-// ⚡ HISTORIQUE
-async function loadHistory(){
-const { data } = await supabaseClient
-.from('entries')
-.select('*')
-.limit(10)
-.order('id',{ascending:false});
-
-history.innerHTML = data.map(e=>`
-<button onclick="quickAdd('${e.desc}',${e.val})"
-class="bg-white px-3 py-1 rounded shadow text-xs">
-${e.desc}
-</button>
-`).join('');
+// SAVE ENTRY
+async function save() {
+  const qty = parseFloat(elements.qty.value) || 0;
+  const kcalVal = parseFloat(elements.kcal.value) || 0;
+  const descVal = elements.desc.value.trim();
+  
+  if (!descVal || qty <= 0) return alert('Veuillez remplir les champs');
+  
+  const val = currentCat === "Sport"
+    ? Math.round(kcalVal * userWeight * 0.0175 * qty / 60)
+    : Math.round(kcalVal * (qty / 100));
+  
+  const { error } = await supabaseClient.from('entries').insert([{
+    category: currentCat,
+    desc: descVal,
+    val: Math.max(1, val),
+    type: currentCat === "Sport" ? "burn" : "food",
+    date: new Date().toISOString().split('T')[0]
+  }]);
+  
+  if (!error) {
+    closeModal();
+    load();
+    loadHistory();
+  }
 }
 
-function quickAdd(desc,val){
-supabaseClient.from('entries').insert([{
-category:"Autre",
-desc,
-val,
-type:"food",
-date:new Date().toISOString().split('T')[0]
-}]).then(()=>load());
+// LOAD DATA
+async function load() {
+  const goal = parseInt(localStorage.getItem('goal') || elements.goalInput.value) || goalDefault;
+  elements.goalInput.value = goal;
+  
+  const weight = parseFloat(localStorage.getItem('weight') || elements.weightInput.value) || 84;
+  elements.weightInput.value = weight;
+  userWeight = weight;
+  
+  const today = new Date().toISOString().split('T')[0];
+  const { data = [] } = await supabaseClient.from('entries').select('*').eq('date', today);
+  
+  let totalIn = 0, totalOut = 0;
+  const groups = {"Petit-déjeuner":[], "Déjeuner":[], "Dîner":[], "Boissons":[], "Autre":[]};
+  
+  data.forEach(e => {
+    if (e.type === "food") totalIn += e.val;
+    else totalOut += e.val;
+    if (groups[e.category]) groups[e.category].push(e);
+  });
+  
+  let html = '';
+  for (let cat in groups) {
+    if (groups[cat].length) {
+      html += `<p class="text-sm font-bold text-slate-600 mt-6 mb-3 flex items-center gap-2">${getEmoji(cat)} ${cat}</p>`;
+      groups[cat].forEach(e => {
+        html += `<div class="glass p-4 rounded-2xl flex justify-between items-center cursor-pointer hover:shadow-xl transition-all" onclick="quickEdit(${e.id}, '${e.desc.replace(/'/g, "\\'")}', ${e.val})">
+          <span class="font-medium">${e.desc}</span>
+          <div class="text-right">
+            <span class="text-2xl font-black ${e.type === 'burn' ? 'text-emerald-500' : 'text-red-500'}">${e.val}</span>
+            <div class="text-xs text-slate-500">${e.type === 'burn' ? '🔥' : '🍽️'}</div>
+          </div>
+        </div>`;
+      });
+    }
+  }
+  
+  elements.dailyList.innerHTML = html || '<p class="text-center text-slate-500 py-8">Aucune entrée aujourd\'t jour</p>';
+  elements.kcalLeft.textContent = Math.max(0, goal + totalOut - totalIn);
 }
 
-// UI
-function openModal(cat){
-currentCat=cat;
-modal.classList.remove("hidden");
+function getEmoji(cat) {
+  const emojis = {
+    'Petit-déjeuner': '🥐',
+    'Déjeuner': '🍽️', 
+    'Dîner': '🌙',
+    'Boissons': '🥤',
+    'Autre': '🍏',
+    'Sport': '🚴'
+  };
+  return emojis[cat] || '📝';
 }
 
-function closeModal(){
-modal.classList.add("hidden");
-desc.value="";
-qty.value=100;
-kcal.value="";
-results.innerHTML="";
-calc.innerText="0 kcal";
-reader.innerHTML="";
+// HISTORY
+async function loadHistory() {
+  const { data = [] } = await supabaseClient.from('entries').select('*').limit(8).order('id', { ascending: false });
+  
+  elements.history.innerHTML = data.map(e => 
+    `<button onclick="quickAdd('${e.desc.replace(/'/g, "\\'")}', ${e.val}, '${e.category}')" 
+      class="glass px-4 py-2 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm flex items-center gap-2 truncate flex-1 min-w-[120px] max-w-[150px]">
+      ${getEmoji(e.category)} ${e.desc.slice(0,15)}${e.desc.length>15?'...':''}
+      <span class="font-bold ml-auto ${e.type==='burn'?'text-emerald-500':'text-red-500'}">${e.val}</span>
+    </button>`
+  ).join('') || '<p class="text-center text-slate-500 py-4 col-span-3">Aucun historique</p>';
 }
 
-// AUTH
-function logout(){
-supabaseClient.auth.signOut().then(()=>location.reload());
+async function quickAdd(desc, val, cat = "Autre") {
+  await supabaseClient.from('entries').insert([{
+    category: cat,
+    desc,
+    val,
+    type: "food",
+    date: new Date().toISOString().split('T')[0]
+  }]);
+  load();
+  loadHistory();
 }
 
+// UI FUNCTIONS
+function openModal(cat) {
+  currentCat = cat;
+  elements.modalTitle.textContent = cat;
+  elements.modal.classList.remove("hidden");
+  elements.desc.focus();
+}
+
+function closeModal() {
+  elements.modal.classList.add("hidden");
+  if (scanner) stopScan();
+  resetModal();
+}
+
+function resetModal() {
+  elements.desc.value = '';
+  elements.qty.value = '100';
+  elements.kcal.value = '';
+  elements.results.innerHTML = '';
+  elements.calc.textContent = '0 kcal';
+}
+
+function logout() {
+  supabaseClient.auth.signOut().then(() => location.reload());
+}
+
+// START
 init();
 </script>
 
