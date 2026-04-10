@@ -1,195 +1,195 @@
-<!--
-VERSION FUSIONNÉE
-- Garde ton code fonctionnel (BioTrack)
-- Ajoute:
-  * objectifs modifiables
-  * modal simplifié (LeGrosBarbu)
-  * fix reload après insert
-  * meilleure gestion date + user
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeGrosBarbu</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:Arial;background:#0d0f14;color:#fff;margin:0}
+.container{max-width:520px;margin:auto;padding:16px}
+.card{background:#161921;padding:14px;border-radius:12px;margin-bottom:10px}
+button{padding:10px;border:none;border-radius:8px;background:#5b7fff;color:#fff;cursor:pointer}
+input,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none}
+.row{display:flex;justify-content:space-between;align-items:center}
+.tab{display:inline-block;margin-right:6px;padding:8px;background:#1e2330;border-radius:8px;cursor:pointer}
+.active{background:#5b7fff}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>🔥 LeGrosBarbu</h2>
 
-IMPORTANT:
-Remplace UNIQUEMENT les fonctions JS ci-dessous dans ton code existant
---> 
+<div>
+<span class="tab active" onclick="showTab('journal')">Journal</span>
+<span class="tab" onclick="showTab('walk')">Marche</span>
+<span class="tab" onclick="showTab('weight')">Poids</span>
+<span class="tab" onclick="showTab('foods')">Aliments</span>
+</div>
+
+<div id="journal">
+<div class="card">
+<h1 id="kcal-left">0</h1>
+<div>kcal restantes</div>
+</div>
+<button onclick="openModal()">+ Ajouter</button>
+<div id="list"></div>
+</div>
+
+<div id="walk" style="display:none">
+<div class="card">
+<input id="w-distance" type="number" placeholder="Distance km">
+<input id="w-time" type="number" placeholder="Temps min">
+<button onclick="saveWalk()">Calculer & ajouter</button>
+</div>
+</div>
+
+<div id="weight" style="display:none">
+<div class="card">
+<input id="weightVal" type="number" placeholder="Poids">
+<input id="weightDate" type="date">
+<button onclick="saveWeight()">Ajouter</button>
+</div>
+<canvas id="weightChart"></canvas>
+</div>
+
+<div id="foods" style="display:none">
+<div class="card">
+<input id="foodName" placeholder="Nom">
+<input id="foodKcal" placeholder="Kcal/100">
+<button onclick="saveFood()">Ajouter aliment</button>
+</div>
+<div id="foods-list"></div>
+</div>
+
+</div>
+
+<div id="modal" style="display:none;position:fixed;inset:0;background:#000a">
+<div class="card">
+<input id="desc" placeholder="Aliment">
+<input id="qty" type="number" value="100">
+<input id="kcal" type="number" placeholder="kcal/100">
+<button onclick="saveEntry()">Valider</button>
+<button onclick="closeModal()">Annuler</button>
+</div>
+</div>
 
 <script>
+const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ FIX DATE
-function todayStr() {
-    return new Date().toISOString().split('T')[0];
+let goal=2300, entries=[], weightData=[];
+
+function today(){return new Date().toISOString().split('T')[0]}
+function safeInt(v){return Math.round(parseFloat(v)||0)}
+
+function showTab(t){
+['journal','walk','weight','foods'].forEach(id=>document.getElementById(id).style.display='none')
+document.getElementById(t).style.display='block'
 }
 
-// ✅ LOAD DATA (corrigé)
-async function loadData() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
+function openModal(){document.getElementById('modal').style.display='block'}
+function closeModal(){document.getElementById('modal').style.display='none'}
 
-    const { data, error } = await sb
-        .from('entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', todayStr())
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error(error);
-        return;
-    }
-
-    currentEntries = data || [];
-
-    let tIn = 0;
-    currentEntries.forEach(e => {
-        if (e.type === 'food') tIn += e.val;
-    });
-
-    const remaining = userGoal - tIn;
-
-    document.getElementById('kcal-left').textContent = remaining;
-    document.getElementById('stat-in').textContent = tIn;
-
-    renderEntries();
+async function saveEntry(){
+const {data:{user}}=await sb.auth.getUser();
+const qty=parseFloat(document.getElementById('qty').value)
+const kcal=parseFloat(document.getElementById('kcal').value)
+const val=safeInt(kcal*(qty/100))
+await sb.from('entries').insert([{user_id:user.id,desc:document.getElementById('desc').value,val,type:'food',date:today()}])
+closeModal();load()
 }
 
-// ✅ RENDER séparé (plus propre)
-function renderEntries() {
-    const listEl = document.getElementById('daily-list');
-
-    const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Sport'];
-    const ICONS = {
-        'Petit-déjeuner': '🥐',
-        'Déjeuner': '🍽️',
-        'Dîner': '🌙',
-        'Snack': '🍎',
-        'Boissons': '🥤',
-        'Sport': '🔥'
-    };
-
-    const groups = {};
-    ORDER.forEach(cat => groups[cat] = []);
-
-    currentEntries.forEach(e => {
-        if (groups[e.category]) groups[e.category].push(e);
-    });
-
-    let html = '';
-
-    ORDER.forEach(cat => {
-        const items = groups[cat];
-        const subtotal = items.reduce((sum, e) => sum + e.val, 0);
-
-        html += `
-            <div class="entry-group">
-                <div class="entry-group-header">
-                    <div class="entry-group-left">
-                        <span>${ICONS[cat]}</span>
-                        <span class="entry-group-title">${cat}</span>
-                    </div>
-                    <div class="entry-group-actions">
-                        <button class="entry-add-btn" onclick="openModal()">+ Ajouter</button>
-                        <span class="entry-group-total">+${subtotal}</span>
-                    </div>
-                </div>
-                <div class="entry-group-items">
-                    ${items.length ? items.map(e => `
-                        <div class="entry-item">
-                            <span class="entry-desc">${e.desc}</span>
-                            <div class="entry-right">
-                                <span class="entry-kcal">+${e.val}</span>
-                                <button onclick="editEntry('${e.id}')">✎</button>
-                                <button onclick="deleteEntry('${e.id}')">✕</button>
-                            </div>
-                        </div>
-                    `).join('') : '<div style="color: var(--muted);">Aucune entrée</div>'}
-                </div>
-            </div>
-        `;
-    });
-
-    listEl.innerHTML = html;
+async function load(){
+const {data:{user}}=await sb.auth.getUser();
+const {data}=await sb.from('entries').select('*').eq('user_id',user.id).eq('date',today())
+entries=data||[]
+let total=0;entries.forEach(e=>total+=e.val)
+document.getElementById('kcal-left').innerText=goal-total
+render()
 }
 
-// ✅ SAVE ENTRY FIX (IMPORTANT)
-async function saveEntry() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-
-    const desc = document.getElementById('entry-desc').value.trim();
-    const cat = document.getElementById('entry-cat').value;
-    const qty = parseFloat(document.getElementById('entry-qty').value) || 0;
-    const kcal = parseFloat(document.getElementById('entry-kcal').value) || 0;
-
-    if (!desc || qty <= 0 || kcal <= 0) {
-        alert('Remplis tous les champs');
-        return;
-    }
-
-    const val = Math.round(kcal * (qty / 100));
-
-    const payload = {
-        user_id: user.id,
-        type: cat === 'Sport' ? 'burn' : 'food',
-        category: cat,
-        desc: `${desc} (${qty}g)`,
-        val,
-        prot: 0,
-        gluc: 0,
-        lip: 0,
-        date: todayStr()
-    };
-
-    let error;
-
-    if (editingEntryId) {
-        ({ error } = await sb.from('entries').update(payload).eq('id', editingEntryId));
-    } else {
-        ({ error } = await sb.from('entries').insert([payload]));
-    }
-
-    if (error) {
-        alert('Erreur: ' + error.message);
-        return;
-    }
-
-    closeModal();
-
-    // 🔥 FIX PRINCIPAL
-    await loadData();
+function render(){
+const el=document.getElementById('list')
+el.innerHTML=entries.map(e=>`<div class='card row'><span>${e.desc}</span><span>${e.val}</span></div>`).join('')
 }
 
-// ✅ SETTINGS SYNC
-async function loadSettings() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-
-    const { data } = await sb
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-    if (data) {
-        userGoal = data.goal || 2300;
-        userWeight = data.weight || 75;
-        userHeight = data.height || 175;
-        userAge = data.age || 30;
-        userSexe = data.sexe || 'H';
-    }
+async function saveWalk(){
+const {data:{user}}=await sb.auth.getUser();
+const d=parseFloat(document.getElementById('w-distance').value)
+const t=parseFloat(document.getElementById('w-time').value)
+const speed=d/(t/60)
+const kcal=safeInt(3.5*75*(t/60))
+await sb.from('entries').insert([{user_id:user.id,desc:`Marche ${speed.toFixed(1)}km/h`,val:kcal,type:'burn',date:today()}])
+load()
 }
 
-// ✅ INIT amélioré
-async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-
-    if (!session) {
-        document.getElementById('auth-screen').style.display = 'flex';
-        return;
-    }
-
-    document.getElementById('auth-screen').style.display = 'none';
-
-    await loadSettings();
-    await loadData();
-    await loadRecipes();
+async function saveWeight(){
+const {data:{user}}=await sb.auth.getUser();
+await sb.from('weight_entries').insert([{user_id:user.id,weight:parseFloat(document.getElementById('weightVal').value),date:document.getElementById('weightDate').value}])
+loadWeight()
 }
 
+async function loadWeight(){
+const {data:{user}}=await sb.auth.getUser();
+const {data}=await sb.from('weight_entries').select('*').eq('user_id',user.id).order('date')
+weightData=data||[]
+const ctx=document.getElementById('weightChart')
+new Chart(ctx,{type:'line',data:{labels:weightData.map(d=>d.date),datasets:[{data:weightData.map(d=>d.weight)}]}})
+}
+
+async function saveFood(){
+const {data:{user}}=await sb.auth.getUser();
+await sb.from('custom_foods').insert([{user_id:user.id,name:document.getElementById('foodName').value,kcal_100:safeInt(document.getElementById('foodKcal').value)}])
+loadFoods()
+}
+
+async function loadFoods(){
+const {data:{user}}=await sb.auth.getUser();
+const {data}=await sb.from('custom_foods').select('*').eq('user_id',user.id)
+document.getElementById('foods-list').innerHTML=data.map(f=>`<div class='card'>${f.name}</div>`).join('')
+}
+
+async function init(){
+const {data:{session}}=await sb.auth.getSession()
+if(!session){
+const email=prompt('email');const pass=prompt('pass')
+await sb.auth.signInWithPassword({email,password:pass})
+}
+load();loadWeight();loadFoods()
+}
+init()
 </script>
+</body>
+</html>
+
+<!-- ================= SQL A EXECUTER DANS SUPABASE =================
+IMPORTANT: exécute ça tel quel dans SQL Editor
+
+create extension if not exists "uuid-ossp";
+
+create table entries (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid,
+  desc text,
+  val integer,
+  type text,
+  date date
+);
+
+create table custom_foods (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid,
+  name text,
+  kcal_100 integer
+);
+
+create table weight_entries (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid,
+  weight numeric,
+  date date
+);
+================================================ -->
