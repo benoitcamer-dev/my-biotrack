@@ -25,6 +25,7 @@
             --green: #3dd68c;
             --pink: #fa5ccd;
             --danger: #ff6b6b;
+            --gold: #f5c842;
             --radius: 20px;
             --radius-sm: 12px;
         }
@@ -659,7 +660,9 @@
         #modal-settings,
         #modal-recipe-link,
         #modal-recipe-editor,
-        #modal-recipe-picker {
+        #modal-recipe-picker,
+        #modal-custom-food,
+        #modal-favorites {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.75);
@@ -674,12 +677,16 @@
         #modal-recipe-link { z-index: 80; }
         #modal-recipe-editor { z-index: 81; }
         #modal-recipe-picker { z-index: 82; }
+        #modal-custom-food { z-index: 83; }
+        #modal-favorites { z-index: 84; }
 
         #modal-add.open,
         #modal-settings.open,
         #modal-recipe-link.open,
         #modal-recipe-editor.open,
-        #modal-recipe-picker.open {
+        #modal-recipe-picker.open,
+        #modal-custom-food.open,
+        #modal-favorites.open {
             display: flex;
         }
 
@@ -800,6 +807,32 @@
             margin-bottom: 2px;
         }
 
+        .result-tag.custom {
+            background: rgba(245,200,66,0.15);
+            color: var(--gold);
+        }
+
+        .result-tag.fav {
+            background: rgba(245,200,66,0.2);
+            color: var(--gold);
+        }
+
+        /* Bouton "Créer cet aliment" dans les résultats */
+        .create-food-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(91,127,255,0.08);
+            border: none;
+            border-top: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .create-food-btn:hover { background: rgba(91,127,255,0.14); }
+
         .saved-link-btn {
             background: none;
             border: none;
@@ -812,6 +845,19 @@
         }
 
         .saved-link-btn:hover { color: #89a0ff; }
+
+        /* Bouton Favoris dans le modal */
+        .fav-link-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: -2px 0 12px 10px;
+            font-size: 12px;
+            color: var(--gold);
+            cursor: pointer;
+            display: none;
+        }
+        .fav-link-btn:hover { color: #ffd966; }
 
         .inputs-grid {
             display: grid;
@@ -1093,6 +1139,103 @@
             margin-bottom: 10px;
             display: none;
         }
+
+        /* ===== CUSTOM FOOD MODAL ===== */
+        .custom-food-info {
+            background: rgba(245,200,66,0.08);
+            border: 1px solid rgba(245,200,66,0.2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: var(--gold);
+        }
+
+        /* ===== FAVORITES MODAL ===== */
+        .fav-item {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .fav-item-main { flex: 1; min-width: 0; }
+
+        .fav-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fav-item-meta {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .fav-item-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .fav-btn {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .fav-btn.primary {
+            background: var(--accent);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .fav-btn.danger { color: var(--danger); }
+
+        .fav-star {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px;
+            opacity: 0.4;
+            transition: opacity 0.15s;
+        }
+        .fav-star.active { opacity: 1; }
+
+        /* inline fav star in result items */
+        .result-fav-btn {
+            background: none;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+            float: right;
+            opacity: 0.5;
+            transition: opacity 0.15s;
+        }
+        .result-fav-btn.active { opacity: 1; }
+
+        .sync-indicator {
+            font-size: 10px;
+            color: var(--muted);
+            text-align: center;
+            padding: 8px;
+        }
     </style>
 </head>
 <body>
@@ -1169,14 +1312,14 @@
 
         <div class="daily-section">
             <div class="section-label">📋 Journal du jour</div>
-            <div class="helper-line">Ajoute ou modifie directement les repas et l’activité dans chaque bloc.</div>
+            <div class="helper-line">Ajoute ou modifie directement les repas et l'activité dans chaque bloc.</div>
             <div id="daily-list"></div>
         </div>
     </section>
 
     <section class="page" id="page-recipes">
         <div class="section-label">📚 Repas sauvegardés</div>
-        <div class="helper-line">Crée des recettes à partir d’ingrédients choisis un par un.</div>
+        <div class="helper-line">Crée des recettes à partir d'ingrédients choisis un par un.</div>
 
         <div class="recipe-form">
             <div class="recipes-tools">
@@ -1204,6 +1347,7 @@
     </section>
 </main>
 
+<!-- MODAL AJOUT ENTRÉE -->
 <div id="modal-add">
     <div class="modal-sheet">
         <div class="modal-handle"></div>
@@ -1217,7 +1361,10 @@
             <button class="search-btn" onclick="startSearch()">↵</button>
         </div>
 
-        <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">Ajouter une recette sauvegardée</button>
+        <div style="display:flex; gap:0; margin-bottom:0;">
+            <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">Ajouter une recette sauvegardée</button>
+            <button id="fav-link-btn" class="fav-link-btn" onclick="openFavoritesModal()">⭐ Mes favoris</button>
+        </div>
 
         <div id="search-results"></div>
 
@@ -1269,6 +1416,7 @@
     </div>
 </div>
 
+<!-- MODAL SETTINGS -->
 <div id="modal-settings">
     <div class="settings-sheet">
         <div class="modal-handle"></div>
@@ -1319,6 +1467,7 @@
     </div>
 </div>
 
+<!-- MODAL RECIPE LINK -->
 <div id="modal-recipe-link">
     <div class="settings-sheet">
         <div class="modal-handle"></div>
@@ -1330,6 +1479,7 @@
     </div>
 </div>
 
+<!-- MODAL RECIPE EDITOR -->
 <div id="modal-recipe-editor">
     <div class="settings-sheet">
         <div class="modal-handle"></div>
@@ -1391,6 +1541,7 @@
     </div>
 </div>
 
+<!-- MODAL RECIPE PICKER -->
 <div id="modal-recipe-picker">
     <div class="settings-sheet">
         <div class="modal-handle"></div>
@@ -1402,6 +1553,72 @@
     </div>
 </div>
 
+<!-- MODAL CRÉER ALIMENT CUSTOM -->
+<div id="modal-custom-food">
+    <div class="settings-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title-row">
+            <div class="modal-title" id="custom-food-title">✨ Nouvel aliment</div>
+            <button class="modal-close" onclick="closeCustomFoodModal()">×</button>
+        </div>
+
+        <div class="custom-food-info">
+            Renseigne les valeurs nutritionnelles pour 100g. Cet aliment sera sauvegardé et synchronisé sur tous tes appareils.
+        </div>
+
+        <div class="setting-row">
+            <label>Nom de l'aliment</label>
+            <input id="cf-name" class="text-input" type="text" placeholder="Ex : Chipolata maison">
+        </div>
+
+        <div class="inputs-grid">
+            <div class="input-box" style="grid-column: span 2;">
+                <label>Kcal / 100g</label>
+                <input id="cf-kcal" type="number" placeholder="0">
+            </div>
+        </div>
+
+        <div class="macros-row">
+            <div class="macro-input prot">
+                <label>Prot. /100g</label>
+                <input id="cf-p" type="number" placeholder="0">
+            </div>
+            <div class="macro-input gluc">
+                <label>Gluc. /100g</label>
+                <input id="cf-g" type="number" placeholder="0">
+            </div>
+            <div class="macro-input lip">
+                <label>Lip. /100g</label>
+                <input id="cf-l" type="number" placeholder="0">
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <input type="checkbox" id="cf-fav" style="width:16px;height:16px;accent-color:var(--gold);">
+            <label for="cf-fav" style="font-size:12px; color:var(--gold); cursor:pointer;">⭐ Ajouter directement aux favoris</label>
+        </div>
+
+        <div id="cf-edit-id" style="display:none;"></div>
+
+        <button class="btn-primary" onclick="saveCustomFood()">✓ Enregistrer l'aliment</button>
+        <button class="btn-cancel" onclick="closeCustomFoodModal()">Annuler</button>
+    </div>
+</div>
+
+<!-- MODAL FAVORIS -->
+<div id="modal-favorites">
+    <div class="settings-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title-row">
+            <div class="modal-title">⭐ Mes favoris</div>
+            <button class="modal-close" onclick="closeFavoritesModal()">×</button>
+        </div>
+        <div class="helper-line" style="margin-bottom:14px;">Tes aliments perso mis en favoris. Clique sur "Utiliser" pour l'ajouter au journal.</div>
+        <div id="favorites-list"></div>
+    </div>
+</div>
+
+<!-- AUTH -->
 <div id="auth-screen">
     <div class="auth-card">
         <div class="auth-logo">Bio<span>Track</span></div>
@@ -1434,6 +1651,14 @@ let recipePickerTargetCategory = null;
 let bilanRange = "week";
 let bilanCursor = new Date();
 
+// Aliments perso et favoris (chargés depuis Supabase)
+let customFoods = [];    // [{ id, name, kcal_100, prot_100, gluc_100, lip_100 }]
+let favoriteIds = [];    // [food_id, ...]
+let editingCustomFoodId = null;
+
+// Catégorie en cours dans le modal favori (pour ajouter directement)
+let favModalSourceCat = null;
+
 const DRINK_DB = [
     { name:"Aperol spritz", k:120, pr:0, gl:11, lp:0, defaultQty:150, kind:'cocktail' },
     { name:"Moscow mule", k:105, pr:0, gl:10, lp:0, defaultQty:200, kind:'cocktail' },
@@ -1448,6 +1673,18 @@ const DRINK_DB = [
 const SPORT_DB = [
     { name:"Marche", mode:'walk' },
     { name:"Vélo", mode:'bike' }
+];
+
+// Mots-clés "produits transformés acceptables comme bruts"
+const ACCEPTABLE_PROCESSED = [
+    'chipolata','saucisse','jambon','lardons','bacon','chorizo','merguez',
+    'andouillette','boudin','rilettes','rillettes','pâté','terrine',
+    'fromage','beurre','crème','yaourt','yogourt','kéfir','skyr',
+    'pain','farine','pâte','tortilla','bagel','baguette',
+    'tofu','tempeh','seitan','edamame',
+    'sardine','thon','saumon fumé','maquereau',
+    'mozzarella','parmesan','gruyère','emmental','comté','roquefort','camembert','brie','feta',
+    'huile','vinaigre'
 ];
 
 function esc(str) {
@@ -1507,42 +1744,243 @@ function calcBMR(w, h, a, s) {
     return Math.round(bmr * 1.2);
 }
 
-function loadSettings() {
-    userGoal = parseInt(localStorage.getItem('bt_goal') || '2300', 10);
+// =============================================
+// SETTINGS — Supabase (synchro) + localStorage (fallback rapide)
+// =============================================
+
+function loadSettingsLocal() {
+    userGoal   = parseInt(localStorage.getItem('bt_goal')   || '2300', 10);
     userWeight = parseFloat(localStorage.getItem('bt_weight') || '75');
     userHeight = parseInt(localStorage.getItem('bt_height') || '175', 10);
-    userAge = parseInt(localStorage.getItem('bt_age') || '30', 10);
-    userSexe = localStorage.getItem('bt_sexe') || 'H';
-}
-
-function saveSettings() {
-    localStorage.setItem('bt_goal', userGoal);
-    localStorage.setItem('bt_weight', userWeight);
-    localStorage.setItem('bt_height', userHeight);
-    localStorage.setItem('bt_age', userAge);
-    localStorage.setItem('bt_sexe', userSexe);
-}
-
-function loadRecipes() {
+    userAge    = parseInt(localStorage.getItem('bt_age')    || '30', 10);
+    userSexe   = localStorage.getItem('bt_sexe') || 'H';
     try {
         const raw = localStorage.getItem('bt_saved_recipes') || '[]';
         const parsed = JSON.parse(raw);
         savedRecipes = Array.isArray(parsed) ? parsed : [];
-    } catch {
-        savedRecipes = [];
-    }
+    } catch { savedRecipes = []; }
 }
 
-function saveRecipes() {
+function saveSettingsLocal() {
+    localStorage.setItem('bt_goal',    userGoal);
+    localStorage.setItem('bt_weight',  userWeight);
+    localStorage.setItem('bt_height',  userHeight);
+    localStorage.setItem('bt_age',     userAge);
+    localStorage.setItem('bt_sexe',    userSexe);
     localStorage.setItem('bt_saved_recipes', JSON.stringify(savedRecipes));
 }
 
+async function loadSettingsRemote() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data } = await sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle();
+    if (data) {
+        userGoal   = data.goal   || 2300;
+        userWeight = data.weight || 75;
+        userHeight = data.height || 175;
+        userAge    = data.age    || 30;
+        userSexe   = data.sexe   || 'H';
+        try {
+            const parsed = typeof data.recipes === 'string' ? JSON.parse(data.recipes) : (data.recipes || []);
+            savedRecipes = Array.isArray(parsed) ? parsed : [];
+        } catch { savedRecipes = []; }
+        saveSettingsLocal(); // met à jour le cache local
+    } else {
+        // Premier login : on pousse ce qu'on a en local
+        await pushSettingsRemote();
+    }
+}
+
+async function pushSettingsRemote() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    await sb.from('user_settings').upsert({
+        user_id:  user.id,
+        goal:     userGoal,
+        weight:   userWeight,
+        height:   userHeight,
+        age:      userAge,
+        sexe:     userSexe,
+        recipes:  savedRecipes,
+        updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+}
+
+// =============================================
+// ALIMENTS CUSTOM — Supabase
+// =============================================
+
+async function loadCustomFoods() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data } = await sb.from('custom_foods').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    customFoods = data || [];
+}
+
+async function loadFavorites() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data } = await sb.from('favorites').select('food_id').eq('user_id', user.id);
+    favoriteIds = (data || []).map(r => r.food_id);
+}
+
+async function toggleFavorite(foodId) {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const isFav = favoriteIds.includes(foodId);
+    if (isFav) {
+        await sb.from('favorites').delete().eq('user_id', user.id).eq('food_id', foodId);
+        favoriteIds = favoriteIds.filter(id => id !== foodId);
+    } else {
+        await sb.from('favorites').insert([{ user_id: user.id, food_id: foodId }]);
+        favoriteIds.push(foodId);
+    }
+}
+
+// =============================================
+// MODAL ALIMENT CUSTOM
+// =============================================
+
+function openCustomFoodModal(prefillName = '', editId = null) {
+    editingCustomFoodId = editId;
+    document.getElementById('cf-edit-id').textContent = editId || '';
+    document.getElementById('custom-food-title').textContent = editId ? '✏️ Modifier l\'aliment' : '✨ Nouvel aliment';
+
+    if (editId) {
+        const food = customFoods.find(f => f.id === editId);
+        if (food) {
+            document.getElementById('cf-name').value = food.name;
+            document.getElementById('cf-kcal').value = food.kcal_100;
+            document.getElementById('cf-p').value    = food.prot_100;
+            document.getElementById('cf-g').value    = food.gluc_100;
+            document.getElementById('cf-l').value    = food.lip_100;
+            document.getElementById('cf-fav').checked = favoriteIds.includes(editId);
+        }
+    } else {
+        document.getElementById('cf-name').value = prefillName;
+        document.getElementById('cf-kcal').value = '';
+        document.getElementById('cf-p').value    = '';
+        document.getElementById('cf-g').value    = '';
+        document.getElementById('cf-l').value    = '';
+        document.getElementById('cf-fav').checked = false;
+    }
+    document.getElementById('modal-custom-food').classList.add('open');
+}
+
+function closeCustomFoodModal() {
+    document.getElementById('modal-custom-food').classList.remove('open');
+    editingCustomFoodId = null;
+}
+
+async function saveCustomFood() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+
+    const name    = document.getElementById('cf-name').value.trim();
+    const kcal100 = parseInt(document.getElementById('cf-kcal').value) || 0;
+    const prot100 = parseFloat(document.getElementById('cf-p').value)  || 0;
+    const gluc100 = parseFloat(document.getElementById('cf-g').value)  || 0;
+    const lip100  = parseFloat(document.getElementById('cf-l').value)  || 0;
+    const wantFav = document.getElementById('cf-fav').checked;
+
+    if (!name) { document.getElementById('cf-name').focus(); return; }
+
+    const payload = { user_id: user.id, name, kcal_100: kcal100, prot_100: prot100, gluc_100: gluc100, lip_100: lip100 };
+
+    let savedId = editingCustomFoodId;
+
+    if (editingCustomFoodId) {
+        await sb.from('custom_foods').update({ name, kcal_100: kcal100, prot_100: prot100, gluc_100: gluc100, lip_100: lip100 }).eq('id', editingCustomFoodId);
+    } else {
+        const { data } = await sb.from('custom_foods').insert([payload]).select().single();
+        if (data) savedId = data.id;
+    }
+
+    // Gérer le favori
+    if (savedId) {
+        const isFav = favoriteIds.includes(savedId);
+        if (wantFav && !isFav) {
+            await sb.from('favorites').insert([{ user_id: user.id, food_id: savedId }]);
+            favoriteIds.push(savedId);
+        } else if (!wantFav && isFav) {
+            await sb.from('favorites').delete().eq('user_id', user.id).eq('food_id', savedId);
+            favoriteIds = favoriteIds.filter(id => id !== savedId);
+        }
+    }
+
+    await loadCustomFoods();
+    closeCustomFoodModal();
+
+    // Si on vient d'un contexte de recherche, on pré-remplit le modal d'ajout
+    if (!editingCustomFoodId && savedId) {
+        const food = customFoods.find(f => f.id === savedId);
+        if (food) fillFood(food.name, food.kcal_100, food.prot_100, food.gluc_100, food.lip_100);
+    }
+}
+
+// =============================================
+// MODAL FAVORIS
+// =============================================
+
+function openFavoritesModal() {
+    favModalSourceCat = currentCat;
+    renderFavoritesList();
+    document.getElementById('modal-favorites').classList.add('open');
+}
+
+function closeFavoritesModal() {
+    document.getElementById('modal-favorites').classList.remove('open');
+}
+
+function renderFavoritesList() {
+    const el = document.getElementById('favorites-list');
+    const favFoods = customFoods.filter(f => favoriteIds.includes(f.id));
+
+    if (!favFoods.length) {
+        el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
+            Aucun favori pour l'instant.<br><br>
+            Crée un aliment perso et coche ⭐ pour l'ajouter ici.
+        </div>`;
+        return;
+    }
+
+    el.innerHTML = favFoods.map(f => `
+        <div class="fav-item">
+            <div class="fav-item-main">
+                <div class="fav-item-name">${f.name}</div>
+                <div class="fav-item-meta">${f.kcal_100} kcal • ${f.prot_100}g P • ${f.gluc_100}g G • ${f.lip_100}g L — pour 100g</div>
+            </div>
+            <div class="fav-item-actions">
+                <button class="fav-btn primary" onclick="useFavoriteFood('${f.id}')">Utiliser</button>
+                <button class="fav-btn" onclick="openCustomFoodModal('', '${f.id}')">✎</button>
+                <button class="fav-btn danger" onclick="removeFavorite('${f.id}')">★</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function removeFavorite(foodId) {
+    await toggleFavorite(foodId);
+    renderFavoritesList();
+}
+
+function useFavoriteFood(foodId) {
+    const food = customFoods.find(f => f.id === foodId);
+    if (!food) return;
+    closeFavoritesModal();
+    fillFood(food.name, food.kcal_100, food.prot_100, food.gluc_100, food.lip_100);
+}
+
+// =============================================
+// SETTINGS MODAL
+// =============================================
+
 function openSettings() {
-    document.getElementById('s-goal').value = userGoal;
+    document.getElementById('s-goal').value   = userGoal;
     document.getElementById('s-weight').value = userWeight;
     document.getElementById('s-height').value = userHeight;
-    document.getElementById('s-age').value = userAge;
-    document.getElementById('s-sexe').value = userSexe;
+    document.getElementById('s-age').value    = userAge;
+    document.getElementById('s-sexe').value   = userSexe;
     updateBMRLive();
     document.getElementById('modal-settings').classList.add('open');
 }
@@ -1566,17 +2004,22 @@ function updateBMRLive() {
     document.getElementById('goal-live').textContent = g;
 }
 
-function saveAndCloseSettings() {
-    userGoal = parseInt(document.getElementById('s-goal').value, 10) || 2300;
-    userWeight = parseFloat(document.getElementById('s-weight').value) || 75;
-    userHeight = parseInt(document.getElementById('s-height').value, 10) || 175;
-    userAge = parseInt(document.getElementById('s-age').value, 10) || 30;
-    userSexe = document.getElementById('s-sexe').value;
-    saveSettings();
+async function saveAndCloseSettings() {
+    userGoal   = parseInt(document.getElementById('s-goal').value, 10)   || 2300;
+    userWeight = parseFloat(document.getElementById('s-weight').value)    || 75;
+    userHeight = parseInt(document.getElementById('s-height').value, 10)  || 175;
+    userAge    = parseInt(document.getElementById('s-age').value, 10)     || 30;
+    userSexe   = document.getElementById('s-sexe').value;
+    saveSettingsLocal();
+    await pushSettingsRemote();
     closeSettings();
     loadData();
     if (currentPage === 'bilan') loadBilan();
 }
+
+// =============================================
+// CLICK OUTSIDE MODALS
+// =============================================
 
 document.getElementById('modal-settings').addEventListener('click', function(e) {
     if (e.target === this) closeSettings();
@@ -1593,6 +2036,16 @@ document.getElementById('modal-recipe-editor').addEventListener('click', functio
 document.getElementById('modal-recipe-picker').addEventListener('click', function(e) {
     if (e.target === this) closeRecipePicker();
 });
+document.getElementById('modal-custom-food').addEventListener('click', function(e) {
+    if (e.target === this) closeCustomFoodModal();
+});
+document.getElementById('modal-favorites').addEventListener('click', function(e) {
+    if (e.target === this) closeFavoritesModal();
+});
+
+// =============================================
+// HELPERS
+// =============================================
 
 function round1(n) {
     return Math.round(n * 10) / 10;
@@ -1628,6 +2081,45 @@ function calcBikeKcalPerHour(speed) {
     return 950;
 }
 
+// =============================================
+// SCORE DE PRIORITÉ — aliments bruts vs transformés
+// =============================================
+
+function scoreProduct(p) {
+    let score = 0;
+    const name = (p.product_name_fr || p.product_name || '').toLowerCase();
+    const ingredients = (p.ingredients_text || '').toLowerCase();
+    const brands = (p.brands || '').toLowerCase();
+
+    // Favoriser les noms courts (aliments bruts ont souvent des noms simples)
+    if (name.length < 15) score += 30;
+    else if (name.length < 25) score += 15;
+
+    // Peu d'ingrédients = plus brut
+    const ingredCount = ingredients ? (ingredients.split(',').length) : 0;
+    if (ingredCount === 0) score += 40; // pas de liste = probablement brut
+    else if (ingredCount <= 3) score += 30;
+    else if (ingredCount <= 6) score += 10;
+    else if (ingredCount > 10) score -= 20;
+
+    // Pas de marque = plus brut
+    if (!brands || brands.trim() === '') score += 20;
+
+    // Produits "transformés acceptables" (chipolata, fromage, etc.)
+    const isAcceptable = ACCEPTABLE_PROCESSED.some(kw => name.includes(kw));
+    if (isAcceptable) score += 35;
+
+    // Pénaliser les noms qui contiennent des mots marketing
+    const marketingWords = ['goût','saveur','recette','spécial','extra','original','classic','light','zero','sans','avec','enrichi','bio certifié','artisan'];
+    if (marketingWords.some(w => name.includes(w))) score -= 15;
+
+    return score;
+}
+
+// =============================================
+// MODAL ADD — ouverture/fermeture
+// =============================================
+
 function resetModalForm() {
     editingId = null;
     document.getElementById('submit-btn').textContent = 'Valider';
@@ -1657,15 +2149,29 @@ function openModal(cat) {
     document.getElementById('in-qty').value = isSport ? '30' : '100';
     document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
     document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'inline-block';
+    document.getElementById('fav-link-btn').style.display = (isSport || favoriteIds.length === 0) ? 'none' : 'inline-block';
     document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
     document.getElementById('calc-sub').textContent = isSport ? 'pour 30 min' : (isDrink ? 'pour 100ml' : 'pour 100g');
 
     if (isSport) showAllSports();
     if (isDrink) showDrinkSuggestions();
+    else if (!isSport) showCustomFoodsSuggestions();
 
     recalc();
     document.getElementById('modal-add').classList.add('open');
     setTimeout(() => document.getElementById('in-desc').focus(), 180);
+}
+
+function showCustomFoodsSuggestions() {
+    if (!customFoods.length) return;
+    const resDiv = document.getElementById('search-results');
+    const favFoods = customFoods.filter(f => favoriteIds.includes(f.id));
+    const otherCustom = customFoods.filter(f => !favoriteIds.includes(f.id));
+    const toShow = [...favFoods, ...otherCustom].slice(0, 5);
+    if (!toShow.length) return;
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = toShow.map(f => buildCustomFoodResultItem(f, false)).join('') +
+        `<button class="create-food-btn" onclick="openCustomFoodModal('')">+ Créer un nouvel aliment</button>`;
 }
 
 function closeModal() {
@@ -1747,11 +2253,38 @@ function startSearch() {
     if (!val) {
         if (currentCat === 'Sport') showAllSports();
         else if (currentCat === 'Boissons') showDrinkSuggestions();
+        else showCustomFoodsSuggestions();
         return;
     }
     if (currentCat === 'Sport') searchSport(val);
     else searchFood(val, 'main');
 }
+
+// =============================================
+// CONSTRUCTION HTML d'un aliment custom dans les résultats
+// =============================================
+
+function buildCustomFoodResultItem(food, isRecipe) {
+    const isFav = favoriteIds.includes(food.id);
+    const fillFn = isRecipe
+        ? `fillRecipeIngredient('${esc(food.name)}', ${food.kcal_100}, ${food.prot_100}, ${food.gluc_100}, ${food.lip_100})`
+        : `fillFood('${esc(food.name)}', ${food.kcal_100}, ${food.prot_100}, ${food.gluc_100}, ${food.lip_100})`;
+
+    return `
+        <div class="result-item" onclick="${fillFn}">
+            <div>
+                <span class="result-tag custom">Perso</span>
+                ${isFav ? '<span class="result-tag fav">⭐ Favori</span>' : ''}
+            </div>
+            <div class="result-name">${food.name}</div>
+            <div class="result-kcal">${food.kcal_100} kcal/100g</div>
+        </div>
+    `;
+}
+
+// =============================================
+// RECHERCHE ALIMENTS
+// =============================================
 
 async function searchFood(val, target = 'main') {
     const isRecipe = target === 'recipe';
@@ -1760,6 +2293,12 @@ async function searchFood(val, target = 'main') {
     resDiv.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">⏳ Recherche…</div></div>`;
 
     const lowerVal = val.toLowerCase();
+
+    // 1. Aliments PERSO (priorité absolue)
+    const customHits = customFoods.filter(f => f.name.toLowerCase().includes(lowerVal));
+    const customHTML = customHits.map(f => buildCustomFoodResultItem(f, isRecipe)).join('');
+
+    // 2. DRINK_DB locale
     const localHits = DRINK_DB.filter(a => a.name.toLowerCase().includes(lowerVal));
     const localHTML = localHits.map(a => `
         <div class="result-item" onclick="${isRecipe ? `fillRecipeIngredient('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp})` : `fillDrink('${esc(a.name)}', ${a.k}, ${a.pr}, ${a.gl}, ${a.lp}, ${a.defaultQty}, '${a.kind}')`}">
@@ -1770,14 +2309,20 @@ async function searchFood(val, target = 'main') {
     `).join('');
 
     try {
-        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=20&action=process&sort_by=unique_scans_n`;
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=40&action=process&sort_by=unique_scans_n`;
         const res = await fetch(url);
         const data = await res.json();
 
-        const offHTML = (data.products || []).map(p => {
+        // Scorer et trier les produits OFF
+        const scored = (data.products || [])
+            .map(p => ({ p, score: scoreProduct(p) }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 12); // garder les 12 meilleurs après tri
+
+        const offHTML = scored.map(({ p }) => {
             const name = (p.product_name_fr || p.product_name || '').trim();
             if (!name) return '';
-            const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
+            const k  = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
             const pr = p.nutriments?.proteins_100g || 0;
             const gl = p.nutriments?.carbohydrates_100g || 0;
             const lp = p.nutriments?.fat_100g || 0;
@@ -1787,11 +2332,19 @@ async function searchFood(val, target = 'main') {
                     <div class="result-kcal">${k} kcal/100g</div>
                 </div>
             `;
-        }).join('');
+        }).filter(Boolean).join('');
 
-        resDiv.innerHTML = localHTML + offHTML || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat — saisie manuelle possible</div></div>`;
+        const createBtn = !isRecipe ? `<button class="create-food-btn" onclick="openCustomFoodModal('${esc(val)}')">+ Créer "${val}" comme aliment perso</button>` : '';
+
+        const combined = customHTML + localHTML + offHTML;
+        resDiv.innerHTML = combined
+            ? combined + createBtn
+            : `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${createBtn}`;
+
     } catch {
-        resDiv.innerHTML = localHTML || `<div class="result-item"><div class="result-name" style="color:var(--muted)">❌ Erreur réseau</div></div>`;
+        const createBtn = !isRecipe ? `<button class="create-food-btn" onclick="openCustomFoodModal('${esc(val)}')">+ Créer "${val}" comme aliment perso</button>` : '';
+        resDiv.innerHTML = (customHTML + localHTML) || `<div class="result-item"><div class="result-name" style="color:var(--muted)">❌ Erreur réseau</div></div>`;
+        if (!isRecipe) resDiv.innerHTML += createBtn;
     }
 }
 
@@ -1876,6 +2429,7 @@ function editEntry(id) {
     document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
     document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
     document.getElementById('saved-meal-link').style.display = 'none';
+    document.getElementById('fav-link-btn').style.display = 'none';
     document.getElementById('speed-row').style.display = 'none';
 
     document.getElementById('in-desc').value = parsed.label;
@@ -1913,6 +2467,7 @@ function editEntry(id) {
 
     document.getElementById('submit-btn').textContent = 'Enregistrer';
     document.getElementById('cancel-edit-btn').style.display = 'block';
+    document.getElementById('search-results').style.display = 'none';
     recalc();
     document.getElementById('modal-add').classList.add('open');
 }
@@ -1951,7 +2506,7 @@ async function submitEntry() {
         val,
         prot: isSport ? 0 : round1(p * factor),
         gluc: isSport ? 0 : round1(g * factor),
-        lip: isSport ? 0 : round1(l * factor),
+        lip:  isSport ? 0 : round1(l * factor),
         date: todayStr()
     };
 
@@ -1975,6 +2530,10 @@ async function submitEntry() {
     loadData();
     if (currentPage === 'bilan') loadBilan();
 }
+
+// =============================================
+// RECIPES
+// =============================================
 
 function getMealEntries(category) {
     return currentEntries.filter(e => e.type === 'food' && e.category === category);
@@ -2126,7 +2685,7 @@ function appendCategoryToRecipe(recipeId) {
 
     recipe.items.push(...items.map(cloneRecipeItemFromEntry));
     recomputeRecipe(recipe);
-    saveRecipes();
+    saveAndSyncRecipes();
     closeRecipePicker();
     renderRecipesPage();
 }
@@ -2200,12 +2759,12 @@ function recalcRecipeDraft() {
 }
 
 function addIngredientToRecipeBuilder() {
-    const desc = document.getElementById('re-desc').value.trim();
-    const qty = parseFloat(document.getElementById('re-qty').value) || 0;
+    const desc    = document.getElementById('re-desc').value.trim();
+    const qty     = parseFloat(document.getElementById('re-qty').value) || 0;
     const kcal100 = parseFloat(document.getElementById('re-kcal').value) || 0;
     const prot100 = parseFloat(document.getElementById('re-p').value) || 0;
     const gluc100 = parseFloat(document.getElementById('re-g').value) || 0;
-    const lip100 = parseFloat(document.getElementById('re-l').value) || 0;
+    const lip100  = parseFloat(document.getElementById('re-l').value) || 0;
 
     if (!desc || qty <= 0) return;
 
@@ -2272,10 +2831,15 @@ function recomputeRecipe(recipe) {
     recipe.totalKcal = Math.round(totals.kcal);
     recipe.totalProt = round1(totals.prot);
     recipe.totalGluc = round1(totals.gluc);
-    recipe.totalLip = round1(totals.lip);
+    recipe.totalLip  = round1(totals.lip);
 }
 
-function saveRecipeFromBuilder() {
+async function saveAndSyncRecipes() {
+    saveSettingsLocal();
+    await pushSettingsRemote();
+}
+
+async function saveRecipeFromBuilder() {
     const name = document.getElementById('re-name').value.trim();
     if (!name || !recipeBuilder.length) {
         alert('Ajoute un nom et au moins un ingrédient.');
@@ -2297,15 +2861,15 @@ function saveRecipeFromBuilder() {
         savedRecipes.unshift(payload);
     }
 
-    saveRecipes();
+    await saveAndSyncRecipes();
     closeRecipeEditor();
     document.getElementById('recipe-new-name').value = '';
     renderRecipesPage();
 }
 
-function deleteRecipe(recipeId) {
+async function deleteRecipe(recipeId) {
     savedRecipes = savedRecipes.filter(r => r.id !== recipeId);
-    saveRecipes();
+    await saveAndSyncRecipes();
     renderRecipesPage();
 }
 
@@ -2351,6 +2915,10 @@ function openRecipePickerCategoryChoice(recipeId) {
     if (!category) return;
     addRecipeToToday(recipeId, category);
 }
+
+// =============================================
+// BILAN
+// =============================================
 
 function startOfWeekMondaySunday(date) {
     const d = new Date(date);
@@ -2565,6 +3133,10 @@ async function loadBilan() {
     }
 }
 
+// =============================================
+// DATA LOADING
+// =============================================
+
 async function loadData() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
@@ -2708,15 +3280,20 @@ async function init() {
     document.getElementById('header-date').textContent =
         new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
 
-    loadSettings();
-    loadRecipes();
+    // Charger settings depuis localStorage d'abord (rapide)
+    loadSettingsLocal();
 
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
         document.getElementById('auth-screen').style.display = 'flex';
     } else {
         document.getElementById('auth-screen').style.display = 'none';
+        // Puis synchroniser depuis Supabase (plus à jour)
+        await loadSettingsRemote();
+        await loadCustomFoods();
+        await loadFavorites();
         loadData();
+        if (currentPage === 'recipes') renderRecipesPage();
     }
 }
 
