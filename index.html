@@ -22,11 +22,7 @@
             --accent2: #7c5cfa;
             --orange: #ff7c4d;
             --green: #3dd68c;
-            --pink: #fa5ccd;
             --danger: #ff6b6b;
-            --gold: #f5c842;
-            --radius: 20px;
-            --radius-sm: 12px;
         }
         html { background: var(--bg); }
         body {
@@ -34,10 +30,8 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100dvh;
-            padding-bottom: 32px;
-            -webkit-tap-highlight-color: transparent;
         }
-        h1, h2, h3, .mono { font-family: 'Syne', sans-serif; }
+        h1, h2, h3 { font-family: 'Syne', sans-serif; }
         header {
             position: sticky;
             top: 0;
@@ -50,76 +44,65 @@
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
         }
-        .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+        .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
         .logo span { color: var(--accent); }
-        .header-date { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: capitalize; }
-        .header-btns { display: flex; gap: 8px; align-items: center; }
-        .btn-icon { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 100px; cursor: pointer; transition: all 0.2s; }
-        .btn-icon:hover { color: var(--text); border-color: var(--border2); }
-        main { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
-        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-        .tab-btn { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 12px 10px; border-radius: 14px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.18s; }
+        .header-date { font-size: 11px; color: var(--muted); text-transform: capitalize; }
+        .header-btns { display: flex; gap: 8px; }
+        .btn-icon { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 100px; cursor: pointer; }
+        .btn-icon:hover { color: var(--text); }
+        main { max-width: 480px; margin: 0 auto; padding: 20px 16px 80px; }
+        .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .tab-btn { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 12px 10px; border-radius: 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .tab-btn.active { background: linear-gradient(135deg, rgba(91,127,255,0.18), rgba(124,92,250,0.12)); color: var(--text); border-color: rgba(91,127,255,0.25); }
         .page { display: none; }
         .page.active { display: block; }
-        .kcal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 28px; padding: 28px 20px 24px; margin-bottom: 16px; }
-        .kcal-hero { text-align: center; margin-bottom: 20px; }
-        .kcal-number { font-family: 'Syne', sans-serif; font-size: 68px; font-weight: 800; letter-spacing: -4px; line-height: 1; background: linear-gradient(135deg, #fff 30%, #7a8098); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .kcal-label { font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; margin-top: 6px; }
-        .progress-wrap { margin-bottom: 20px; }
-        .progress-bar-bg { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.5s ease; }
-        .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 6px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
-        .stat-box .s-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 4px; }
-        .stat-box .s-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
-        .stat-box.ingere .s-val { color: #f87171; }
-        .stat-box.depense .s-val { color: var(--green); }
-        .stat-box.bmr .s-val { color: var(--accent); }
-        .stat-box.sport .s-val { color: var(--orange); }
-        .macro-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .macro-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
-        .macro-pill .label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
-        .macro-pill .val { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
-        .macro-pill.prot .label { color: var(--accent); }
-        .macro-pill.gluc .label { color: var(--orange); }
-        .macro-pill.lip .label { color: var(--pink); }
-        .section-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; padding-left: 2px; }
-        .helper-line { font-size: 11px; color: var(--muted); margin: -4px 0 12px 2px; }
-        .daily-section { margin-bottom: 8px; }
+        .kcal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 28px; padding: 28px 20px; margin-bottom: 16px; text-align: center; }
+        .kcal-number { font-family: 'Syne', sans-serif; font-size: 68px; font-weight: 800; letter-spacing: -4px; }
+        .kcal-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; margin-top: 6px; }
+        .section-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+        .helper-line { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
         #daily-list { display: flex; flex-direction: column; gap: 14px; }
-        .entry-group { margin-bottom: 2px; }
-        .entry-group-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0 2px; flex-wrap: wrap; }
+        .entry-group { margin-bottom: 8px; }
+        .entry-group-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
         .entry-group-left { display: flex; align-items: center; gap: 8px; }
-        .entry-group-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
-        .entry-group-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .entry-group-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
+        .entry-group-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .entry-group-total { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: var(--accent); }
-        .entry-group-total.sport { color: var(--orange); }
-        .entry-add-btn { border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-        .entry-add-btn:hover { border-color: var(--border2); }
+        .entry-add-btn { border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; cursor: pointer; }
         .entry-group-items { display: flex; flex-direction: column; gap: 6px; }
-        .entry-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; animation: fadeUp 0.28s ease; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .entry-main { flex: 1; min-width: 0; }
-        .entry-desc { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .entry-kcal { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
-        .entry-kcal.food { color: var(--accent); }
-        .entry-kcal.burn { color: var(--orange); }
-        .entry-action { background: none; border: none; color: var(--border2); font-size: 14px; cursor: pointer; padding: 4px; transition: color 0.15s; }
+        .entry-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; }
+        .entry-desc { font-size: 12px; }
+        .entry-right { display: flex; align-items: center; gap: 8px; }
+        .entry-kcal { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--accent); }
+        .entry-action { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; }
         .entry-action:hover { color: var(--text); }
-        .entry-action.delete:hover { color: var(--danger); }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
+        .modal.open { display: flex; }
+        .modal-sheet { background: var(--surface); border: 1px solid var(--border2); border-radius: 28px 28px 0 0; width: 100%; max-width: 480px; padding: 24px 20px 40px; max-height: 92dvh; overflow-y: auto; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 18px; }
+        .modal-close { float: right; background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; margin-top: -10px; }
+        .input-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+        .input-box label { display: block; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+        .input-box input, .input-box select { width: 100%; background: none; border: none; outline: none; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+        .btn-primary { width: 100%; background: var(--accent); border: none; border-radius: 12px; padding: 16px; color: white; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-bottom: 8px; }
+        .btn-primary:hover { background: var(--accent2); }
         #auth-screen { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 32px; }
         .auth-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 28px; padding: 40px 32px; width: 100%; max-width: 360px; }
-        .auth-logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
-        .auth-logo span { color: var(--accent); }
-        .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
-        .auth-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); outline: none; margin-bottom: 10px; transition: border-color 0.2s; }
-        .auth-input:focus { border-color: var(--accent); }
-        .auth-error { font-size: 12px; color: var(--danger); margin-bottom: 10px; display: none; }
-        .btn-primary { width: 100%; background: var(--accent); border: none; border-radius: 12px; padding: 16px; color: white; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; transition: all 0.15s; cursor: pointer; }
-        .btn-primary:hover { background: var(--accent2); }
+        .auth-logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .auth-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; font-size: 14px; color: var(--text); margin-bottom: 10px; }
+        .recipe-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 10px; }
+        .recipe-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+        .recipe-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+        .recipe-items { font-size: 12px; color: var(--text); line-height: 1.5; margin-top: 10px; }
+        .recipe-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .btn-recipe { border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 10px; padding: 8px 10px; font-size: 11px; cursor: pointer; }
+        .btn-recipe.primary { background: var(--accent); border-color: transparent; color: white; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+        .stat-box .label { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+        .stat-box .value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -139,92 +122,143 @@
     <div class="tabs">
         <button class="tab-btn active" id="tab-journal" onclick="showPage('journal')">Journal</button>
         <button class="tab-btn" id="tab-recipes" onclick="showPage('recipes')">Repas</button>
-        <button class="tab-btn" id="tab-weight" onclick="showPage('weight')">Poids</button>
         <button class="tab-btn" id="tab-bilan" onclick="showPage('bilan')">Bilan</button>
     </div>
 
     <section class="page active" id="page-journal">
         <div class="kcal-card">
-            <div class="kcal-hero">
-                <div class="kcal-number" id="kcal-left">—</div>
-                <div class="kcal-label">kcal disponibles aujourd'hui</div>
+            <div class="kcal-number" id="kcal-left">—</div>
+            <div class="kcal-label">kcal disponibles aujourd'hui</div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="label">🍽️ Ingérées</div>
+                <div class="value" id="stat-in">0</div>
             </div>
-            <div class="progress-wrap">
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-                </div>
-                <div class="progress-labels">
-                    <span id="progress-eaten">0 mangé</span>
-                    <span id="progress-goal">— objectif</span>
-                </div>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-box ingere">
-                    <div class="s-label">🍽️ Ingérées</div>
-                    <div class="s-val" id="stat-in">0</div>
-                </div>
-                <div class="stat-box depense">
-                    <div class="s-label">🔥 Dépensées</div>
-                    <div class="s-val" id="stat-out">—</div>
-                </div>
-                <div class="stat-box bmr">
-                    <div class="s-label">🫀 Métabolisme</div>
-                    <div class="s-val" id="stat-bmr">—</div>
-                </div>
-                <div class="stat-box sport">
-                    <div class="s-label">🚴 Sport</div>
-                    <div class="s-val" id="stat-sport">0</div>
-                </div>
-            </div>
-            <div class="macro-grid">
-                <div class="macro-pill prot">
-                    <div class="label">Protéines</div>
-                    <div class="val" id="total-p">0g</div>
-                </div>
-                <div class="macro-pill gluc">
-                    <div class="label">Glucides</div>
-                    <div class="val" id="total-g">0g</div>
-                </div>
-                <div class="macro-pill lip">
-                    <div class="label">Lipides</div>
-                    <div class="val" id="total-l">0g</div>
-                </div>
+            <div class="stat-box">
+                <div class="label">🔥 Dépensées</div>
+                <div class="value" id="stat-out">—</div>
             </div>
         </div>
-
-        <div class="daily-section">
-            <div class="section-label">📋 Journal du jour</div>
-            <div class="helper-line">Ajoute ou modifie directement les repas et l'activité dans chaque bloc.</div>
-            <div id="daily-list"></div>
-        </div>
+        <div class="section-label">📋 Journal du jour</div>
+        <div class="helper-line">Clique sur "+ Ajouter" pour enregistrer un aliment.</div>
+        <div id="daily-list"></div>
     </section>
 
     <section class="page" id="page-recipes">
-        <div class="section-label">📚 Repas sauvegardés</div>
-        <div class="helper-line">Crée des recettes à partir d'ingrédients choisis un par un.</div>
+        <div class="section-label">📚 Recettes sauvegardées</div>
+        <button class="entry-add-btn" style="width: 100%; padding: 12px; margin-bottom: 16px;" onclick="openRecipeEditor()">+ Créer une recette</button>
         <div id="recipes-list"></div>
-    </section>
-
-    <section class="page" id="page-weight">
-        <div class="section-label">⚖️ Suivi de poids</div>
-        <div class="helper-line">Enregistre ton poids pour suivre ta progression dans le temps.</div>
-        <div id="weight-history"></div>
     </section>
 
     <section class="page" id="page-bilan">
         <div class="section-label">📊 Bilan</div>
-        <div id="bilan-summary"></div>
+        <div id="bilan-content">Aucun bilan disponible</div>
     </section>
 </main>
 
+<!-- MODAL ENTRY -->
+<div id="modal-entry" class="modal">
+    <div class="modal-sheet">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-title">+ Ajouter une entrée</div>
+        <div class="input-box">
+            <label>Catégorie</label>
+            <select id="entry-cat">
+                <option>Petit-déjeuner</option>
+                <option>Déjeuner</option>
+                <option>Dîner</option>
+                <option>Snack</option>
+                <option>Boissons</option>
+                <option>Sport</option>
+            </select>
+        </div>
+        <div class="input-box">
+            <label>Description</label>
+            <input id="entry-desc" type="text" placeholder="Ex: Poulet rôti">
+        </div>
+        <div class="input-box">
+            <label>Quantité (g)</label>
+            <input id="entry-qty" type="number" value="100">
+        </div>
+        <div class="input-box">
+            <label>Kcal / 100</label>
+            <input id="entry-kcal" type="number" value="0">
+        </div>
+        <button class="btn-primary" onclick="saveEntry()">✓ Valider</button>
+        <button class="btn-primary" style="background: var(--surface2); color: var(--text);" onclick="closeModal()">Annuler</button>
+    </div>
+</div>
+
+<!-- MODAL SETTINGS -->
+<div id="modal-settings" class="modal">
+    <div class="modal-sheet">
+        <button class="modal-close" onclick="closeSettings()">✕</button>
+        <div class="modal-title">⚙️ Réglages</div>
+        <div class="input-box">
+            <label>Objectif calorique (kcal/jour)</label>
+            <input id="s-goal" type="number" value="2300" onchange="onSettingChange()">
+        </div>
+        <div class="input-box">
+            <label>Poids (kg)</label>
+            <input id="s-weight" type="number" value="75" onchange="onSettingChange()">
+        </div>
+        <div class="input-box">
+            <label>Taille (cm)</label>
+            <input id="s-height" type="number" value="175" onchange="onSettingChange()">
+        </div>
+        <div class="input-box">
+            <label>Âge</label>
+            <input id="s-age" type="number" value="30" onchange="onSettingChange()">
+        </div>
+        <div class="input-box">
+            <label>Sexe</label>
+            <select id="s-sexe" onchange="onSettingChange()">
+                <option value="H">Homme</option>
+                <option value="F">Femme</option>
+            </select>
+        </div>
+        <button class="btn-primary" onclick="saveSettings()">✓ Enregistrer</button>
+        <button class="btn-primary" style="background: var(--surface2); color: var(--text);" onclick="closeSettings()">Annuler</button>
+    </div>
+</div>
+
+<!-- MODAL RECIPE EDITOR -->
+<div id="modal-recipe" class="modal">
+    <div class="modal-sheet">
+        <button class="modal-close" onclick="closeRecipeEditor()">✕</button>
+        <div class="modal-title">✨ Créer une recette</div>
+        <div class="input-box">
+            <label>Nom de la recette</label>
+            <input id="recipe-name" type="text" placeholder="Ex: Déjeuner saumon">
+        </div>
+        <div class="input-box">
+            <label>Ingrédient</label>
+            <input id="recipe-ing" type="text" placeholder="Ex: Saumon">
+        </div>
+        <div class="input-box">
+            <label>Quantité (g)</label>
+            <input id="recipe-qty" type="number" value="100">
+        </div>
+        <div class="input-box">
+            <label>Kcal / 100</label>
+            <input id="recipe-ing-kcal" type="number" value="0">
+        </div>
+        <button class="btn-primary" onclick="addIngredientToRecipe()">+ Ajouter ingrédient</button>
+        <div id="recipe-ing-list" style="margin-top: 12px;"></div>
+        <button class="btn-primary" onclick="saveRecipe()">✓ Enregistrer recette</button>
+        <button class="btn-primary" style="background: var(--surface2); color: var(--text);" onclick="closeRecipeEditor()">Annuler</button>
+    </div>
+</div>
+
+<!-- AUTH -->
 <div id="auth-screen">
     <div class="auth-card">
-        <div class="auth-logo">Le<span>Gros</span>Barbu</div>
-        <div class="auth-sub">Suivi nutritionnel quotidien</div>
+        <div class="auth-logo">Le<span style="color: var(--accent);">Gros</span>Barbu</div>
+        <div style="font-size: 13px; color: var(--muted); margin-bottom: 32px;">Suivi nutritionnel quotidien</div>
         <input id="auth-email" class="auth-input" type="email" placeholder="Email">
         <input id="auth-pass" class="auth-input" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter') handleAuth()">
-        <div class="auth-error" id="auth-error">Email ou mot de passe incorrect</div>
-        <button class="btn-primary" onclick="handleAuth()" style="margin-top:8px">Se connecter</button>
+        <button class="btn-primary" onclick="handleAuth()">Se connecter</button>
     </div>
 </div>
 
@@ -233,186 +267,254 @@ const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let userGoal = 2300;
-let userWeight = 75;
-let userHeight = 175;
-let userAge = 30;
-let userSexe = "H";
+let userGoal = 2300, userWeight = 75, userHeight = 175, userAge = 30, userSexe = "H";
 let currentEntries = [];
 let currentPage = "journal";
+let savedRecipes = [];
+let recipeBuilder = [];
+let editingEntryId = null;
 
-function todayStr() {
-    return new Date().toISOString().split('T')[0];
-}
-
-function calcBMR(w, h, a, s) {
-    const base = 10 * w + 6.25 * h - 5 * a;
-    const bmr = s === 'H' ? base + 5 : base - 161;
-    return Math.round(bmr * 1.2);
-}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function calcBMR(w, h, a, s) { const base = 10 * w + 6.25 * h - 5 * a; return Math.round((s === 'H' ? base + 5 : base - 161) * 1.2); }
 
 function showPage(page) {
     currentPage = page;
-    document.getElementById('page-journal').classList.toggle('active', page === 'journal');
-    document.getElementById('page-recipes').classList.toggle('active', page === 'recipes');
-    document.getElementById('page-weight').classList.toggle('active', page === 'weight');
-    document.getElementById('page-bilan').classList.toggle('active', page === 'bilan');
-    document.getElementById('tab-journal').classList.toggle('active', page === 'journal');
-    document.getElementById('tab-recipes').classList.toggle('active', page === 'recipes');
-    document.getElementById('tab-weight').classList.toggle('active', page === 'weight');
-    document.getElementById('tab-bilan').classList.toggle('active', page === 'bilan');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.getElementById('tab-' + page).classList.add('active');
 }
 
+function openModal() { document.getElementById('modal-entry').classList.add('open'); }
+function closeModal() { document.getElementById('modal-entry').classList.remove('open'); editingEntryId = null; }
 function openSettings() {
-    alert("Réglages (à implémente)");
+    document.getElementById('s-goal').value = userGoal;
+    document.getElementById('s-weight').value = userWeight;
+    document.getElementById('s-height').value = userHeight;
+    document.getElementById('s-age').value = userAge;
+    document.getElementById('s-sexe').value = userSexe;
+    document.getElementById('modal-settings').classList.add('open');
+}
+function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); }
+function openRecipeEditor() {
+    recipeBuilder = [];
+    document.getElementById('recipe-name').value = '';
+    document.getElementById('recipe-ing').value = '';
+    document.getElementById('recipe-qty').value = '100';
+    document.getElementById('recipe-ing-kcal').value = '0';
+    document.getElementById('recipe-ing-list').innerHTML = '';
+    document.getElementById('modal-recipe').classList.add('open');
+}
+function closeRecipeEditor() { document.getElementById('modal-recipe').classList.remove('open'); }
+
+function onSettingChange() { }
+
+async function saveSettings() {
+    userGoal = parseInt(document.getElementById('s-goal').value) || 2300;
+    userWeight = parseFloat(document.getElementById('s-weight').value) || 75;
+    userHeight = parseInt(document.getElementById('s-height').value) || 175;
+    userAge = parseInt(document.getElementById('s-age').value) || 30;
+    userSexe = document.getElementById('s-sexe').value;
+    closeSettings();
+    loadData();
+}
+
+async function saveEntry() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    
+    const desc = document.getElementById('entry-desc').value.trim();
+    const cat = document.getElementById('entry-cat').value;
+    const qty = parseFloat(document.getElementById('entry-qty').value) || 0;
+    const kcal = parseFloat(document.getElementById('entry-kcal').value) || 0;
+    
+    if (!desc || qty <= 0 || kcal <= 0) { alert('Remplis tous les champs'); return; }
+    
+    const val = Math.round(kcal * (qty / 100));
+    const payload = { user_id: user.id, type: 'food', category: cat, desc: `${desc} (${qty}g)`, val, prot: 0, gluc: 0, lip: 0, date: todayStr() };
+    
+    if (editingEntryId) {
+        await sb.from('entries').update(payload).eq('id', editingEntryId);
+    } else {
+        await sb.from('entries').insert([payload]);
+    }
+    
+    closeModal();
+    loadData();
+}
+
+function editEntry(id) {
+    const entry = currentEntries.find(e => e.id === id);
+    if (!entry) return;
+    editingEntryId = id;
+    const match = entry.desc.match(/^(.*)\s\((\d+)g\)$/);
+    document.getElementById('entry-cat').value = entry.category;
+    document.getElementById('entry-desc').value = match ? match[1] : entry.desc;
+    document.getElementById('entry-qty').value = match ? match[2] : 100;
+    document.getElementById('entry-kcal').value = Math.round(entry.val / ((match ? parseInt(match[2]) : 100) / 100));
+    openModal();
+}
+
+async function deleteEntry(id) {
+    if (confirm('Supprimer cette entrée ?')) {
+        await sb.from('entries').delete().eq('id', id);
+        loadData();
+    }
+}
+
+function addIngredientToRecipe() {
+    const ing = document.getElementById('recipe-ing').value.trim();
+    const qty = parseInt(document.getElementById('recipe-qty').value) || 100;
+    const kcal = parseInt(document.getElementById('recipe-ing-kcal').value) || 0;
+    
+    if (!ing || qty <= 0 || kcal <= 0) { alert('Remplis tous les champs'); return; }
+    
+    recipeBuilder.push({ desc: ing, qty, kcal });
+    renderRecipeIngredients();
+    document.getElementById('recipe-ing').value = '';
+    document.getElementById('recipe-qty').value = '100';
+    document.getElementById('recipe-ing-kcal').value = '0';
+}
+
+function renderRecipeIngredients() {
+    const el = document.getElementById('recipe-ing-list');
+    el.innerHTML = recipeBuilder.map((ing, i) => `
+        <div style="background: var(--surface2); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>${ing.desc} (${ing.qty}g) - ${ing.kcal} kcal/100</span>
+            <button class="btn-recipe" onclick="removeIngredient(${i})">Supprimer</button>
+        </div>
+    `).join('');
+}
+
+function removeIngredient(i) {
+    recipeBuilder.splice(i, 1);
+    renderRecipeIngredients();
+}
+
+async function saveRecipe() {
+    const name = document.getElementById('recipe-name').value.trim();
+    if (!name || !recipeBuilder.length) { alert('Ajoute un nom et des ingrédients'); return; }
+    
+    const recipe = { id: String(Date.now()), name, items: recipeBuilder };
+    savedRecipes.unshift(recipe);
+    localStorage.setItem('recipes', JSON.stringify(savedRecipes));
+    closeRecipeEditor();
+    renderRecipesPage();
+}
+
+async function deleteRecipe(id) {
+    if (confirm('Supprimer cette recette ?')) {
+        savedRecipes = savedRecipes.filter(r => r.id !== id);
+        localStorage.setItem('recipes', JSON.stringify(savedRecipes));
+        renderRecipesPage();
+    }
+}
+
+function renderRecipesPage() {
+    const el = document.getElementById('recipes-list');
+    if (!savedRecipes.length) {
+        el.innerHTML = '<div class="recipe-card"><div class="recipe-name">Aucune recette</div></div>';
+        return;
+    }
+    
+    el.innerHTML = savedRecipes.map(r => {
+        const total = r.items.reduce((s, i) => s + Math.round(i.kcal * (i.qty / 100)), 0);
+        return `
+            <div class="recipe-card">
+                <div class="recipe-name">${r.name}</div>
+                <div class="recipe-meta">${r.items.length} ingrédient(s) • ${total} kcal</div>
+                <div class="recipe-items">${r.items.map(i => `• ${i.desc} (${i.qty}g)`).join('<br>')}</div>
+                <div class="recipe-actions">
+                    <button class="btn-recipe" onclick="deleteRecipe('${r.id}')">Supprimer</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 async function loadData() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
-
-    const today = todayStr();
-    const { data } = await sb.from('entries').select('*')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .order('id', { ascending: false });
-
-    let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
+    
+    const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', todayStr()).order('id', { ascending: false });
+    let tIn = 0;
     currentEntries = data || [];
-
-    currentEntries.forEach(e => {
-        if (e.type === 'food') {
-            tIn += e.val;
-            tP += e.prot || 0;
-            tG += e.gluc || 0;
-            tL += e.lip || 0;
-        } else {
-            tSport += e.val;
-        }
-    });
-
+    currentEntries.forEach(e => { if (e.type === 'food') tIn += e.val; });
+    
     const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
-    const totalOut = bmr + tSport;
     const remaining = userGoal - tIn;
-    const pct = Math.min(100, Math.round((tIn / Math.max(userGoal, 1)) * 100));
-
+    
     document.getElementById('kcal-left').textContent = remaining;
     document.getElementById('stat-in').textContent = tIn;
-    document.getElementById('stat-out').textContent = totalOut;
-    document.getElementById('stat-bmr').textContent = bmr;
-    document.getElementById('stat-sport').textContent = tSport;
-    document.getElementById('total-p').textContent = Math.round(tP) + 'g';
-    document.getElementById('total-g').textContent = Math.round(tG) + 'g';
-    document.getElementById('total-l').textContent = Math.round(tL) + 'g';
-    document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('progress-eaten').textContent = tIn + ' mangé';
-    document.getElementById('progress-goal').textContent = userGoal + ' objectif';
-
-    // Rendu du journal
+    document.getElementById('stat-out').textContent = bmr;
+    
     const listEl = document.getElementById('daily-list');
-    const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Autre', 'Sport'];
-    const ICONS = {
-        'Petit-déjeuner': '🥐',
-        'Déjeuner': '🍽️',
-        'Dîner': '🌙',
-        'Snack': '🍎',
-        'Boissons': '🥤',
-        'Autre': '➕',
-        'Sport': '🔥'
-    };
-
+    const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Sport'];
+    const ICONS = { 'Petit-déjeuner': '🥐', 'Déjeuner': '🍽️', 'Dîner': '🌙', 'Snack': '🍎', 'Boissons': '🥤', 'Sport': '🔥' };
+    
     const groups = {};
     ORDER.forEach(cat => groups[cat] = []);
-    currentEntries.forEach(e => {
-        if (groups[e.category] !== undefined) groups[e.category].push(e);
-        else groups['Autre'].push(e);
-    });
-
+    currentEntries.forEach(e => { if (groups[e.category]) groups[e.category].push(e); });
+    
     let html = '';
-
     ORDER.forEach(cat => {
         const items = groups[cat];
         const subtotal = items.reduce((sum, e) => sum + e.val, 0);
-        const isSport = cat === 'Sport';
-
         html += `
             <div class="entry-group">
                 <div class="entry-group-header">
-                    <div class="entry-group-left">
-                        <span>${ICONS[cat]}</span>
-                        <span class="entry-group-title">${cat}</span>
-                    </div>
+                    <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div>
                     <div class="entry-group-actions">
-                        <span class="entry-group-total ${isSport ? 'sport' : ''}">
-                            ${isSport ? '−' : '+'}${subtotal} kcal
-                        </span>
+                        <button class="entry-add-btn" onclick="openModal()">+ Ajouter</button>
+                        <span class="entry-group-total">+${subtotal}</span>
                     </div>
                 </div>
                 <div class="entry-group-items">
                     ${items.length ? items.map(e => `
                         <div class="entry-item">
-                            <div class="entry-main">
-                                <div class="entry-desc">${e.desc}</div>
-                            </div>
+                            <span class="entry-desc">${e.desc}</span>
                             <div class="entry-right">
-                                <span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val}</span>
+                                <span class="entry-kcal">+${e.val}</span>
+                                <button class="entry-action" onclick="editEntry(${e.id})">✎</button>
+                                <button class="entry-action" onclick="deleteEntry(${e.id})">✕</button>
                             </div>
                         </div>
-                    `).join('') : `<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}
+                    `).join('') : '<div style="color: var(--muted); font-size: 12px;">Aucune entrée</div>'}
                 </div>
             </div>
         `;
     });
-
     listEl.innerHTML = html;
-}
-
-async function loadSettingsRemote() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    const { data } = await sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle();
-    if (data) {
-        userGoal = data.goal || 2300;
-        userWeight = data.weight || 75;
-        userHeight = data.height || 175;
-        userAge = data.age || 30;
-        userSexe = data.sexe || 'H';
-    }
 }
 
 async function handleAuth() {
     const email = document.getElementById('auth-email').value.trim();
     const pass = document.getElementById('auth-pass').value;
-    const errEl = document.getElementById('auth-error');
-    errEl.style.display = 'none';
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) {
-        errEl.style.display = 'block';
-    } else {
-        init();
-    }
+    if (!error) init();
 }
 
-function logout() {
-    sb.auth.signOut().then(() => location.reload());
-}
+function logout() { sb.auth.signOut().then(() => location.reload()); }
 
 async function init() {
-    document.getElementById('header-date').textContent =
-        new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-
+    document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
         document.getElementById('auth-screen').style.display = 'flex';
     } else {
         document.getElementById('auth-screen').style.display = 'none';
-        await loadSettingsRemote();
-        await loadData();  // ← AJOUT CRUCIAL
+        savedRecipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+        await loadData();
+        renderRecipesPage();
     }
 }
 
+document.getElementById('modal-entry').addEventListener('click', e => { if (e.target.id === 'modal-entry') closeModal(); });
+document.getElementById('modal-settings').addEventListener('click', e => { if (e.target.id === 'modal-settings') closeSettings(); });
+document.getElementById('modal-recipe').addEventListener('click', e => { if (e.target.id === 'modal-recipe') closeRecipeEditor(); });
+
 init();
 </script>
-
 </body>
 </html>
