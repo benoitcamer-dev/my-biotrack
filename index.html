@@ -84,7 +84,6 @@
         .entry-action { background: none; border: none; color: var(--border2); font-size: 13px; cursor: pointer; padding: 3px; transition: color 0.15s; }
         .entry-action:hover { color: var(--text); } .entry-action.delete:hover { color: var(--danger); }
 
-        /* RECIPES */
         .recipes-tools { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 12px; }
         .search-input, .text-input, .setting-row input, .setting-row select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
         .search-input::placeholder, .text-input::placeholder { color: var(--muted); }
@@ -100,7 +99,6 @@
         .recipe-btn.primary, .nav-btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
         .recipe-btn.danger { color: #ff8a8a; }
 
-        /* BILAN */
         .range-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
         .range-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 9px 6px; font-size: 10px; font-weight: 700; cursor: pointer; }
         .range-btn.active { background: rgba(91,127,255,0.14); border-color: rgba(91,127,255,0.24); color: var(--text); }
@@ -116,7 +114,6 @@
         .day-line-right .out { font-family: 'Syne', sans-serif; font-size: 12px; color: var(--green); font-weight: 700; margin-top: 1px; }
         .nav-center { flex: 1; text-align: center; font-size: 11px; color: var(--text); font-weight: 700; }
 
-        /* MODALS */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
         .modal-overlay.open { display: flex; }
         .modal-overlay.z70 { z-index: 70; } .modal-overlay.z80 { z-index: 80; } .modal-overlay.z81 { z-index: 81; } .modal-overlay.z82 { z-index: 82; } .modal-overlay.z83 { z-index: 83; } .modal-overlay.z84 { z-index: 84; } .modal-overlay.z85 { z-index: 85; }
@@ -172,8 +169,18 @@
         .builder-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
         .builder-item { display: flex; justify-content: space-between; align-items: center; gap: 9px; }
 
-        /* AUTH */
-        #auth-screen { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 32px; }
+        /* AUTH — CORRECTION CRITIQUE : pointer-events none quand caché */
+        #auth-screen { 
+            position: fixed; inset: 0; z-index: 200; 
+            background: var(--bg); 
+            display: flex; 
+            align-items: center; justify-content: center; 
+            padding: 32px; 
+        }
+        #auth-screen.hidden { 
+            display: none !important; 
+            pointer-events: none !important; 
+        }
         .auth-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 24px; padding: 36px 28px; width: 100%; max-width: 360px; }
         .auth-logo { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
         .auth-logo span { color: var(--accent); }
@@ -182,10 +189,8 @@
         .auth-input:focus { border-color: var(--accent); } .auth-input::placeholder { color: var(--muted); }
         .auth-error { font-size: 12px; color: var(--danger); margin-bottom: 10px; display: none; }
 
-        /* CUSTOM FOOD */
         .custom-food-info { background: rgba(245,200,66,0.08); border: 1px solid rgba(245,200,66,0.2); border-radius: 11px; padding: 11px 13px; margin-bottom: 14px; font-size: 11px; color: var(--gold); }
 
-        /* FAVORITES / ALIMENTS */
         .food-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px; display: flex; justify-content: space-between; align-items: center; gap: 9px; margin-bottom: 7px; }
         .food-item-main { flex: 1; min-width: 0; }
         .food-item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -200,10 +205,8 @@
         .aliments-tab { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 9px; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; }
         .aliments-tab.active { background: rgba(91,127,255,0.15); border-color: rgba(91,127,255,0.3); color: var(--text); }
 
-        /* POIDS */
         .weight-form { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
         .weight-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
-        .weight-input-box { }
         .weight-input-box label { display: block; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
         .weight-input-box input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); outline: none; }
         .weight-input-box input:focus { border-color: var(--accent); }
@@ -218,7 +221,7 @@
         .imc-bar-wrap { position: relative; height: 12px; border-radius: 6px; overflow: hidden; background: linear-gradient(90deg, #3b82f6 0%, #22c55e 30%, #f59e0b 60%, #ef4444 80%, #7c2d12 100%); margin-bottom: 6px; }
         .imc-cursor { position: absolute; top: -3px; width: 6px; height: 18px; background: #fff; border-radius: 3px; transform: translateX(-50%); box-shadow: 0 0 6px rgba(0,0,0,0.5); transition: left 0.4s ease; }
         .imc-scale { display: flex; justify-content: space-between; font-size: 8px; color: var(--muted); }
-        .weight-history { }
+        .weight-history {}
         .weight-entry-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
         .weight-entry-item:last-child { border-bottom: none; }
         .weight-entry-date { font-size: 11px; color: var(--muted); }
@@ -226,7 +229,6 @@
         .weight-entry-del { background: none; border: none; color: var(--border2); font-size: 13px; cursor: pointer; padding: 2px; }
         .weight-entry-del:hover { color: var(--danger); }
 
-        /* MARCHE AVANCÉE */
         .walk-mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
         .walk-tab { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 9px; padding: 8px; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; }
         .walk-tab.active { background: rgba(91,127,255,0.15); border-color: rgba(91,127,255,0.3); color: var(--text); }
@@ -243,9 +245,20 @@
         .walk-fav-item:hover { background: rgba(245,200,66,0.06); }
         .walk-fav-name { font-size: 12px; font-weight: 600; color: var(--gold); }
         .walk-fav-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+        /* LOADING OVERLAY */
+        #loading-screen { position: fixed; inset: 0; z-index: 199; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+        #loading-screen.hidden { display: none; }
+        .loading-text { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--muted); }
+        .loading-text span { color: var(--accent); }
     </style>
 </head>
 <body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+    <div class="loading-text">LeGros<span>Barbu</span></div>
+</div>
 
 <header>
     <div>
@@ -339,15 +352,12 @@
         </div>
         <div id="search-results"></div>
 
-        <!-- MARCHE MODE TABS -->
         <div id="walk-advanced" style="display:none;">
             <div class="walk-mode-tabs">
                 <div class="walk-tab active" id="walk-tab-simple" onclick="setWalkMode('simple')">Simple</div>
                 <div class="walk-tab" id="walk-tab-route" onclick="setWalkMode('route')">Itinéraire</div>
             </div>
-            <div id="walk-simple-section">
-                <!-- champs standard visibles -->
-            </div>
+            <div id="walk-simple-section"></div>
             <div id="walk-route-section" style="display:none;">
                 <div class="walk-route-section">
                     <div class="walk-addr-row">
@@ -402,7 +412,7 @@
             <div class="bmr-item"><div class="b-label">🎯 Objectif actuel</div><div class="b-val" id="goal-live">—</div><div style="font-size:8px;color:var(--muted);margin-top:1px;">kcal/jour</div></div>
         </div>
         <div class="setting-row"><label>🎯 Objectif calorique (kcal/jour)</label><input id="s-goal" type="number" placeholder="2300" oninput="onSettingChange()"></div>
-        <div class="setting-row"><label>⚖️ Poids (kg) — mis à jour auto depuis l'onglet Poids</label><input id="s-weight" type="number" placeholder="75" oninput="onSettingChange()"></div>
+        <div class="setting-row"><label>⚖️ Poids (kg)</label><input id="s-weight" type="number" placeholder="75" oninput="onSettingChange()"></div>
         <div class="setting-row"><label>📐 Taille (cm)</label><input id="s-height" type="number" placeholder="175" oninput="onSettingChange()"></div>
         <div class="setting-row"><label>🎂 Âge</label><input id="s-age" type="number" placeholder="30" oninput="onSettingChange()"></div>
         <div class="setting-row"><label>🚻 Sexe</label><select id="s-sexe" onchange="onSettingChange()"><option value="H">Homme</option><option value="F">Femme</option></select></div>
@@ -494,7 +504,7 @@
     </div>
 </div>
 
-<!-- MODAL FAVORIS RAPIDE (depuis modal-add) -->
+<!-- MODAL FAVORIS RAPIDE -->
 <div id="modal-favs-quick" class="modal-overlay z85">
     <div class="settings-sheet">
         <div class="modal-handle"></div>
@@ -560,11 +570,10 @@ let customFoods = [], favoriteIds = [], editingCustomFoodId = null;
 let currentAlimentsTab = 'favs';
 let weightEntries = [];
 let currentWalkMode = 'simple';
-let currentRouteData = null; // { distance, from, to, roundtrip }
-let walkFavorites = []; // stocké dans user_settings.recipes (on réutilise jsonb) — non, on stocke dans localStorage pour simplicité
+let currentRouteData = null;
+let walkFavorites = [];
 let searchDebounceTimer = null;
 
-// Produits transformés à traiter comme bruts
 const ACCEPTABLE_PROCESSED = [
     'chipolata','saucisse de toulouse','saucisse','jambon blanc','jambon cru','jambon de bayonne',
     'jambon sec','lardons','bacon','chorizo','merguez','andouillette','boudin noir','boudin blanc',
@@ -596,7 +605,7 @@ function todayStr() { return new Date().toISOString().split('T')[0]; }
 function formatDateFR(dateStr, opts={ weekday:'short', day:'numeric', month:'short' }) { return new Date(dateStr+'T12:00:00').toLocaleDateString('fr-FR', opts); }
 function round1(n) { return Math.round(n * 10) / 10; }
 function parseDesc(desc) {
-    const match = String(desc).match(/^(.*)\s\(([\d.,]+)\s*(g|min|ml)\)$/i);
+    const match = String(desc).match(/^(.*)\s$([\d.,]+)\s*(g|min|ml)$$/i);
     if (!match) return { label: desc, qty: null, unit: null };
     return { label: match[1].trim(), qty: parseFloat(match[2].replace(',','.')), unit: match[3].toLowerCase() };
 }
@@ -610,8 +619,6 @@ function calcBikeKcalPerHour(speed) {
     if (speed<19) return 450; if (speed<22) return 550; if (speed<26) return 650;
     if (speed<30) return 800; return 950;
 }
-
-// --- SCORE aliments bruts ---
 function scoreProduct(p) {
     let score = 0;
     const name = (p.product_name_fr || p.product_name || '').toLowerCase();
@@ -646,30 +653,38 @@ function saveSettingsLocal() {
     localStorage.setItem('bt_walk_favs', JSON.stringify(walkFavorites));
 }
 async function loadSettingsRemote() {
-    const { data: { user } } = await sb.auth.getUser(); if (!user) return;
-    const { data } = await sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle();
-    if (data) {
-        userGoal=data.goal||2300; userWeight=data.weight||75; userHeight=data.height||175;
-        userAge=data.age||30; userSexe=data.sexe||'H';
-        try { const p = typeof data.recipes==='string'?JSON.parse(data.recipes):(data.recipes||[]); savedRecipes=Array.isArray(p)?p:[]; } catch { savedRecipes=[]; }
-        saveSettingsLocal();
-    } else { await pushSettingsRemote(); }
+    try {
+        const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+        const { data } = await sb.from('user_settings').select('*').eq('user_id', user.id).maybeSingle();
+        if (data) {
+            userGoal=data.goal||2300; userWeight=data.weight||75; userHeight=data.height||175;
+            userAge=data.age||30; userSexe=data.sexe||'H';
+            try { const p = typeof data.recipes==='string'?JSON.parse(data.recipes):(data.recipes||[]); savedRecipes=Array.isArray(p)?p:[]; } catch { savedRecipes=[]; }
+            saveSettingsLocal();
+        } else { await pushSettingsRemote(); }
+    } catch(e) { console.error('loadSettingsRemote error:', e); }
 }
 async function pushSettingsRemote() {
-    const { data: { user } } = await sb.auth.getUser(); if (!user) return;
-    await sb.from('user_settings').upsert({ user_id:user.id, goal:userGoal, weight:userWeight, height:userHeight, age:userAge, sexe:userSexe, recipes:savedRecipes, updated_at:new Date().toISOString() }, { onConflict:'user_id' });
+    try {
+        const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+        await sb.from('user_settings').upsert({ user_id:user.id, goal:userGoal, weight:userWeight, height:userHeight, age:userAge, sexe:userSexe, recipes:savedRecipes, updated_at:new Date().toISOString() }, { onConflict:'user_id' });
+    } catch(e) { console.error('pushSettingsRemote error:', e); }
 }
 
 // --- CUSTOM FOODS ---
 async function loadCustomFoods() {
-    const { data:{user} } = await sb.auth.getUser(); if (!user) return;
-    const { data } = await sb.from('custom_foods').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
-    customFoods = data || [];
+    try {
+        const { data:{user} } = await sb.auth.getUser(); if (!user) return;
+        const { data } = await sb.from('custom_foods').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
+        customFoods = data || [];
+    } catch(e) { console.error('loadCustomFoods error:', e); }
 }
 async function loadFavorites() {
-    const { data:{user} } = await sb.auth.getUser(); if (!user) return;
-    const { data } = await sb.from('favorites').select('food_id').eq('user_id', user.id);
-    favoriteIds = (data||[]).map(r=>r.food_id);
+    try {
+        const { data:{user} } = await sb.auth.getUser(); if (!user) return;
+        const { data } = await sb.from('favorites').select('food_id').eq('user_id', user.id);
+        favoriteIds = (data||[]).map(r=>r.food_id);
+    } catch(e) { console.error('loadFavorites error:', e); }
 }
 async function toggleFavoriteById(foodId) {
     const { data:{user} } = await sb.auth.getUser(); if (!user) return;
@@ -718,9 +733,7 @@ async function saveCustomFood() {
     }
     await loadCustomFoods();
     closeCustomFoodModal();
-    // Si on venait du modal-aliments, rafraîchir
     if (document.getElementById('modal-aliments').classList.contains('open')) renderAlimentsList();
-    // Sinon pré-remplir le modal-add
     else if (savedId && !editingCustomFoodId) {
         const food = customFoods.find(f=>f.id===savedId);
         if (food) fillFood(food.name, food.kcal_100, food.prot_100, food.gluc_100, food.lip_100);
@@ -886,7 +899,6 @@ async function searchFood(val, target='main') {
     const localHTML=localHits.map(a=>`<div class="result-item" onclick="${isRecipe?`fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`:`fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`}"><div><span class="result-tag">Base locale</span></div><div class="result-name">${a.name}</div><div class="result-kcal">${a.k} kcal/100ml</div></div>`).join('');
     const createBtn=!isRecipe?`<button class="create-food-btn" onclick="openCustomFoodModal('${esc(val)}')">+ Créer "${val}" comme aliment perso</button>`:'';
 
-    // Retry avec timeout
     let offHTML='', attempts=0, success=false;
     while (attempts<2 && !success) {
         try {
@@ -910,7 +922,7 @@ async function searchFood(val, target='main') {
 function searchSport(val) {
     const q=val.toLowerCase(), resDiv=document.getElementById('search-results'); resDiv.style.display='block';
     const items=SPORT_DB.filter(s=>s.name.toLowerCase().includes(q));
-    resDiv.innerHTML=items.map(s=>`<div class="result-item" onclick="${s.mode==='walk'?'selectWalkMode()':'selectBikeMode()}"}"><div class="result-name">${s.name}</div><div class="result-kcal burn">${s.mode==='walk'?'Calcul précis disponible':'vitesse à renseigner'}</div></div>`).join('')||`<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
+    resDiv.innerHTML=items.map(s=>`<div class="result-item" onclick="${s.mode==='walk'?'selectWalkMode()':'selectBikeMode()'}"><div class="result-name">${s.name}</div><div class="result-kcal burn">${s.mode==='walk'?'Calcul précis disponible':'vitesse à renseigner'}</div></div>`).join('')||`<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
 }
 
 function fillFood(name,k,pr,gl,lp) { document.getElementById('in-desc').value=name; document.getElementById('in-kcal').value=k; document.getElementById('in-p').value=pr; document.getElementById('in-g').value=gl; document.getElementById('in-l').value=lp; document.getElementById('search-results').style.display='none'; recalc(); }
@@ -952,7 +964,6 @@ function loadWalkFav(i) {
     document.getElementById('walk-route-result').style.display='block';
     document.getElementById('walk-route-result').innerHTML=`<strong>${f.distance} km</strong> · Trajet favori chargé`;
     document.getElementById('save-route-btn').style.display='none';
-    // Pré-remplir durée et kcal
     document.getElementById('in-qty').value=f.duration;
     document.getElementById('in-kcal').value=Math.round(calcWalkKcalPerHour(5));
     recalc();
@@ -966,7 +977,7 @@ async function calcRoute() {
         const geocode=async(addr)=>{
             const r=await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(addr)}&size=1`);
             const d=await r.json(); const f=d.features?.[0]; if (!f) throw new Error('Adresse introuvable : '+addr);
-            return f.geometry.coordinates; // [lng, lat]
+            return f.geometry.coordinates;
         };
         const [fromCoords,toCoords]=await Promise.all([geocode(from),geocode(to)]);
         const roundtrip=document.getElementById('walk-roundtrip').checked;
@@ -1174,21 +1185,20 @@ async function loadBilan() {
 
 // --- POIDS ---
 async function loadWeightEntries() {
-    const { data:{user} } = await sb.auth.getUser(); if (!user) return;
-    const {data} = await sb.from('weight_entries').select('*').eq('user_id',user.id).order('date',{ascending:true});
-    weightEntries = data||[];
+    try {
+        const { data:{user} } = await sb.auth.getUser(); if (!user) return;
+        const {data} = await sb.from('weight_entries').select('*').eq('user_id',user.id).order('date',{ascending:true});
+        weightEntries = data||[];
+    } catch(e) { console.error('loadWeightEntries error:', e); }
 }
 function openWeightModal() { document.getElementById('w-date').value=todayStr(); renderWeightModal(); document.getElementById('modal-weight').classList.add('open'); }
 function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); }
-function renderWeightModal() {
-    renderIMC(); renderWeightChart(); renderWeightHistory();
-}
+function renderWeightModal() { renderIMC(); renderWeightChart(); renderWeightHistory(); }
 async function addWeightEntry() {
     const { data:{user} } = await sb.auth.getUser(); if (!user) return;
     const val=parseFloat(document.getElementById('w-val').value), date=document.getElementById('w-date').value;
     if (!val||!date) { alert('Renseigne un poids et une date.'); return; }
     await sb.from('weight_entries').upsert({user_id:user.id,weight:val,date},{onConflict:'user_id,date'});
-    // Mettre à jour le poids dans réglages si c'est la date la plus récente
     const lastDate=weightEntries.length?weightEntries[weightEntries.length-1].date:'';
     if (!lastDate||date>=lastDate) {
         userWeight=val; saveSettingsLocal(); await pushSettingsRemote();
@@ -1214,7 +1224,6 @@ function renderIMC() {
     else{label='Obésité sévère';color='#7c2d12';}
     document.getElementById('imc-label').textContent=label;
     document.getElementById('imc-val').style.color=color;
-    // Position curseur : IMC de 16 à 40 => 0% à 100%
     const pct=Math.min(100,Math.max(0,((imc-16)/(40-16))*100));
     document.getElementById('imc-cursor').style.left=pct+'%';
 }
@@ -1248,31 +1257,52 @@ function renderWeightHistory() {
 
 // --- LOAD DATA ---
 async function loadData() {
-    const { data:{user} } = await sb.auth.getUser(); if (!user) return;
-    const {data} = await sb.from('entries').select('*').eq('user_id',user.id).eq('date',todayStr());
-    let tIn=0,tSport=0,tP=0,tG=0,tL=0;
-    const entries=(data||[]).sort((a,b)=>b.id-a.id); currentEntries=entries;
-    entries.forEach(e=>{ if(e.type==='food'){tIn+=e.val;tP+=e.prot||0;tG+=e.gluc||0;tL+=e.lip||0;}else{tSport+=e.val;} });
-    const bmr=calcBMR(userWeight,userHeight,userAge,userSexe),totalOut=bmr+tSport,remaining=userGoal-tIn,pct=Math.min(100,Math.round((tIn/Math.max(userGoal,1))*100));
-    document.getElementById('kcal-left').textContent=remaining; document.getElementById('stat-in').textContent=tIn; document.getElementById('stat-out').textContent=totalOut; document.getElementById('stat-bmr').textContent=bmr; document.getElementById('stat-sport').textContent=tSport;
-    document.getElementById('total-p').textContent=Math.round(tP)+'g'; document.getElementById('total-g').textContent=Math.round(tG)+'g'; document.getElementById('total-l').textContent=Math.round(tL)+'g';
-    document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-eaten').textContent=tIn+' mangé'; document.getElementById('progress-goal').textContent=userGoal+' objectif';
-    const bar=document.getElementById('progress-fill');
-    if(pct>95)bar.style.background='linear-gradient(90deg,#ef4444,#f97316)'; else if(pct>75)bar.style.background='linear-gradient(90deg,#fbbf24,#f97316)'; else bar.style.background='linear-gradient(90deg,var(--accent),var(--accent2))';
-    const kcalEl=document.getElementById('kcal-left');
-    if(remaining<0)kcalEl.style.background='linear-gradient(135deg,#ef4444,#f87171)'; else if(remaining<300)kcalEl.style.background='linear-gradient(135deg,#fbbf24,#f97316)'; else kcalEl.style.background='linear-gradient(135deg,#fff 30%,#7a8098)';
-    kcalEl.style.webkitBackgroundClip='text'; kcalEl.style.webkitTextFillColor='transparent';
+    try {
+        const { data:{user} } = await sb.auth.getUser(); if (!user) return;
+        const {data} = await sb.from('entries').select('*').eq('user_id',user.id).eq('date',todayStr());
+        let tIn=0,tSport=0,tP=0,tG=0,tL=0;
+        const entries=(data||[]).sort((a,b)=>b.id-a.id); currentEntries=entries;
+        entries.forEach(e=>{ if(e.type==='food'){tIn+=e.val;tP+=e.prot||0;tG+=e.gluc||0;tL+=e.lip||0;}else{tSport+=e.val;} });
+        const bmr=calcBMR(userWeight,userHeight,userAge,userSexe),totalOut=bmr+tSport,remaining=userGoal-tIn,pct=Math.min(100,Math.round((tIn/Math.max(userGoal,1))*100));
+        document.getElementById('kcal-left').textContent=remaining; document.getElementById('stat-in').textContent=tIn; document.getElementById('stat-out').textContent=totalOut; document.getElementById('stat-bmr').textContent=bmr; document.getElementById('stat-sport').textContent=tSport;
+        document.getElementById('total-p').textContent=Math.round(tP)+'g'; document.getElementById('total-g').textContent=Math.round(tG)+'g'; document.getElementById('total-l').textContent=Math.round(tL)+'g';
+        document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-eaten').textContent=tIn+' mangé'; document.getElementById('progress-goal').textContent=userGoal+' objectif';
+        const bar=document.getElementById('progress-fill');
+        if(pct>95)bar.style.background='linear-gradient(90deg,#ef4444,#f97316)'; else if(pct>75)bar.style.background='linear-gradient(90deg,#fbbf24,#f97316)'; else bar.style.background='linear-gradient(90deg,var(--accent),var(--accent2))';
+        const kcalEl=document.getElementById('kcal-left');
+        if(remaining<0)kcalEl.style.background='linear-gradient(135deg,#ef4444,#f87171)'; else if(remaining<300)kcalEl.style.background='linear-gradient(135deg,#fbbf24,#f97316)'; else kcalEl.style.background='linear-gradient(135deg,#fff 30%,#7a8098)';
+        kcalEl.style.webkitBackgroundClip='text'; kcalEl.style.webkitTextFillColor='transparent';
 
-    const ORDER=['Petit-déjeuner','Déjeuner','Dîner','Snack','Boissons','Sport'];
-    const ICONS={'Petit-déjeuner':'🥐','Déjeuner':'🍽️','Dîner':'🌙','Snack':'🍎','Boissons':'🥤','Sport':'🔥'};
-    const groups={};ORDER.forEach(cat=>groups[cat]=[]);
-    entries.forEach(e=>{if(groups[e.category]!==undefined)groups[e.category].push(e);});
-    let html='';
-    ORDER.forEach(cat=>{
-        const items=groups[cat],subtotal=items.reduce((s,e)=>s+e.val,0),isSport=cat==='Sport';
-        html+=`<div class="entry-group"><div class="entry-group-header"><div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div><div class="entry-group-actions"><button class="entry-add-btn" onclick="openModal('${esc(cat)}')">+ Ajouter</button>${!isSport&&items.length?`<button class="meal-save-btn" onclick="openLinkMealModal('${esc(cat)}')">→ Recette</button>`:''}<span class="entry-group-total ${isSport?'sport':''}">${isSport?'−':'+'}${subtotal} kcal</span></div></div><div class="entry-group-items">${items.length?items.map(e=>`<div class="entry-item"><div class="entry-main"><div class="entry-desc">${e.desc}</div></div><div class="entry-right"><span class="entry-kcal ${e.type}">${e.type==='burn'?'−':'+'}${e.val}</span><button class="entry-action" onclick="editEntry(${e.id})">✎</button><button class="entry-action delete" onclick="del(${e.id})">✕</button></div></div>`).join(''):`<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}</div></div>`;
-    });
-    document.getElementById('daily-list').innerHTML=html;
+        const ORDER=['Petit-déjeuner','Déjeuner','Dîner','Snack','Boissons','Sport'];
+        const ICONS={'Petit-déjeuner':'🥐','Déjeuner':'🍽️','Dîner':'🌙','Snack':'🍎','Boissons':'🥤','Sport':'🔥'};
+        const groups={};ORDER.forEach(cat=>groups[cat]=[]);
+        entries.forEach(e=>{if(groups[e.category]!==undefined)groups[e.category].push(e);});
+        let html='';
+        ORDER.forEach(cat=>{
+            const items=groups[cat],subtotal=items.reduce((s,e)=>s+e.val,0),isSport=cat==='Sport';
+            html+=`<div class="entry-group">
+                <div class="entry-group-header">
+                    <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div>
+                    <div class="entry-group-actions">
+                        <button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
+                        ${!isSport&&items.length?`<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>`:''}
+                        <span class="entry-group-total ${isSport?'sport':''}">${isSport?'−':'+'}${subtotal} kcal</span>
+                    </div>
+                </div>
+                <div class="entry-group-items">
+                    ${items.length?items.map(e=>`<div class="entry-item">
+                        <div class="entry-main"><div class="entry-desc">${e.desc}</div></div>
+                        <div class="entry-right">
+                            <span class="entry-kcal ${e.type}">${e.type==='burn'?'−':'+'}${e.val}</span>
+                            <button class="entry-action" onclick="editEntry(${e.id})">✎</button>
+                            <button class="entry-action delete" onclick="del(${e.id})">✕</button>
+                        </div>
+                    </div>`).join(''):`<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}
+                </div>
+            </div>`;
+        });
+        document.getElementById('daily-list').innerHTML=html;
+    } catch(e) { console.error('loadData error:', e); }
 }
 
 async function del(id) { await sb.from('entries').delete().eq('id',id); loadData(); if(currentPage==='bilan')loadBilan(); }
@@ -1280,26 +1310,52 @@ async function del(id) { await sb.from('entries').delete().eq('id',id); loadData
 async function handleAuth() {
     const email=document.getElementById('auth-email').value.trim(),pass=document.getElementById('auth-pass').value;
     document.getElementById('auth-error').style.display='none';
-    const {error}=await sb.auth.signInWithPassword({email,password:pass});
-    if(error){document.getElementById('auth-error').style.display='block';}else{init();}
+    try {
+        const {error}=await sb.auth.signInWithPassword({email,password:pass});
+        if(error){ document.getElementById('auth-error').style.display='block'; document.getElementById('auth-error').textContent=error.message; }
+        else { await init(); }
+    } catch(e) { document.getElementById('auth-error').style.display='block'; document.getElementById('auth-error').textContent='Erreur de connexion.'; }
 }
 function logout() { sb.auth.signOut().then(()=>location.reload()); }
 
+// --- INIT — CORRECTION PRINCIPALE ---
 async function init() {
     document.getElementById('header-date').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     loadSettingsLocal();
-    const {data:{session}}=await sb.auth.getSession();
-    if(!session){document.getElementById('auth-screen').style.display='flex';}
-    else {
-        document.getElementById('auth-screen').style.display='none';
-        await loadSettingsRemote();
-        await loadCustomFoods();
-        await loadFavorites();
-        await loadWeightEntries();
-        loadData();
-        if(currentPage==='recipes')renderRecipesPage();
+    
+    try {
+        const {data:{session}} = await sb.auth.getSession();
+        
+        if (!session) {
+            // Pas de session : montrer auth, cacher le reste
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        } else {
+            // Session OK : cacher auth
+            document.getElementById('auth-screen').classList.add('hidden');
+            
+            // Charger les données
+            await Promise.all([
+                loadSettingsRemote(),
+                loadCustomFoods(),
+                loadFavorites(),
+                loadWeightEntries()
+            ]);
+            
+            await loadData();
+            
+            if (currentPage==='recipes') renderRecipesPage();
+            
+            // Cacher le loading screen APRÈS chargement
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+    } catch(e) {
+        console.error('Init error:', e);
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
     }
 }
+
 init();
 </script>
 </body>
