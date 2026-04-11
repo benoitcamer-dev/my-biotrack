@@ -243,36 +243,6 @@
         .walk-fav-item:hover { background: rgba(245,200,66,0.06); }
         .walk-fav-name { font-size: 12px; font-weight: 600; color: var(--gold); }
         .walk-fav-meta { font-size: 10px; color: var(--muted); margin-top: 1px; }
-
-        /* SPORT FAVS MODAL TABS */
-        .sfav-tabs { display: flex; gap: 7px; margin-bottom: 14px; }
-        .sfav-tab { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 9px; padding: 8px; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; }
-        .sfav-tab.active { background: rgba(91,127,255,0.15); border-color: rgba(91,127,255,0.3); color: var(--text); }
-        .sfav-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 11px; padding: 10px 13px; margin-bottom: 7px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .sfav-item-info { flex: 1; min-width: 0; }
-        .sfav-item-name { font-size: 12px; font-weight: 600; color: var(--text); }
-        .sfav-item-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
-        .sfav-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-        .sfav-action-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 5px 9px; font-size: 11px; cursor: pointer; color: var(--muted); }
-        .sfav-action-btn:hover { color: var(--text); border-color: var(--border2); }
-        .sfav-action-btn.danger:hover { color: var(--danger); }
-
-        @media (min-width: 600px) {
-            body { font-size: 15px; }
-            .entry-desc { font-size: 12px; }
-            .result-name { font-size: 13px; }
-            .recipe-meta, .summary-sub, .helper-line { font-size: 12px; }
-            .recipe-name, .summary-title { font-size: 15px; }
-            .tab-btn { font-size: 12px; }
-            .btn-icon { font-size: 11px; }
-            .section-label { font-size: 11px; }
-            .stat-box .s-label { font-size: 10px; }
-            .stat-box .s-val { font-size: 20px; }
-            .macro-pill .val { font-size: 14px; }
-            .entry-kcal { font-size: 13px; }
-            .walk-fav-name { font-size: 13px; }
-            .modal-title { font-size: 21px; }
-        }
     </style>
 </head>
 <body>
@@ -284,7 +254,6 @@
     </div>
     <div class="header-btns">
         <button class="btn-icon gold" onclick="openAlimentsModal()">⭐ Aliments</button>
-        <button class="btn-icon" style="color:#ff7c4d;border-color:rgba(255,124,77,0.3);" onclick="openSportFavsModal()">🏃 Sports</button>
         <button class="btn-icon green" onclick="openWeightModal()">⚖️ Poids</button>
         <button class="btn-icon" onclick="openSettings()">⚙️ Réglages</button>
         <button class="btn-icon" onclick="logout()">↪</button>
@@ -563,20 +532,6 @@
     </div>
 </div>
 
-<!-- MODAL SPORT FAVORIS -->
-<div id="modal-sport-favs" class="modal-overlay z84">
-    <div class="settings-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-title-row"><div class="modal-title">🏃 Sports favoris</div><button class="modal-close" onclick="closeSportFavsModal()">×</button></div>
-        <div class="sfav-tabs">
-            <div class="sfav-tab active" id="sfav-tab-walk" onclick="switchSportFavTab('walk')">🚶 Marche</div>
-            <div class="sfav-tab" id="sfav-tab-bike" onclick="switchSportFavTab('bike')">🚴 Vélo</div>
-        </div>
-        <div id="sfav-walk-content"></div>
-        <div id="sfav-bike-content" style="display:none;"></div>
-    </div>
-</div>
-
 <!-- AUTH -->
 <div id="auth-screen">
     <div class="auth-card">
@@ -607,8 +562,6 @@ let weightEntries = [];
 let currentWalkMode = 'simple';
 let currentRouteData = null; // { distance, from, to, roundtrip }
 let walkFavorites = []; // stocké dans user_settings.recipes (on réutilise jsonb) — non, on stocke dans localStorage pour simplicité
-let bikeFavorites = [];
-let currentSportFavTab = 'walk';
 let searchDebounceTimer = null;
 
 // Produits transformés à traiter comme bruts
@@ -635,32 +588,6 @@ const DRINK_DB = [
     { name:"Vin rosé", k:83, pr:0.1, gl:2.1, lp:0, defaultQty:120, kind:'wine' },
     { name:"Vin blanc", k:82, pr:0.1, gl:1.6, lp:0, defaultQty:120, kind:'wine' }
 ];
-const LEGUMES_DB = [
-    {name:'Ail',k:135,pr:6.4,gl:30,lp:0.5},{name:'Oignon',k:38,pr:1,gl:8.6,lp:0.1},
-    {name:'Piment rouge',k:31,pr:1.2,gl:6.1,lp:0.3},{name:'Piment vert',k:20,pr:0.9,gl:3.7,lp:0.2},
-    {name:'Céleri branche',k:16,pr:0.7,gl:2.4,lp:0.2},{name:'Céleri rave',k:39,pr:1.5,gl:7.4,lp:0.3},
-    {name:'Chou chinois',k:13,pr:1.2,gl:1.9,lp:0.2},{name:'Pak choy',k:13,pr:1.5,gl:1.9,lp:0.2},
-    {name:'Champignons de Paris',k:22,pr:3.1,gl:1.6,lp:0.3},{name:'Champignons shiitake',k:34,pr:2.2,gl:5.7,lp:0.5},
-    {name:'Carotte',k:35,pr:0.8,gl:7.5,lp:0.2},{name:'Courgette',k:17,pr:1.2,gl:2.4,lp:0.2},
-    {name:'Aubergine',k:25,pr:1,gl:4.6,lp:0.2},{name:'Poivron rouge',k:31,pr:1,gl:6.4,lp:0.3},
-    {name:'Poivron vert',k:20,pr:0.9,gl:3.7,lp:0.2},{name:'Tomate',k:18,pr:0.9,gl:3.3,lp:0.2},
-    {name:'Concombre',k:12,pr:0.6,gl:2.2,lp:0.1},{name:'Épinards',k:23,pr:2.9,gl:1.4,lp:0.4},
-    {name:'Laitue',k:14,pr:1.3,gl:1.5,lp:0.2},{name:'Brocoli',k:34,pr:3,gl:4.5,lp:0.4},
-    {name:'Chou-fleur',k:25,pr:2,gl:3.6,lp:0.3},{name:'Chou blanc',k:25,pr:1.5,gl:4.5,lp:0.2},
-    {name:'Chou rouge',k:31,pr:1.5,gl:6,lp:0.2},{name:'Chou de Bruxelles',k:43,pr:3.4,gl:6,lp:0.5},
-    {name:'Haricots verts',k:30,pr:1.8,gl:5.2,lp:0.2},{name:'Petits pois',k:81,pr:5.4,gl:11,lp:0.4},
-    {name:'Maïs',k:86,pr:3.3,gl:16,lp:1.4},{name:'Radis',k:16,pr:0.7,gl:2.5,lp:0.1},
-    {name:'Navet',k:28,pr:0.9,gl:5.7,lp:0.1},{name:'Betterave',k:43,pr:1.6,gl:8.8,lp:0.1},
-    {name:'Fenouil',k:31,pr:1.2,gl:5.9,lp:0.2},{name:'Poireau',k:31,pr:1.5,gl:5.5,lp:0.3},
-    {name:'Asperge',k:20,pr:2.2,gl:2,lp:0.1},{name:'Artichaut',k:47,pr:3.3,gl:7.5,lp:0.2},
-    {name:'Avocat',k:160,pr:2,gl:1.8,lp:15},{name:'Butternut',k:40,pr:1,gl:8.5,lp:0.1},
-    {name:'Potiron',k:26,pr:1,gl:5,lp:0.1},{name:'Pomme de terre',k:77,pr:2,gl:17,lp:0.1},
-    {name:'Patate douce',k:86,pr:1.6,gl:20,lp:0.1},{name:'Mâche',k:21,pr:2,gl:1.2,lp:0.4},
-    {name:'Roquette',k:25,pr:2.6,gl:1.9,lp:0.7},{name:'Endive',k:17,pr:0.9,gl:2.8,lp:0.1},
-    {name:'Persil',k:36,pr:3,gl:3.5,lp:0.8},{name:'Ciboulette',k:30,pr:3.3,gl:2,lp:0.7},
-    {name:'Échalote',k:72,pr:2.5,gl:15,lp:0.2},{name:'Gingembre',k:80,pr:1.8,gl:17,lp:0.7},
-    {name:'Tomate cerise',k:18,pr:0.9,gl:3.3,lp:0.2},{name:'Chou kale',k:49,pr:4.3,gl:5.2,lp:0.9},
-];
 const SPORT_DB = [{ name:"Marche", mode:'walk' }, { name:"Vélo", mode:'bike' }];
 
 // --- UTILS ---
@@ -679,9 +606,9 @@ function calcWalkKcalPerHour(speed) {
     if (speed<=6.5) return 360; if (speed<=7) return 400; return 450;
 }
 function calcBikeKcalPerHour(speed) {
-    if (!speed||speed<=0) return 0; if (speed<12) return 210; if (speed<16) return 290;
-    if (speed<19) return 370; if (speed<22) return 450; if (speed<26) return 530;
-    if (speed<30) return 640; return 780;
+    if (!speed||speed<=0) return 0; if (speed<12) return 250; if (speed<16) return 350;
+    if (speed<19) return 450; if (speed<22) return 550; if (speed<26) return 650;
+    if (speed<30) return 800; return 950;
 }
 
 // --- SCORE aliments bruts ---
@@ -710,7 +637,6 @@ function loadSettingsLocal() {
     userSexe   = localStorage.getItem('bt_sexe') || 'H';
     try { const r = localStorage.getItem('bt_saved_recipes') || '[]'; savedRecipes = JSON.parse(r) || []; } catch { savedRecipes = []; }
     try { walkFavorites = JSON.parse(localStorage.getItem('bt_walk_favs') || '[]'); } catch { walkFavorites = []; }
-    try { bikeFavorites = JSON.parse(localStorage.getItem('bt_bike_favs') || '[]'); } catch { bikeFavorites = []; }
 }
 function saveSettingsLocal() {
     localStorage.setItem('bt_goal', userGoal); localStorage.setItem('bt_weight', userWeight);
@@ -718,7 +644,6 @@ function saveSettingsLocal() {
     localStorage.setItem('bt_sexe', userSexe);
     localStorage.setItem('bt_saved_recipes', JSON.stringify(savedRecipes));
     localStorage.setItem('bt_walk_favs', JSON.stringify(walkFavorites));
-    localStorage.setItem('bt_bike_favs', JSON.stringify(bikeFavorites));
 }
 async function loadSettingsRemote() {
     const { data: { user } } = await sb.auth.getUser(); if (!user) return;
@@ -957,9 +882,6 @@ async function searchFood(val, target='main') {
     const lv=val.toLowerCase();
     const customHits=customFoods.filter(f=>f.name.toLowerCase().includes(lv));
     const customHTML=customHits.map(f=>buildCustomResultItem(f,isRecipe)).join('');
-    // Légumes locaux
-    const legumesHits=LEGUMES_DB.filter(a=>a.name.toLowerCase().includes(lv));
-    const legumesHTML=legumesHits.map(a=>`<div class="result-item" onclick="${isRecipe?`fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`:`fillFood('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`}"><div><span class="result-tag" style="background:rgba(61,214,140,0.15);color:var(--green);">🥦 Légume</span></div><div class="result-name">${a.name}</div><div class="result-kcal">${a.k} kcal/100g</div></div>`).join('');
     const localHits=DRINK_DB.filter(a=>a.name.toLowerCase().includes(lv));
     const localHTML=localHits.map(a=>`<div class="result-item" onclick="${isRecipe?`fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`:`fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`}"><div><span class="result-tag">Base locale</span></div><div class="result-name">${a.name}</div><div class="result-kcal">${a.k} kcal/100ml</div></div>`).join('');
     const createBtn=!isRecipe?`<button class="create-food-btn" onclick="openCustomFoodModal('${esc(val)}')">+ Créer "${val}" comme aliment perso</button>`:'';
@@ -972,14 +894,7 @@ async function searchFood(val, target='main') {
             const url=`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(val)}&json=1&page_size=40&action=process&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text`;
             const res=await fetch(url,{signal:controller.signal}); clearTimeout(timeout);
             const data=await res.json(); success=true;
-            const isDrinkSearch=(currentCat==='Boissons'||isRecipe===false&&val.toLowerCase().includes('eau'));
-            const scored=(data.products||[])
-                .filter(p=>{
-                    const k=Math.round(p.nutriments?.['energy-kcal_100g']||(p.nutriments?.['energy-kj_100g']/4.184)||0);
-                    if (!isDrinkSearch && k===0) return false; // exclure 0 kcal sauf boissons
-                    return true;
-                })
-                .map(p=>({p,score:scoreProduct(p)})).sort((a,b)=>b.score-a.score).slice(0,12);
+            const scored=(data.products||[]).map(p=>({p,score:scoreProduct(p)})).sort((a,b)=>b.score-a.score).slice(0,12);
             offHTML=scored.map(({p})=>{
                 const name=(p.product_name_fr||p.product_name||'').trim(); if (!name) return '';
                 const k=Math.round(p.nutriments?.['energy-kcal_100g']||(p.nutriments?.['energy-kj_100g']/4.184)||0);
@@ -988,8 +903,7 @@ async function searchFood(val, target='main') {
             }).filter(Boolean).join('');
         } catch(e) { attempts++; if (attempts<2) await new Promise(r=>setTimeout(r,1200)); }
     }
-    // Légumes locaux en premier, puis custom, puis boissons locales, puis OFF
-    const combined=legumesHTML+customHTML+localHTML+offHTML;
+    const combined=customHTML+localHTML+offHTML;
     resDiv.innerHTML=combined?(combined+createBtn):`<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${createBtn}`;
 }
 
@@ -1034,12 +948,11 @@ function loadWalkFav(i) {
     document.getElementById('walk-from').value=f.from;
     document.getElementById('walk-to').value=f.to;
     document.getElementById('walk-roundtrip').checked=f.roundtrip;
-    currentRouteData={distance:f.distance,from:f.from,to:f.to,roundtrip:f.roundtrip,favName:f.name};
+    currentRouteData={distance:f.distance,from:f.from,to:f.to,roundtrip:f.roundtrip};
     document.getElementById('walk-route-result').style.display='block';
-    document.getElementById('walk-route-result').innerHTML=`<strong>${f.distance} km</strong> · Trajet favori chargé : "${f.name}"`;
+    document.getElementById('walk-route-result').innerHTML=`<strong>${f.distance} km</strong> · Trajet favori chargé`;
     document.getElementById('save-route-btn').style.display='none';
-    // Pré-remplir durée, kcal, et nom dans le champ description
-    document.getElementById('in-desc').value=f.name;
+    // Pré-remplir durée et kcal
     document.getElementById('in-qty').value=f.duration;
     document.getElementById('in-kcal').value=Math.round(calcWalkKcalPerHour(5));
     recalc();
@@ -1095,7 +1008,7 @@ function recalc() {
     const k=getEffectiveKcalInput(), isSport=currentCat==='Sport', isDrink=currentCat==='Boissons';
     const desc=document.getElementById('in-desc').value.trim().toLowerCase();
     const factor=isSport?q/60:q/100, total=Math.round(k*factor);
-    document.getElementById('calc-res').textContent=total+'\u202fkcal';
+    document.getElementById('calc-res').textContent=total+' kcal';
     if (isSport&&desc==='marche'&&currentWalkMode==='simple') {
         const speed=parseFloat(document.getElementById('in-speed').value)||6, distance=round1(speed*(q/60));
         document.getElementById('in-distance').value=distance+' km';
@@ -1189,7 +1102,7 @@ function closeRecipeEditor() { document.getElementById('modal-recipe-editor').cl
 function resetRecipeDraft() { ['re-desc','re-kcal'].forEach(id=>document.getElementById(id).value=''); ['re-p','re-g','re-l'].forEach(id=>document.getElementById(id).value='0'); document.getElementById('re-qty').value='100'; document.getElementById('re-search-results').style.display='none'; document.getElementById('re-search-results').innerHTML=''; recalcRecipeDraft(); }
 function searchRecipeFood() { const val=document.getElementById('re-desc').value.trim(); if (!val) return; searchFood(val,'recipe'); }
 function fillRecipeIngredient(name,k,pr,gl,lp) { document.getElementById('re-desc').value=name; document.getElementById('re-kcal').value=k; document.getElementById('re-p').value=pr; document.getElementById('re-g').value=gl; document.getElementById('re-l').value=lp; document.getElementById('re-search-results').style.display='none'; recalcRecipeDraft(); }
-function recalcRecipeDraft() { const q=parseFloat(document.getElementById('re-qty').value)||0,k=parseFloat(document.getElementById('re-kcal').value)||0; document.getElementById('re-calc').textContent=Math.round(k*(q/100))+'\u202fkcal'; document.getElementById('re-calc-sub').textContent=`pour ${q}\u202fg/ml`; }
+function recalcRecipeDraft() { const q=parseFloat(document.getElementById('re-qty').value)||0,k=parseFloat(document.getElementById('re-kcal').value)||0; document.getElementById('re-calc').textContent=Math.round(k*(q/100))+' kcal'; document.getElementById('re-calc-sub').textContent=`pour ${q} g/ml`; }
 function addIngredientToRecipeBuilder() {
     const desc=document.getElementById('re-desc').value.trim(),qty=parseFloat(document.getElementById('re-qty').value)||0,kcal100=parseFloat(document.getElementById('re-kcal').value)||0,prot100=parseFloat(document.getElementById('re-p').value)||0,gluc100=parseFloat(document.getElementById('re-g').value)||0,lip100=parseFloat(document.getElementById('re-l').value)||0;
     if (!desc||qty<=0) return; const factor=qty/100;
@@ -1197,26 +1110,11 @@ function addIngredientToRecipeBuilder() {
     resetRecipeDraft(); renderRecipeBuilder();
 }
 function removeBuilderItem(id) { recipeBuilder=recipeBuilder.filter(i=>i.id!==id); renderRecipeBuilder(); }
-function editBuilderItem(id) {
-    const item=recipeBuilder.find(i=>i.id===id); if (!item) return;
-    // Charger dans le formulaire
-    document.getElementById('re-desc').value=item.desc;
-    document.getElementById('re-qty').value=item.qty;
-    document.getElementById('re-kcal').value=item.kcal100;
-    document.getElementById('re-p').value=item.prot100;
-    document.getElementById('re-g').value=item.gluc100;
-    document.getElementById('re-l').value=item.lip100;
-    recalcRecipeDraft();
-    // Retirer l'ingrédient pour le re-ajouter après modification
-    recipeBuilder=recipeBuilder.filter(i=>i.id!==id);
-    renderRecipeBuilder();
-    document.getElementById('re-desc').focus();
-}
 function renderRecipeBuilder() {
     const el=document.getElementById('recipe-builder-list');
     if (!recipeBuilder.length) { el.innerHTML=`<div class="recipe-card"><div class="recipe-meta">Aucun ingrédient.</div></div>`; return; }
     const totals=recipeTotals(recipeBuilder);
-    el.innerHTML=`${recipeBuilder.map(i=>`<div class="builder-item"><div class="builder-main"><div class="builder-title">${i.desc}</div><div class="builder-sub">${i.qty}\u202fg/ml · ${i.val}\u202fkcal</div></div><div style="display:flex;gap:5px;"><button class="recipe-btn" onclick="editBuilderItem(${i.id})" title="Modifier">✎</button><button class="recipe-btn danger" onclick="removeBuilderItem(${i.id})">✕</button></div></div>`).join('')}<div class="recipe-card"><div class="recipe-name">Total</div><div class="recipe-items">${Math.round(totals.kcal)}\u202fkcal · ${round1(totals.prot)}\u202fg P · ${round1(totals.gluc)}\u202fg G · ${round1(totals.lip)}\u202fg L</div></div>`;
+    el.innerHTML=`${recipeBuilder.map(i=>`<div class="builder-item"><div class="builder-main"><div class="builder-title">${i.desc}</div><div class="builder-sub">${i.qty} g/ml • ${i.val} kcal</div></div><button class="recipe-btn danger" onclick="removeBuilderItem(${i.id})">Supprimer</button></div>`).join('')}<div class="recipe-card"><div class="recipe-name">Total</div><div class="recipe-items">${Math.round(totals.kcal)} kcal • ${round1(totals.prot)}g P • ${round1(totals.gluc)}g G • ${round1(totals.lip)}g L</div></div>`;
 }
 function recomputeRecipe(r) { const t=recipeTotals(r.items); r.totalKcal=Math.round(t.kcal); r.totalProt=round1(t.prot); r.totalGluc=round1(t.gluc); r.totalLip=round1(t.lip); }
 async function saveAndSyncRecipes() { saveSettingsLocal(); await pushSettingsRemote(); }
@@ -1232,7 +1130,7 @@ function addRecipeToToday(recipeId,category='Déjeuner') { currentCat=category; 
 function renderRecipesPage() {
     const el=document.getElementById('recipes-list');
     if (!savedRecipes.length) { el.innerHTML=`<div class="recipe-card"><div class="recipe-name">Aucune recette</div><div class="recipe-meta">Crée ta première recette.</div></div>`; return; }
-    el.innerHTML=savedRecipes.map(r=>`<div class="recipe-card"><div class="recipe-name">${r.name}</div><div class="recipe-meta">${r.items.length} ingrédient(s) · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt||0)}\u202fg P · ${round1(r.totalGluc||0)}\u202fg G · ${round1(r.totalLip||0)}\u202fg L</div><div class="recipe-items">${r.items.slice(0,4).map(i=>`• ${i.desc} (${i.qty}\u202fg/ml)`).join('<br>')}${r.items.length>4?`<br>• … +${r.items.length-4} autre(s)`:''}</div><div class="recipe-actions"><button class="recipe-btn primary" onclick="openRecipePickerCategoryChoice('${r.id}')">Ajouter aujourd'hui</button><button class="recipe-btn" onclick="openRecipeEditorEdit('${r.id}')">Modifier</button><button class="recipe-btn danger" onclick="deleteRecipe('${r.id}')">Supprimer</button></div></div>`).join('');
+    el.innerHTML=savedRecipes.map(r=>`<div class="recipe-card"><div class="recipe-name">${r.name}</div><div class="recipe-meta">${r.items.length} ingrédient(s) • ${Math.round(r.totalKcal)} kcal</div><div class="recipe-items">${r.items.slice(0,4).map(i=>`• ${i.desc} (${i.qty} g/ml)`).join('<br>')}${r.items.length>4?`<br>• … +${r.items.length-4} autre(s)`:''}</div><div class="recipe-actions"><button class="recipe-btn primary" onclick="openRecipePickerCategoryChoice('${r.id}')">Ajouter aujourd'hui</button><button class="recipe-btn" onclick="openRecipeEditorEdit('${r.id}')">Modifier</button><button class="recipe-btn danger" onclick="deleteRecipe('${r.id}')">Supprimer</button></div></div>`).join('');
 }
 function openRecipePickerCategoryChoice(recipeId) { const cat=prompt("Catégorie ?\nPetit-déjeuner / Déjeuner / Dîner / Snack / Boissons","Déjeuner"); if (!cat) return; addRecipeToToday(recipeId,cat); }
 
@@ -1264,7 +1162,7 @@ async function loadBilan() {
     const startStr=toDateStr(start),endStr=toDateStr(end);
     renderBilanNav(startStr,endStr);
     const {data} = await sb.from('entries').select('*').eq('user_id',user.id).gte('date',startStr).lte('date',endStr).order('date',{ascending:true});
-    const rows=data||[], bmr=calcBMR(userWeight,userHeight,userAge,userSexe), totalDays=bilanRange==='week'?7:daysBetween(start,end);
+    const rows=data||[], bmr=calcBMR(userWeight,userHeight,userAge,userSexe), totalDays=daysBetween(start,end);
     const byDay={};
     for (let i=0;i<totalDays;i++){const d=new Date(start);d.setDate(start.getDate()+i);byDay[toDateStr(d)]={food:0,sport:0,out:bmr};}
     rows.forEach(e=>{if(!byDay[e.date])byDay[e.date]={food:0,sport:0,out:bmr};if(e.type==='food')byDay[e.date].food+=e.val;if(e.type==='burn')byDay[e.date].sport+=e.val;});
@@ -1357,8 +1255,8 @@ async function loadData() {
     entries.forEach(e=>{ if(e.type==='food'){tIn+=e.val;tP+=e.prot||0;tG+=e.gluc||0;tL+=e.lip||0;}else{tSport+=e.val;} });
     const bmr=calcBMR(userWeight,userHeight,userAge,userSexe),totalOut=bmr+tSport,remaining=userGoal-tIn,pct=Math.min(100,Math.round((tIn/Math.max(userGoal,1))*100));
     document.getElementById('kcal-left').textContent=remaining; document.getElementById('stat-in').textContent=tIn; document.getElementById('stat-out').textContent=totalOut; document.getElementById('stat-bmr').textContent=bmr; document.getElementById('stat-sport').textContent=tSport;
-    document.getElementById('total-p').textContent=Math.round(tP)+'\u202fg'; document.getElementById('total-g').textContent=Math.round(tG)+'\u202fg'; document.getElementById('total-l').textContent=Math.round(tL)+'\u202fg';
-    document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-eaten').textContent=tIn+'\u202fmangé'; document.getElementById('progress-goal').textContent=userGoal+'\u202fobjectif';
+    document.getElementById('total-p').textContent=Math.round(tP)+'g'; document.getElementById('total-g').textContent=Math.round(tG)+'g'; document.getElementById('total-l').textContent=Math.round(tL)+'g';
+    document.getElementById('progress-fill').style.width=pct+'%'; document.getElementById('progress-eaten').textContent=tIn+' mangé'; document.getElementById('progress-goal').textContent=userGoal+' objectif';
     const bar=document.getElementById('progress-fill');
     if(pct>95)bar.style.background='linear-gradient(90deg,#ef4444,#f97316)'; else if(pct>75)bar.style.background='linear-gradient(90deg,#fbbf24,#f97316)'; else bar.style.background='linear-gradient(90deg,var(--accent),var(--accent2))';
     const kcalEl=document.getElementById('kcal-left');
@@ -1372,7 +1270,7 @@ async function loadData() {
     let html='';
     ORDER.forEach(cat=>{
         const items=groups[cat],subtotal=items.reduce((s,e)=>s+e.val,0),isSport=cat==='Sport';
-        html+=`<div class="entry-group"><div class="entry-group-header"><div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div><div class="entry-group-actions"><button class="entry-add-btn" onclick="openModal('${esc(cat)}')">+ Ajouter</button>${!isSport&&items.length?`<button class="meal-save-btn" onclick="openLinkMealModal('${esc(cat)}')">→ Recette</button>`:''}<span class="entry-group-total ${isSport?'sport':''}">${isSport?'−':'+'}${subtotal}\u202fkcal</span></div></div><div class="entry-group-items">${items.length?items.map(e=>`<div class="entry-item"><div class="entry-main"><div class="entry-desc">${e.desc}</div></div><div class="entry-right"><span class="entry-kcal ${e.type}">${e.type==='burn'?'−':'+'}${e.val}</span><button class="entry-action" onclick="editEntry(${e.id})">✎</button><button class="entry-action delete" onclick="del(${e.id})">✕</button></div></div>`).join(''):`<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}</div></div>`;
+        html+=`<div class="entry-group"><div class="entry-group-header"><div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div><div class="entry-group-actions"><button class="entry-add-btn" onclick="openModal('${esc(cat)}')">+ Ajouter</button>${!isSport&&items.length?`<button class="meal-save-btn" onclick="openLinkMealModal('${esc(cat)}')">→ Recette</button>`:''}<span class="entry-group-total ${isSport?'sport':''}">${isSport?'−':'+'}${subtotal} kcal</span></div></div><div class="entry-group-items">${items.length?items.map(e=>`<div class="entry-item"><div class="entry-main"><div class="entry-desc">${e.desc}</div></div><div class="entry-right"><span class="entry-kcal ${e.type}">${e.type==='burn'?'−':'+'}${e.val}</span><button class="entry-action" onclick="editEntry(${e.id})">✎</button><button class="entry-action delete" onclick="del(${e.id})">✕</button></div></div>`).join(''):`<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}</div></div>`;
     });
     document.getElementById('daily-list').innerHTML=html;
 }
@@ -1402,97 +1300,6 @@ async function init() {
         if(currentPage==='recipes')renderRecipesPage();
     }
 }
-
-// --- SPORT FAVORIS MODAL ---
-function openSportFavsModal() {
-    currentSportFavTab='walk';
-    renderSportFavTabBtns();
-    renderSportFavWalk();
-    renderSportFavBike();
-    document.getElementById('modal-sport-favs').classList.add('open');
-}
-function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }
-function switchSportFavTab(tab) {
-    currentSportFavTab=tab;
-    renderSportFavTabBtns();
-    document.getElementById('sfav-walk-content').style.display=tab==='walk'?'block':'none';
-    document.getElementById('sfav-bike-content').style.display=tab==='bike'?'block':'none';
-}
-function renderSportFavTabBtns() {
-    document.getElementById('sfav-tab-walk').classList.toggle('active',currentSportFavTab==='walk');
-    document.getElementById('sfav-tab-bike').classList.toggle('active',currentSportFavTab==='bike');
-    document.getElementById('sfav-walk-content').style.display=currentSportFavTab==='walk'?'block':'none';
-    document.getElementById('sfav-bike-content').style.display=currentSportFavTab==='bike'?'block':'none';
-}
-function renderSportFavWalk() {
-    const el=document.getElementById('sfav-walk-content');
-    if (!walkFavorites.length) { el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:12px 0;text-align:center;">Aucun trajet favori.<br><span style="font-size:10px;">Calcule un itinéraire dans le journal pour en sauvegarder un.</span></div>'; return; }
-    el.innerHTML=walkFavorites.map((f,i)=>`<div class="sfav-item"><div class="sfav-item-info"><div class="sfav-item-name">&#11088; ${f.name}</div><div class="sfav-item-meta">${f.distance}\u202fkm &middot; ~${f.duration}\u202fmin &middot; ~${f.kcal}\u202fkcal</div><div class="sfav-item-meta" style="font-size:9px;opacity:.7;">${f.from||''} &rarr; ${f.to||''}${f.roundtrip?' (A/R)':''}</div></div><div class="sfav-item-actions"><button class="sfav-action-btn" onclick="editSportFavWalk(${i})">&#9998;</button><button class="sfav-action-btn danger" onclick="deleteSportFavWalk(${i})">&#10005;</button></div></div>`).join('');
-}
-function renderSportFavBike() {
-    const el=document.getElementById('sfav-bike-content');
-    let html='';
-    if (!bikeFavorites.length) { html='<div style="color:var(--muted);font-size:12px;padding:12px 0;text-align:center;">Aucune sortie v&eacute;lo favorite.<br><span style="font-size:10px;">Ajoute-en une manuellement.</span></div>'; }
-    else { html=bikeFavorites.map((f,i)=>`<div class="sfav-item"><div class="sfav-item-info"><div class="sfav-item-name" style="color:var(--orange);">&#11088; ${f.name}</div><div class="sfav-item-meta">${f.speed}\u202fkm/h &middot; ${f.duration}\u202fmin &middot; ~${f.kcal}\u202fkcal</div></div><div class="sfav-item-actions"><button class="sfav-action-btn" onclick="editSportFavBike(${i})">&#9998;</button><button class="sfav-action-btn danger" onclick="deleteSportFavBike(${i})">&#10005;</button></div></div>`).join(''); }
-    html+='<button class="btn-primary" style="margin-top:12px;background:var(--orange);" onclick="addBikeFavManual()">+ Ajouter une sortie v\u00e9lo</button>';
-    el.innerHTML=html;
-}
-function deleteSportFavWalk(i) { if (!confirm('Supprimer ce trajet ?')) return; walkFavorites.splice(i,1); saveSettingsLocal(); renderSportFavWalk(); renderWalkFavs(); }
-function deleteSportFavBike(i) { if (!confirm('Supprimer cette sortie ?')) return; bikeFavorites.splice(i,1); saveSettingsLocal(); renderSportFavBike(); }
-function editSportFavWalk(i) {
-    const f=walkFavorites[i]; if (!f) return;
-    const newName=prompt('Nom du trajet :',f.name); if (newName===null) return;
-    const newDur=prompt('Dur\u00e9e (min) :',f.duration); if (newDur===null) return;
-    const dur=parseInt(newDur)||f.duration;
-    const speed=f.distance?round1(f.distance/(dur/60)):5;
-    const kcal=Math.round(calcWalkKcalPerHour(speed)*(dur/60));
-    walkFavorites[i]={...f,name:newName.trim()||f.name,duration:dur,kcal};
-    saveSettingsLocal(); renderSportFavWalk(); renderWalkFavs();
-}
-function editSportFavBike(i) {
-    const f=bikeFavorites[i]; if (!f) return;
-    const newName=prompt('Nom de la sortie :',f.name); if (newName===null) return;
-    const newSpd=prompt('Vitesse (km/h) :',f.speed); if (newSpd===null) return;
-    const newDur=prompt('Dur\u00e9e (min) :',f.duration); if (newDur===null) return;
-    const spd=parseFloat(newSpd)||f.speed, dur=parseInt(newDur)||f.duration;
-    const kcal=Math.round(calcBikeKcalPerHour(spd)*(dur/60));
-    bikeFavorites[i]={name:newName.trim()||f.name,speed:spd,duration:dur,kcal};
-    saveSettingsLocal(); renderSportFavBike();
-}
-function addBikeFavManual() {
-    const name=prompt('Nom de la sortie :','Sortie v\u00e9lo'); if (!name) return;
-    const spd=parseFloat(prompt('Vitesse moyenne (km/h) :','20')||'20');
-    const dur=parseInt(prompt('Dur\u00e9e (min) :','60')||'60');
-    const kcal=Math.round(calcBikeKcalPerHour(spd)*(dur/60));
-    bikeFavorites.unshift({name,speed:spd,duration:dur,kcal});
-    saveSettingsLocal(); renderSportFavBike();
-}
-document.getElementById('modal-sport-favs').addEventListener('click',function(e){if(e.target===this)closeSportFavsModal();});
-
-// --- ENTREE = VALIDER SUR PC ---
-document.addEventListener('keydown', function(e) {
-    if (e.key !== 'Enter') return;
-    if (document.getElementById('modal-add').classList.contains('open')) {
-        const active=document.activeElement;
-        if (active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA') && active.id!=='in-desc') {
-            e.preventDefault(); submitEntry();
-        }
-        return;
-    }
-    if (document.getElementById('modal-settings').classList.contains('open')) {
-        e.preventDefault(); saveAndCloseSettings(); return;
-    }
-    if (document.getElementById('modal-recipe-editor').classList.contains('open')) {
-        const active=document.activeElement;
-        if (active && active.tagName==='INPUT' && active.id!=='re-name') {
-            e.preventDefault(); addIngredientToRecipeBuilder(); return;
-        }
-    }
-    if (document.getElementById('modal-custom-food').classList.contains('open')) {
-        e.preventDefault(); saveCustomFood(); return;
-    }
-});
-
 init();
 </script>
 </body>
