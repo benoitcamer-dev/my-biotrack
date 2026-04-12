@@ -398,8 +398,12 @@ overflow: hidden;
 text-overflow: ellipsis;
 }
 .entry-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
-.entry-kcal {
-font-family: 'Syne', sans-serif;
+.meal-macros-row { display: flex; gap: 8px; padding: 2px 12px 6px; }
+.meal-macro { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+.meal-macro.p { background: rgba(91,127,255,0.12); color: #7da4ff; }
+.meal-macro.g { background: rgba(251,191,36,0.12); color: #fbbf24; }
+.meal-macro.l { background: rgba(249,115,22,0.12); color: #f97316; }
+.entry-kcal {font-family: 'Syne', sans-serif;
 font-size: 13px;
 font-weight: 700;
 }
@@ -652,6 +656,7 @@ z-index: 60;
 .modal-overlay.z86 { z-index: 86; }
 .modal-overlay.z87 { z-index: 87; }
 .modal-overlay.z88 { z-index: 88; }
+.modal-overlay.z90 { z-index: 90; }
 .modal-sheet,.settings-sheet {
 background: var(--surface);
 border: 1px solid var(--border2);
@@ -730,8 +735,7 @@ letter-spacing: 1px;
 margin-top: 2px;
 }
 .result-kcal.burn { color: var(--orange); }
-.result-tag {
-display: inline-block;
+.result-tag {display: inline-block;
 font-size: 8px;
 padding: 2px 5px;
 background: rgba(91,127,255,0.15);
@@ -1572,6 +1576,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <div style="display:flex;gap:0;margin-bottom:2px;">
 <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">📚 Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openFavoritesQuickModal()">⭐ Favoris</button>
+<button class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
 </div>
 <div id="search-results"></div>
 <!-- SPORT FAVS (marche + vélo) -->
@@ -1707,6 +1712,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <input id="re-desc" class="search-input" type="text" placeholder="Rechercher un ingrédient..."
 autocomplete="off" onkeydown="if(event.key==='Enter') searchRecipeFood()">
 <button class="search-btn" onclick="searchRecipeFood()">↵</button>
+<button class="search-btn" onclick="openBarcodeScanner('recipe')" style="background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;">📷</button>
 </div>
 <div id="re-search-results"></div>
 <div class="inputs-grid">
@@ -1814,7 +1820,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="aliments-tab" id="atab-all" onclick="switchAlimentsTab('all')">📦 Tous</div>
 </div>
 <div id="aliments-list"></div>
-<button class="btn-primary" style="margin-top:12px;" onclick="openCustomFoodModal('',null,true)">+ Créer un aliment</button>
+<div style="display:flex;gap:8px;margin-top:12px;">
+<button class="btn-primary" style="flex:1;" onclick="openCustomFoodModal('',null,true)">+ Créer un aliment</button>
+<button class="btn-primary" style="flex:0 0 auto;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
+</div>
 </div>
 </div>
 <!-- MODAL FAVORIS RAPIDE -->
@@ -1897,8 +1906,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="tooltip" style="position: relative; height: 160px;">
 <svg id="weight-svg" viewBox="0 0 400 160" preserveAspectRatio="none"></svg>
 <div class="y-axis">
-<label id="y-axis-min">—</label>
 <label id="y-axis-max">—</label>
+<label id="y-axis-min">—</label>
 </div>
 </div>
 </div>
@@ -2014,6 +2023,44 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 </div>
 </div>
+<!-- MODAL SCANNER CODE-BARRES -->
+<div id="modal-barcode" class="modal-overlay z90">
+<div class="settings-sheet" style="max-height:92vh;">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">📷 Scanner un code-barres</div>
+<button class="modal-close" onclick="closeBarcodeScanner()">×</button>
+</div>
+<div id="barcode-camera-wrap" style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:12px;">
+<video id="barcode-video" style="width:100%;height:100%;object-fit:cover;" playsinline autoplay muted></video>
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+<div style="width:60%;height:1px;background:rgba(91,127,255,0.7);box-shadow:0 0 8px #5b7fff;"></div>
+</div>
+<div id="barcode-status" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.7);">Cadre le code-barres…</div>
+</div>
+<div id="barcode-result-form" style="display:none;">
+<div class="section-label">Produit trouvé — vérifie les valeurs</div>
+<div class="input-box" style="margin-bottom:8px;">
+<label>Nom</label>
+<input id="bc-name" class="input-field" type="text" placeholder="Nom du produit">
+</div>
+<div class="inputs-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+<div class="input-box"><label>Kcal/100g</label><input id="bc-kcal" class="input-field" type="number" step="1" placeholder="0"></div>
+<div class="input-box"><label>Protéines (g)</label><input id="bc-prot" class="input-field" type="number" step="0.1" placeholder="0"></div>
+<div class="input-box"><label>Glucides (g)</label><input id="bc-gluc" class="input-field" type="number" step="0.1" placeholder="0"></div>
+<div class="input-box"><label>Lipides (g)</label><input id="bc-lip" class="input-field" type="number" step="0.1" placeholder="0"></div>
+</div>
+<div style="display:flex;gap:8px;">
+<button class="btn-cancel" style="flex:1;" onclick="closeBarcodeScanner()">Annuler</button>
+<button class="btn-primary" style="flex:2;" onclick="confirmBarcodeProduct()">✓ Utiliser</button>
+</div>
+</div>
+<div id="barcode-not-found" style="display:none;text-align:center;padding:16px 0;">
+<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Produit non trouvé. Tu peux le créer manuellement.</div>
+<button class="btn-primary" onclick="openCustomFoodFromBarcode()">+ Créer manuellement</button>
+</div>
+</div>
+</div>
 <!-- AUTH -->
 <div id="auth-screen">
 <div class="auth-card">
@@ -2053,7 +2100,89 @@ let sportFavDateDate = new Date();
 let sportFavDateCalOpen = false;
 let editingWeightId = null;
 const PRIORITY_VEGETABLES = [
-"ail", "oignon", "piment", "céleri", "chou chinois", "pak choy", "champignon de paris", "carotte", "courgette", "tomate", "salade", "épinard", "brocoli", "poivron", "aubergine", "concombre", "radis", "navet", "betterave", "poireau", "artichaut", "asperge", "chou-fleur", "chou rouge", "chou vert", "haricot vert", "petit pois", "maïs", "pomme de terre", "patate douce", "panais", "topinambour", "courge", "potiron", "butternut", "endive", "scarole", "frisée", "blette", "roquette", "cresson", "persil", "ciboulette", "basilic", "thym", "romarin", "menthe", "corriandre", "gingembre", "curcuma", "piment", "poivron"
+"ail", "oignon", "oignons", "échalote", "piment", "céleri", "chou chinois", "pak choi", "pak choy", "bok choy", "champignon de paris", "shiitake", "pleurote", "champignon", "carotte", "courgette", "tomate", "salade", "épinard", "brocoli", "poivron", "aubergine", "concombre", "radis", "navet", "betterave", "poireau", "artichaut", "asperge", "chou-fleur", "chou rouge", "chou vert", "chou frisé", "chou kale", "kale", "haricot vert", "haricot beurre", "petit pois", "pois chiche", "pois cassé", "lentille", "maïs", "pomme de terre", "patate douce", "panais", "topinambour", "courge", "potiron", "butternut", "endive", "scarole", "frisée", "blette", "roquette", "cresson", "mâche", "persil", "ciboulette", "basilic", "thym", "romarin", "menthe", "coriandre", "gingembre", "curcuma", "citronnelle", "galangal", "wasabi", "daïkon", "daikon", "bambou", "pousse de bambou", "germe de soja", "soja", "edamame", "haricot mungo", "fenouil", "cèleri-rave", "rutabaga", "crosne", "salsifis", "chayote", "christophine", "gombo", "taro", "igname", "fruit de la passion", "papaye verte", "mangue verte"
+];
+// Base locale d'ingrédients bruts courants (priorité sur OpenFoodFacts)
+const LOCAL_FOOD_DB = [
+// Légumes courants
+{ name: "Ail", k: 135, pr: 6.4, gl: 28, lp: 0.5 },
+{ name: "Oignon", k: 40, pr: 1.1, gl: 9.3, lp: 0.1 },
+{ name: "Échalote", k: 72, pr: 2.5, gl: 16.8, lp: 0.2 },
+{ name: "Carotte", k: 41, pr: 0.9, gl: 9.6, lp: 0.2 },
+{ name: "Courgette", k: 17, pr: 1.2, gl: 3.1, lp: 0.3 },
+{ name: "Tomate", k: 18, pr: 0.9, gl: 3.9, lp: 0.2 },
+{ name: "Épinard", k: 23, pr: 2.9, gl: 3.6, lp: 0.4 },
+{ name: "Brocoli", k: 34, pr: 2.8, gl: 7.0, lp: 0.4 },
+{ name: "Chou-fleur", k: 25, pr: 1.9, gl: 5.0, lp: 0.3 },
+{ name: "Poivron rouge", k: 31, pr: 1.0, gl: 7.2, lp: 0.3 },
+{ name: "Poivron vert", k: 20, pr: 0.9, gl: 4.6, lp: 0.2 },
+{ name: "Aubergine", k: 25, pr: 1.0, gl: 5.9, lp: 0.2 },
+{ name: "Concombre", k: 15, pr: 0.7, gl: 3.6, lp: 0.1 },
+{ name: "Radis", k: 16, pr: 0.7, gl: 3.4, lp: 0.1 },
+{ name: "Betterave", k: 43, pr: 1.6, gl: 9.6, lp: 0.1 },
+{ name: "Poireau", k: 31, pr: 1.5, gl: 7.3, lp: 0.3 },
+{ name: "Céleri branche", k: 16, pr: 0.7, gl: 3.0, lp: 0.2 },
+{ name: "Céleri-rave", k: 42, pr: 1.5, gl: 9.2, lp: 0.3 },
+{ name: "Fenouil", k: 31, pr: 1.2, gl: 7.3, lp: 0.2 },
+{ name: "Endive", k: 17, pr: 0.9, gl: 3.1, lp: 0.1 },
+{ name: "Navet", k: 28, pr: 0.9, gl: 6.4, lp: 0.1 },
+{ name: "Artichaut", k: 47, pr: 3.3, gl: 10.5, lp: 0.2 },
+{ name: "Asperge", k: 20, pr: 2.2, gl: 3.9, lp: 0.1 },
+{ name: "Haricot vert", k: 31, pr: 1.8, gl: 7.1, lp: 0.1 },
+{ name: "Petit pois", k: 81, pr: 5.4, gl: 14.5, lp: 0.4 },
+{ name: "Maïs", k: 86, pr: 3.2, gl: 19.0, lp: 1.2 },
+{ name: "Pomme de terre", k: 77, pr: 2.1, gl: 17.5, lp: 0.1 },
+{ name: "Patate douce", k: 86, pr: 1.6, gl: 20.1, lp: 0.1 },
+{ name: "Butternut", k: 45, pr: 1.0, gl: 11.7, lp: 0.1 },
+{ name: "Potiron", k: 26, pr: 1.0, gl: 6.5, lp: 0.1 },
+{ name: "Courge spaghetti", k: 31, pr: 0.6, gl: 6.9, lp: 0.6 },
+{ name: "Roquette", k: 25, pr: 2.6, gl: 3.7, lp: 0.7 },
+{ name: "Mâche", k: 21, pr: 2.0, gl: 3.6, lp: 0.4 },
+{ name: "Laitue", k: 15, pr: 1.4, gl: 2.9, lp: 0.2 },
+{ name: "Salade verte", k: 15, pr: 1.4, gl: 2.9, lp: 0.2 },
+{ name: "Champignon de Paris", k: 22, pr: 3.1, gl: 4.0, lp: 0.3 },
+{ name: "Shiitake", k: 34, pr: 2.2, gl: 6.8, lp: 0.5 },
+{ name: "Pleurote", k: 33, pr: 3.3, gl: 6.1, lp: 0.4 },
+// Légumes asiatiques
+{ name: "Chou chinois", k: 16, pr: 1.2, gl: 3.2, lp: 0.2 },
+{ name: "Pak choy", k: 13, pr: 1.5, gl: 2.2, lp: 0.2 },
+{ name: "Bok choy", k: 13, pr: 1.5, gl: 2.2, lp: 0.2 },
+{ name: "Gingembre frais", k: 80, pr: 1.8, gl: 18.0, lp: 0.8 },
+{ name: "Daïkon", k: 18, pr: 0.6, gl: 4.1, lp: 0.1 },
+{ name: "Germe de soja", k: 30, pr: 3.0, gl: 5.9, lp: 0.2 },
+{ name: "Pousse de bambou", k: 27, pr: 2.6, gl: 5.2, lp: 0.3 },
+{ name: "Citronnelle", k: 99, pr: 1.8, gl: 25.3, lp: 0.5 },
+{ name: "Coriandre fraîche", k: 23, pr: 2.1, gl: 3.7, lp: 0.5 },
+{ name: "Kale", k: 49, pr: 4.3, gl: 8.8, lp: 0.9 },
+{ name: "Gombo", k: 33, pr: 1.9, gl: 7.5, lp: 0.2 },
+// Légumineuses
+{ name: "Lentilles cuites", k: 116, pr: 9.0, gl: 20.1, lp: 0.4 },
+{ name: "Pois chiches cuits", k: 164, pr: 8.9, gl: 27.4, lp: 2.6 },
+{ name: "Haricots rouges cuits", k: 127, pr: 8.7, gl: 22.8, lp: 0.5 },
+{ name: "Haricots blancs cuits", k: 139, pr: 9.7, gl: 25.4, lp: 0.5 },
+// Viandes & poissons bruts
+{ name: "Poulet blanc cru", k: 110, pr: 23.0, gl: 0, lp: 1.9 },
+{ name: "Poulet cuisse cru", k: 189, pr: 17.6, gl: 0, lp: 13.0 },
+{ name: "Bœuf haché 5%", k: 121, pr: 21.5, gl: 0, lp: 4.3 },
+{ name: "Bœuf haché 15%", k: 189, pr: 19.0, gl: 0, lp: 12.5 },
+{ name: "Steak bœuf", k: 158, pr: 26.4, gl: 0, lp: 5.8 },
+{ name: "Porc filet", k: 143, pr: 21.5, gl: 0, lp: 6.2 },
+{ name: "Agneau côtelette", k: 235, pr: 20.0, gl: 0, lp: 16.8 },
+{ name: "Saumon frais", k: 208, pr: 20.0, gl: 0, lp: 13.6 },
+{ name: "Cabillaud", k: 82, pr: 18.0, gl: 0, lp: 0.7 },
+{ name: "Thon frais", k: 144, pr: 23.3, gl: 0, lp: 5.1 },
+{ name: "Crevettes", k: 99, pr: 21.0, gl: 0.9, lp: 1.1 },
+{ name: "Coquille Saint-Jacques", k: 88, pr: 17.1, gl: 3.3, lp: 0.8 },
+// Œufs & laitiers
+{ name: "Œuf entier", k: 155, pr: 12.6, gl: 1.1, lp: 10.6 },
+{ name: "Blanc d'œuf", k: 52, pr: 10.9, gl: 0.7, lp: 0.2 },
+// Féculents & grains
+{ name: "Riz blanc cru", k: 360, pr: 6.7, gl: 79.3, lp: 0.6 },
+{ name: "Riz brun cru", k: 370, pr: 7.9, gl: 76.2, lp: 2.7 },
+{ name: "Pâtes crues", k: 352, pr: 13.0, gl: 70.2, lp: 1.5 },
+{ name: "Quinoa cru", k: 368, pr: 14.1, gl: 64.2, lp: 6.1 },
+{ name: "Avoine flocons", k: 389, pr: 16.9, gl: 66.3, lp: 6.9 },
+{ name: "Boulgour cru", k: 342, pr: 12.3, gl: 75.9, lp: 1.3 },
 ];
 function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/`/g, '\\`'); }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
@@ -2335,6 +2464,7 @@ if (currentPage === 'bilan') loadBilan();
 ['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight'].forEach(id => {
 document.getElementById(id).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
 });
+document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
 function showPage(page) {
 currentPage = page;
 ['journal', 'recipes', 'bilan'].forEach(p => {
@@ -2499,6 +2629,13 @@ const lH = DRINK_DB.filter(a => a.name.toLowerCase().includes(lv)).map(a => `<di
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
+// Local food DB (raw ingredients)
+const localMatches = LOCAL_FOOD_DB.filter(a => a.name.toLowerCase().includes(lv));
+const localH = localMatches.map(a => `<div class="result-item" onmousedown="isClickingResult=true;${isR ? `fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `fillFood('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`};setTimeout(()=>isClickingResult=false,200)">
+<div><span class="result-tag" style="background:rgba(52,211,153,0.15);color:#34d399;">🥦 Brut</span></div>
+<div class="result-name">${a.name}</div>
+<div class="result-kcal">${a.k} kcal/100g</div>
+</div>`).join('');
 const cb = !isR ? `<button class="create-food-btn" onclick="openCustomFoodModal('${esc(v)}')">+ Créer "${v}"</button>` : '';
 let oH = '', att = 0, ok = false;
 while (att < 2 && !ok) {
@@ -2521,7 +2658,7 @@ return `<div class="result-item" onmousedown="isClickingResult=true;${isR ? `fil
 }).filter(Boolean).join('');
 } catch (e) { att++; if (att < 2) await new Promise(r => setTimeout(r, 1200)); }
 }
-const combined = cH + lH + oH;
+const combined = cH + localH + lH + oH;
 div.innerHTML = combined ? (combined + cb) : `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
 }
 function fillFood(n, k, pr, gl, lp) {
@@ -3087,7 +3224,8 @@ el.innerHTML = `<div class="recipe-card">
 </div>`;
 return;
 }
-el.innerHTML = savedRecipes.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
+const sorted = [...savedRecipes].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+el.innerHTML = sorted.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
 <div class="recipe-name">${r.name}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${r.items.slice(0, 4).map(i => `• ${i.desc} (${i.qty}&nbsp;g/ml)`).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
@@ -3183,7 +3321,7 @@ function startOfQuarter(d) { const q = Math.floor(d.getMonth() / 3) * 3; return 
 function endOfQuarter(d) { const q = Math.floor(d.getMonth() / 3) * 3; return new Date(d.getFullYear(), q + 3, 0, 23, 59, 59, 999); }
 function startOfYear(d) { return new Date(d.getFullYear(), 0, 1, 0, 0, 0, 0); }
 function endOfYear(d) { return new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999); }
-function daysBetween(s, e) { return Math.round((e.getTime() - s.getTime()) / 86400000) + 1; }
+function daysBetween(s, e) { return Math.round((e.getTime() - s.getTime()) / 86400000); }
 function setBilanRange(r) { bilanRange = r; bilanCursor = new Date(); ['week', 'month', 'quarter', 'year'].forEach(x => document.getElementById('range-' + x).classList.toggle('active', x === r)); loadBilan(); }
 function moveBilan(d) {
 if (bilanRange === 'week') bilanCursor.setDate(bilanCursor.getDate() + (d * 7));
@@ -3219,9 +3357,10 @@ renderBilanNav(startStr, endStr);
 const { data } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
 const rows = data || [];
 const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
-const totalDays = daysBetween(start, end);
+const totalDays = bilanRange === 'week' ? 7 : daysBetween(start, end);
+const loopDays = bilanRange === 'week' ? 7 : totalDays;
 const byDay = {};
-for (let i = 0; i < totalDays; i++) {
+for (let i = 0; i < loopDays; i++) {
 const d = new Date(start);
 d.setDate(start.getDate() + i);
 byDay[dateToStr(d)] = { food: 0, sport: 0, out: bmr, prot: 0, gluc: 0, lip: 0 };
@@ -3369,13 +3508,17 @@ document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((i
 function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
 if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="DM Sans">Ajoute au moins 2 entrées.</text>'; return; }
-const minW = 0, maxW = 110;
+const allW = weightEntries.map(e => e.weight);
+const dataMin = Math.min(...allW), dataMax = Math.max(...allW);
+const minW = Math.min(60, Math.floor(dataMin - 2));
+const maxW = Math.max(minW + 10, Math.ceil(dataMax + 2));
 const W = 400, H = 160, P = 32;
 const xs = function(i) { return (i / (weightEntries.length - 1)) * (W - P * 2) + P; };
-const ys = function(v) { return H - P - ((v - minW) / (maxW - minW)) * (H - P * 2); };
+// Inverted Y: higher weight = lower on chart (top = maxW, bottom = minW)
+const ys = function(v) { return P + ((maxW - v) / (maxW - minW)) * (H - P * 2); };
 const pts = weightEntries.map(function(e, i) { return xs(i) + ',' + ys(e.weight); }).join(' ');
-document.getElementById('y-axis-min').textContent = '0';
-document.getElementById('y-axis-max').textContent = '110';
+document.getElementById('y-axis-min').textContent = minW;
+document.getElementById('y-axis-max').textContent = maxW;
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
   const label = e.weight + ' kg \u2014 ' + formatDateFR(e.date, { day: 'numeric', month: 'short' });
@@ -3451,6 +3594,10 @@ entries.forEach(e => { if (groups[e.category] !== undefined) groups[e.category].
 let html = '';
 ORDER.forEach(cat => {
 const items = groups[cat], sub = items.reduce((s, e) => s + e.val, 0), isSport = cat === 'Sport';
+const mP = items.filter(e => e.type==='food').reduce((s,e) => s+(e.prot||0), 0);
+const mG = items.filter(e => e.type==='food').reduce((s,e) => s+(e.gluc||0), 0);
+const mL = items.filter(e => e.type==='food').reduce((s,e) => s+(e.lip||0), 0);
+const hasMacros = !isSport && items.filter(e=>e.type==='food').length > 0;
 html += `<div class="entry-group">
 <div class="entry-group-header">
 <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div>
@@ -3461,6 +3608,7 @@ ${!isSport && items.length ? `<button class="entry-group-clear" onclick="clearMe
 <span class="entry-group-total ${isSport ? 'sport' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
+${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
 <div class="entry-group-items">${items.length ? items.map(e => {
 const raw = e.desc || '';
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
@@ -3653,6 +3801,7 @@ const selectedDate = strToDate(date);
 journalDate = selectedDate;
 updateJournalDateUI();
 closeSportFavDateModal();
+closeSportFavsModal();
 if (type === 'walk') {
 const fav = walkFavorites[rid];
 if (!fav) return;
@@ -3730,6 +3879,123 @@ if (e.key === 'Enter') { e.preventDefault(); saveCustomFood(); }
 document.getElementById('w-val').addEventListener('keydown', function (e) {
 if (e.key === 'Enter') { e.preventDefault(); addWeightEntry(); }
 });
+// ─── BARCODE SCANNER ───────────────────────────────────────────────────────
+let barcodeTarget = 'main';
+let barcodeStream = null;
+let barcodeAnimFrame = null;
+let barcodeDetector = null;
+let barcodeScanning = false;
+let barcodeLastCode = null;
+
+function openBarcodeScanner(target) {
+  barcodeTarget = target;
+  barcodeLastCode = null;
+  document.getElementById('barcode-result-form').style.display = 'none';
+  document.getElementById('barcode-not-found').style.display = 'none';
+  document.getElementById('barcode-camera-wrap').style.display = 'block';
+  document.getElementById('barcode-status').textContent = 'Cadre le code-barres…';
+  document.getElementById('modal-barcode').classList.add('open');
+  startBarcodeCamera();
+}
+function closeBarcodeScanner() {
+  stopBarcodeCamera();
+  document.getElementById('modal-barcode').classList.remove('open');
+}
+async function startBarcodeCamera() {
+  try {
+    barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
+    const video = document.getElementById('barcode-video');
+    video.srcObject = barcodeStream;
+    await video.play();
+    if ('BarcodeDetector' in window) {
+      barcodeDetector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'] });
+      barcodeScanning = true;
+      scanBarcodeLoop();
+    } else {
+      document.getElementById('barcode-status').innerHTML = `<div style="padding:8px;"><input id="bc-manual-code" type="text" inputmode="numeric" placeholder="Saisir le code EAN..." style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;color:#fff;width:150px;font-size:13px;text-align:center;"><button onclick="document.getElementById('bc-manual-code').value&&lookupBarcode(document.getElementById('bc-manual-code').value)" style="background:#5b7fff;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;margin-left:6px;cursor:pointer;">OK</button></div>`;
+    }
+  } catch(e) {
+    document.getElementById('barcode-status').textContent = '❌ Caméra non disponible. Vérifie les permissions.';
+  }
+}
+function stopBarcodeCamera() {
+  barcodeScanning = false;
+  if (barcodeAnimFrame) { cancelAnimationFrame(barcodeAnimFrame); barcodeAnimFrame = null; }
+  if (barcodeStream) { barcodeStream.getTracks().forEach(t => t.stop()); barcodeStream = null; }
+}
+async function scanBarcodeLoop() {
+  if (!barcodeScanning) return;
+  const video = document.getElementById('barcode-video');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    try {
+      const results = await barcodeDetector.detect(video);
+      if (results.length > 0) {
+        const code = results[0].rawValue;
+        if (code !== barcodeLastCode) {
+          barcodeLastCode = code;
+          stopBarcodeCamera();
+          await lookupBarcode(code);
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  barcodeAnimFrame = requestAnimationFrame(scanBarcodeLoop);
+}
+async function lookupBarcode(code) {
+  document.getElementById('barcode-camera-wrap').style.display = 'block';
+  document.getElementById('barcode-status').textContent = `🔍 Recherche du code ${code}…`;
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const d = await res.json();
+    if (d.status === 1 && d.product) {
+      const p = d.product;
+      const name = (p.product_name_fr || p.product_name || '').trim() || `Produit ${code}`;
+      const kcal = Math.round(p.nutriments?.['energy-kcal_100g'] || ((p.nutriments?.['energy-kj_100g']||0) / 4.184) || 0);
+      const prot = parseFloat((p.nutriments?.proteins_100g || 0).toFixed(1));
+      const gluc = parseFloat((p.nutriments?.carbohydrates_100g || 0).toFixed(1));
+      const lip = parseFloat((p.nutriments?.fat_100g || 0).toFixed(1));
+      document.getElementById('bc-name').value = name;
+      document.getElementById('bc-kcal').value = kcal;
+      document.getElementById('bc-prot').value = prot;
+      document.getElementById('bc-gluc').value = gluc;
+      document.getElementById('bc-lip').value = lip;
+      document.getElementById('barcode-camera-wrap').style.display = 'none';
+      document.getElementById('barcode-result-form').style.display = 'block';
+      document.getElementById('barcode-not-found').style.display = 'none';
+    } else {
+      document.getElementById('barcode-camera-wrap').style.display = 'none';
+      document.getElementById('barcode-not-found').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('barcode-status').textContent = '❌ Erreur réseau. Réessaie.';
+    barcodeScanning = true;
+    scanBarcodeLoop();
+  }
+}
+function confirmBarcodeProduct() {
+  const name = document.getElementById('bc-name').value.trim();
+  const k = parseFloat(document.getElementById('bc-kcal').value) || 0;
+  const pr = parseFloat(document.getElementById('bc-prot').value) || 0;
+  const gl = parseFloat(document.getElementById('bc-gluc').value) || 0;
+  const lp = parseFloat(document.getElementById('bc-lip').value) || 0;
+  if (!name) { alert('Nom requis'); return; }
+  closeBarcodeScanner();
+  if (barcodeTarget === 'main') { fillFood(name, k, pr, gl, lp); }
+  else if (barcodeTarget === 'recipe') { fillRecipeIngredient(name, k, pr, gl, lp); }
+  else if (barcodeTarget === 'aliments') {
+    openCustomFoodModal(name, null, true);
+    setTimeout(() => {
+      document.getElementById('cf-name').value = name;
+      document.getElementById('cf-kcal').value = k;
+      document.getElementById('cf-prot').value = pr;
+      document.getElementById('cf-gluc').value = gl;
+      document.getElementById('cf-lip').value = lp;
+    }, 150);
+  }
+}
+function openCustomFoodFromBarcode() { closeBarcodeScanner(); openCustomFoodModal('', null, true); }
+// ─── FIN BARCODE SCANNER ───────────────────────────────────────────────────
 init();
 </script>
 </body>
