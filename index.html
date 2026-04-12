@@ -3368,20 +3368,35 @@ document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((i
 }
 function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
-if (weightEntries.length < 2) { svg.innerHTML = `<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="DM Sans">Ajoute au moins 2 entrées.</text>`; return; }
+if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="DM Sans">Ajoute au moins 2 entrées.</text>'; return; }
 const minW = 0, maxW = 110;
 const W = 400, H = 160, P = 32;
-const xs = i => (i / (weightEntries.length - 1)) * (W - P * 2) + P;
-const ys = v => H - P - ((v - minW) / (maxW - minW)) * (H - P * 2);
-const pts = weightEntries.map((e, i) => `${xs(i)},${ys(e.weight)}`).join(' ');
+const xs = function(i) { return (i / (weightEntries.length - 1)) * (W - P * 2) + P; };
+const ys = function(v) { return H - P - ((v - minW) / (maxW - minW)) * (H - P * 2); };
+const pts = weightEntries.map(function(e, i) { return xs(i) + ',' + ys(e.weight); }).join(' ');
 document.getElementById('y-axis-min').textContent = '0';
 document.getElementById('y-axis-max').textContent = '110';
-svg.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>
-<polygon points="${P},${H - P} ${pts} ${W - P},${H - P}" fill="url(#wg)"/>
-<polyline points="${pts}" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-${weightEntries.map((e, i) => { const cx = xs(i), cy = ys(e.weight); const label = e.weight + ' kg — ' + formatDateFR(e.date, { day: 'numeric', month: 'short' }); const tx = cx > W - 80 ? cx - 4 : cx + 4; const anchor = cx > W - 80 ? 'end' : 'start'; return '<g style="cursor:pointer"><circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/><text id="wlabel' + i + '" x="' + tx + '" y="' + (cy - 8) + '" text-anchor="' + anchor + '" fill="#f0f2f8" font-size="9" font-family="DM Sans" opacity="0" pointer-events="none">' + label + '</text><circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent" onmouseover="document.getElementById('wlabel' + i + '').setAttribute('opacity','1')" onmouseout="document.getElementById('wlabel' + i + '').setAttribute('opacity','0')" ontouchstart="document.getElementById('wlabel' + i + '').setAttribute('opacity','1')" ontouchend="setTimeout(()=>document.getElementById('wlabel' + i + '').setAttribute('opacity','0'),1500)"/></g>'; }).join('')}
-<text x="${P}" y="${H - 8}" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' })}</text>
-<text x="${W - P}" y="${H - 8}" text-anchor="end" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' })}</text>`;
+const dots = weightEntries.map(function(e, i) {
+  const cx = xs(i), cy = ys(e.weight);
+  const label = e.weight + ' kg \u2014 ' + formatDateFR(e.date, { day: 'numeric', month: 'short' });
+  const tx = cx > W - 80 ? cx - 4 : cx + 4;
+  const anchor = cx > W - 80 ? 'end' : 'start';
+  return '<g style="cursor:pointer">'
+    + '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/>'
+    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 8) + '" text-anchor="' + anchor + '" fill="#f0f2f8" font-size="9" font-family="DM Sans" opacity="0" pointer-events="none">' + label + '</text>'
+    + '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent"'
+    + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
+    + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
+    + ' ontouchstart="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
+    + ' ontouchend="setTimeout(function(){document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)},1500)"/>'
+    + '</g>';
+}).join('');
+svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>'
+  + '<polygon points="' + P + ',' + (H - P) + ' ' + pts + ' ' + (W - P) + ',' + (H - P) + '" fill="url(#wg)"/>'
+  + '<polyline points="' + pts + '" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+  + dots
+  + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="9" font-family="DM Sans">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
+  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="#7a8098" font-size="9" font-family="DM Sans">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
 }
 function renderWeightHistory() {
 const el = document.getElementById('weight-history-list');
