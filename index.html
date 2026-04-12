@@ -270,6 +270,7 @@ font-weight: 700;
 .stat-box.depense .s-val { color: var(--green); }
 .stat-box.bmr .s-val { color: var(--accent); }
 .stat-box.sport .s-val { color: var(--orange); }
+.stat-box.bilan .s-val { color: var(--orange); font-size: 16px; }
 .macro-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
 .macro-pill {
 background: var(--surface2);
@@ -324,6 +325,7 @@ font-family: 'Syne', sans-serif;
 font-size: 12px;
 font-weight: 700;
 color: var(--text);
+cursor: pointer;
 }
 .entry-group-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .entry-group-total {
@@ -355,6 +357,15 @@ font-size: 9px;
 font-weight: 700;
 cursor: pointer;
 white-space: nowrap;
+}
+.entry-group-clear {
+background: none;
+border: none;
+color: var(--danger);
+font-size: 12px;
+cursor: pointer;
+padding: 2px 4px;
+margin-left: 4px;
 }
 .entry-group-items { display: flex; flex-direction: column; gap: 5px; }
 .entry-item {
@@ -443,6 +454,12 @@ background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 14px;
 padding: 13px;
+}
+.recipe-card.clickable {
+cursor: pointer;
+}
+.recipe-card.clickable:hover {
+border-color: var(--accent);
 }
 .recipe-name,.summary-title {
 font-family: 'Syne',sans-serif;
@@ -634,6 +651,7 @@ z-index: 60;
 .modal-overlay.z85 { z-index: 85; }
 .modal-overlay.z86 { z-index: 86; }
 .modal-overlay.z87 { z-index: 87; }
+.modal-overlay.z88 { z-index: 88; }
 .modal-sheet,.settings-sheet {
 background: var(--surface);
 border: 1px solid var(--border2);
@@ -1139,6 +1157,7 @@ border: 1px solid var(--border);
 border-radius: 14px;
 padding: 16px;
 margin-bottom: 14px;
+position: relative;
 }
 .weight-chart-title {
 font-family: 'Syne',sans-serif;
@@ -1203,14 +1222,14 @@ border-radius: 50%;
 margin: 0 auto 2px;
 }
 .imc-legend-text {
-font-size: 7px;
+font-size: 10px;
 color: var(--muted);
 line-height: 1.2;
 }
 .imc-scale {
 display: flex;
 justify-content: space-between;
-font-size: 8px;
+font-size: 10px;
 color: var(--muted);
 }
 .weight-entry-item {
@@ -1239,6 +1258,16 @@ cursor: pointer;
 padding: 2px;
 }
 .weight-entry-del:hover { color: var(--danger); }
+.weight-entry-edit {
+background: none;
+border: none;
+color: var(--border2);
+font-size: 13px;
+cursor: pointer;
+padding: 2px;
+margin-right: 8px;
+}
+.weight-entry-edit:hover { color: var(--text); }
 .sport-fav-section { margin-bottom: 12px; }
 .sport-fav-title {
 font-size: 9px;
@@ -1375,6 +1404,50 @@ color: var(--muted);
 margin-top: 4px;
 }
 .bike-fav-section { margin-bottom: 14px; }
+.tooltip {
+position: relative;
+display: inline-block;
+}
+.tooltip .tooltiptext {
+visibility: hidden;
+width: auto;
+background-color: var(--surface2);
+color: var(--text);
+text-align: center;
+border-radius: 6px;
+padding: 5px 10px;
+position: absolute;
+z-index: 1;
+bottom: 125%;
+left: 50%;
+transform: translateX(-50%);
+opacity: 0;
+transition: opacity 0.3s;
+font-size: 11px;
+white-space: nowrap;
+}
+.tooltip:hover .tooltiptext {
+visibility: visible;
+opacity: 1;
+}
+.y-axis {
+position: absolute;
+left: 0;
+top: 0;
+width: 30px;
+height: 100%;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+padding: 10px 0;
+font-size: 9px;
+color: var(--muted);
+}
+.y-axis label {
+writing-mode: vertical-rl;
+transform: rotate(180deg);
+text-align: center;
+}
 </style>
 </head>
 <body>
@@ -1386,7 +1459,7 @@ margin-top: 4px;
 </div>
 <div class="header-btns">
 <button class="btn-icon gold" onclick="openAlimentsModal()">⭐ Aliments</button>
-<button class="btn-icon orange" onclick="openSportFavsModal()">🚶 Sports</button>
+<button class="btn-icon" onclick="openSportFavsModal()">⭐ Sports</button>
 <button class="btn-icon green" onclick="openWeightModal()">⚖️ Poids</button>
 <button class="btn-icon" onclick="openSettings()">⚙️ Réglages</button>
 <button class="btn-icon" onclick="logout()">↪</button>
@@ -1430,6 +1503,7 @@ margin-top: 4px;
 <div class="stat-box depense"><div class="s-label">🔥 Dépensées</div><div class="s-val" id="stat-out">—</div></div>
 <div class="stat-box bmr"><div class="s-label">🫀 Métabolisme</div><div class="s-val" id="stat-bmr">—</div></div>
 <div class="stat-box sport"><div class="s-label">🚴 Sport</div><div class="s-val" id="stat-sport">0</div></div>
+<div class="stat-box bilan"><div class="s-label">📊 Bilan</div><div class="s-val" id="stat-bilan">—</div></div>
 </div>
 <div class="macro-grid">
 <div class="macro-pill prot"><div class="label">Protéines</div><div class="val" id="total-p">0 g</div></div>
@@ -1800,7 +1874,13 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="weight-chart-wrap">
 <div class="weight-chart-title">Évolution du poids</div>
+<div class="tooltip" style="position: relative; height: 160px;">
 <svg id="weight-svg" viewBox="0 0 400 160" preserveAspectRatio="none"></svg>
+<div class="y-axis">
+<label id="y-axis-min">—</label>
+<label id="y-axis-max">—</label>
+</div>
+</div>
 </div>
 <div class="section-label">Historique</div>
 <div id="weight-history-list"></div>
@@ -1811,7 +1891,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">🚶 Sports favoris</div>
+<div class="modal-title">⭐ Sports favoris</div>
 <button class="modal-close" onclick="closeSportFavsModal()">×</button>
 </div>
 <div class="aliments-tabs">
@@ -1825,71 +1905,94 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <!-- MODAL RECIPE DATE MEAL -->
 <div id="modal-recipe-date-meal" class="modal-overlay z86">
-    <div class="settings-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-title-row">
-            <div class="modal-title">Choisir jour et repas</div>
-            <button class="modal-close" onclick="closeRecipeDateMealModal()">×</button>
-        </div>
-        <div class="date-nav" style="margin-bottom: 12px;">
-            <button class="date-nav-btn" onclick="moveRecipeDateMeal(-1)">←</button>
-            <div class="date-nav-center" onclick="toggleRecipeDateMealCalendar()">
-                <div class="date-nav-label" id="recipe-date-meal-label">Aujourd'hui</div>
-                <div class="date-nav-sub" id="recipe-date-meal-sub"></div>
-                <div class="cal-dropdown" id="recipe-date-meal-cal-dropdown" onclick="event.stopPropagation()">
-                    <div class="cal-header">
-                        <button class="cal-nav" onclick="calNavRecipeDateMeal(-1)">←</button>
-                        <div class="cal-month-label" id="recipe-date-meal-cal-month-label"></div>
-                        <button class="cal-nav" onclick="calNavRecipeDateMeal(1)">→</button>
-                    </div>
-                    <div class="cal-grid" id="recipe-date-meal-cal-grid"></div>
-                </div>
-            </div>
-            <button class="date-nav-btn" onclick="moveRecipeDateMeal(1)">→</button>
-        </div>
-        <div class="section-label">Repas</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-            <button class="btn-icon" onclick="selectRecipeMeal('Petit-déjeuner')">🥐 Petit-déjeuner</button>
-            <button class="btn-icon" onclick="selectRecipeMeal('Déjeuner')">🍽️ Déjeuner</button>
-            <button class="btn-icon" onclick="selectRecipeMeal('Dîner')">🌙 Dîner</button>
-            <button class="btn-icon" onclick="selectRecipeMeal('Snack')">🍎 Snack</button>
-            <button class="btn-icon" onclick="selectRecipeMeal('Boissons')">🥤 Boissons</button>
-        </div>
-        <input type="hidden" id="recipe-date-meal-rid">
-        <input type="hidden" id="recipe-date-meal-date" value="">
-        <input type="hidden" id="recipe-date-meal-category" value="">
-    </div>
+<div class="settings-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">Choisir jour et repas</div>
+<button class="modal-close" onclick="closeRecipeDateMealModal()">×</button>
+</div>
+<div class="date-nav" style="margin-bottom: 12px;">
+<button class="date-nav-btn" onclick="moveRecipeDateMeal(-1)">←</button>
+<div class="date-nav-center" onclick="toggleRecipeDateMealCalendar()">
+<div class="date-nav-label" id="recipe-date-meal-label">Aujourd'hui</div>
+<div class="date-nav-sub" id="recipe-date-meal-sub"></div>
+<div class="cal-dropdown" id="recipe-date-meal-cal-dropdown" onclick="event.stopPropagation()">
+<div class="cal-header">
+<button class="cal-nav" onclick="calNavRecipeDateMeal(-1)">←</button>
+<div class="cal-month-label" id="recipe-date-meal-cal-month-label"></div>
+<button class="cal-nav" onclick="calNavRecipeDateMeal(1)">→</button>
+</div>
+<div class="cal-grid" id="recipe-date-meal-cal-grid"></div>
+</div>
+</div>
+<button class="date-nav-btn" onclick="moveRecipeDateMeal(1)">→</button>
+</div>
+<div class="section-label">Repas</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+<button class="btn-icon" onclick="selectRecipeMeal('Petit-déjeuner')">🥐 Petit-déjeuner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Déjeuner')">🍽️ Déjeuner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Dîner')">🌙 Dîner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Snack')">🍎 Snack</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Boissons')">🥤 Boissons</button>
+</div>
+<input type="hidden" id="recipe-date-meal-rid">
+<input type="hidden" id="recipe-date-meal-date" value="">
+<input type="hidden" id="recipe-date-meal-category" value="">
+</div>
 </div>
 <!-- MODAL SPORT FAV DATE -->
 <div id="modal-sport-fav-date" class="modal-overlay z87">
-    <div class="settings-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-title-row">
-            <div class="modal-title">Choisir le jour</div>
-            <button class="modal-close" onclick="closeSportFavDateModal()">×</button>
-        </div>
-        <div class="date-nav" style="margin-bottom: 12px;">
-            <button class="date-nav-btn" onclick="moveSportFavDate(-1)">←</button>
-            <div class="date-nav-center" onclick="toggleSportFavDateCalendar()">
-                <div class="date-nav-label" id="sport-fav-date-label">Aujourd'hui</div>
-                <div class="date-nav-sub" id="sport-fav-date-sub"></div>
-                <div class="cal-dropdown" id="sport-fav-date-cal-dropdown" onclick="event.stopPropagation()">
-                    <div class="cal-header">
-                        <button class="cal-nav" onclick="calNavSportFavDate(-1)">←</button>
-                        <div class="cal-month-label" id="sport-fav-date-cal-month-label"></div>
-                        <button class="cal-nav" onclick="calNavSportFavDate(1)">→</button>
-                    </div>
-                    <div class="cal-grid" id="sport-fav-date-cal-grid"></div>
-                </div>
-            </div>
-            <button class="date-nav-btn" onclick="moveSportFavDate(1)">→</button>
-        </div>
-        <input type="hidden" id="sport-fav-date-rid">
-        <input type="hidden" id="sport-fav-date-type">
-        <input type="hidden" id="sport-fav-date-date" value="">
-        <button class="btn-primary" onclick="useSportFavOnDate()">Ajouter au journal</button>
-        <button class="btn-cancel" onclick="closeSportFavDateModal()">Annuler</button>
-    </div>
+<div class="settings-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">Choisir le jour</div>
+<button class="modal-close" onclick="closeSportFavDateModal()">×</button>
+</div>
+<div class="date-nav" style="margin-bottom: 12px;">
+<button class="date-nav-btn" onclick="moveSportFavDate(-1)">←</button>
+<div class="date-nav-center" onclick="toggleSportFavDateCalendar()">
+<div class="date-nav-label" id="sport-fav-date-label">Aujourd'hui</div>
+<div class="date-nav-sub" id="sport-fav-date-sub"></div>
+<div class="cal-dropdown" id="sport-fav-date-cal-dropdown" onclick="event.stopPropagation()">
+<div class="cal-header">
+<button class="cal-nav" onclick="calNavSportFavDate(-1)">←</button>
+<div class="cal-month-label" id="sport-fav-date-cal-month-label"></div>
+<button class="cal-nav" onclick="calNavSportFavDate(1)">→</button>
+</div>
+<div class="cal-grid" id="sport-fav-date-cal-grid"></div>
+</div>
+</div>
+<button class="date-nav-btn" onclick="moveSportFavDate(1)">→</button>
+</div>
+<input type="hidden" id="sport-fav-date-rid">
+<input type="hidden" id="sport-fav-date-type">
+<input type="hidden" id="sport-fav-date-date" value="">
+<button class="btn-primary" onclick="useSportFavOnDate()">Ajouter au journal</button>
+<button class="btn-cancel" onclick="closeSportFavDateModal()">Annuler</button>
+</div>
+</div>
+<!-- MODAL EDIT WEIGHT -->
+<div id="modal-edit-weight" class="modal-overlay z88">
+<div class="settings-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">Modifier le poids</div>
+<button class="modal-close" onclick="closeEditWeightModal()">×</button>
+</div>
+<div class="weight-form">
+<div class="weight-inputs">
+<div class="weight-input-box">
+<label>Poids (kg)</label>
+<input id="edit-w-val" type="number" step="0.1" placeholder="75.0">
+</div>
+<div class="weight-input-box">
+<label>Date</label>
+<input id="edit-w-date" type="date" readonly>
+</div>
+<button class="weight-add-btn" onclick="saveEditedWeight()">✓ Enregistrer</button>
+</div>
+</div>
+</div>
 </div>
 <!-- AUTH -->
 <div id="auth-screen">
@@ -1928,6 +2031,7 @@ let recipeDateMealDate = new Date();
 let recipeDateMealCalOpen = false;
 let sportFavDateDate = new Date();
 let sportFavDateCalOpen = false;
+let editingWeightId = null;
 const PRIORITY_VEGETABLES = [
 "ail", "oignon", "piment", "céleri", "chou chinois", "pak choy", "champignon de paris", "carotte", "courgette", "tomate", "salade", "épinard", "brocoli", "poivron", "aubergine", "concombre", "radis", "navet", "betterave", "poireau", "artichaut", "asperge", "chou-fleur", "chou rouge", "chou vert", "haricot vert", "petit pois", "maïs", "pomme de terre", "patate douce", "panais", "topinambour", "courge", "potiron", "butternut", "endive", "scarole", "frisée", "blette", "roquette", "cresson", "persil", "ciboulette", "basilic", "thym", "romarin", "menthe", "corriandre", "gingembre", "curcuma", "piment", "poivron"
 ];
@@ -2208,7 +2312,7 @@ closeSettings();
 loadData();
 if (currentPage === 'bilan') loadBilan();
 }
-['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date'].forEach(id => {
+['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight'].forEach(id => {
 document.getElementById(id).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
 });
 function showPage(page) {
@@ -2337,10 +2441,10 @@ document.getElementById('walk-favs-quick-list').innerHTML = `<div class="sport-f
 }
 }
 function loadWalkFavQuick(i) {
-    openSportFavDateModal(i, 'walk');
+openSportFavDateModal(i, 'walk');
 }
 function loadBikeFavQuick(i) {
-    openSportFavDateModal(i, 'bike');
+openSportFavDateModal(i, 'bike');
 }
 function showDrinkSuggestions() {
 const div = document.getElementById('search-results');
@@ -2787,11 +2891,13 @@ el.innerHTML = `<div class="recipe-card">
 </div>`;
 return;
 }
-el.innerHTML = savedRecipes.map(r => `<div class="recipe-card">
+el.innerHTML = savedRecipes.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
 <div class="recipe-name">${r.name}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
+<div class="recipe-items">${r.items.slice(0, 4).map(i => `• ${i.desc} (${i.qty}&nbsp;g/ml)`).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
 <div class="recipe-actions">
-<button class="recipe-btn primary" onclick="${fromAdd ? `addRecipeToCurrentMeal('${r.id}')` : `appendCategoryToRecipe('${r.id}')`}">Choisir</button>
+<button class="recipe-btn primary" onclick="event.stopPropagation();${fromAdd ? `addRecipeToCurrentMeal('${r.id}')` : `appendCategoryToRecipe('${r.id}')`}">Choisir</button>
+<button class="recipe-btn danger" onclick="event.stopPropagation();deleteRecipe('${r.id}')">Supprimer</button>
 </div>
 </div>`).join('');
 }
@@ -2956,19 +3062,83 @@ el.innerHTML = `<div class="recipe-card">
 </div>`;
 return;
 }
-el.innerHTML = savedRecipes.map(r => `<div class="recipe-card">
+el.innerHTML = savedRecipes.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
 <div class="recipe-name">${r.name}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${r.items.slice(0, 4).map(i => `• ${i.desc} (${i.qty}&nbsp;g/ml)`).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
 <div class="recipe-actions">
-<button class="recipe-btn primary" onclick="openRecipePickerCategoryChoice('${r.id}')">Ajouter aujourd'hui</button>
-<button class="recipe-btn" onclick="openRecipeEditorEdit('${r.id}')">Modifier</button>
-<button class="recipe-btn danger" onclick="deleteRecipe('${r.id}')">Supprimer</button>
+<button class="recipe-btn primary" onclick="event.stopPropagation();openRecipeDateMealModal('${r.id}')">Ajouter aujourd'hui</button>
+<button class="recipe-btn danger" onclick="event.stopPropagation();deleteRecipe('${r.id}')">Supprimer</button>
 </div>
 </div>`).join('');
 }
-function openRecipePickerCategoryChoice(rid) {
-    openRecipeDateMealModal(rid);
+function openRecipeDateMealModal(rid) {
+document.getElementById('recipe-date-meal-rid').value = rid;
+updateRecipeDateMealUI();
+document.getElementById('modal-recipe-date-meal').classList.add('open');
+}
+function closeRecipeDateMealModal() {
+document.getElementById('modal-recipe-date-meal').classList.remove('open');
+}
+function updateRecipeDateMealUI() {
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const isToday = recipeDateMealDate.getTime() === today.getTime();
+document.getElementById('recipe-date-meal-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(recipeDateMealDate), { weekday: 'long', day: 'numeric', month: 'long' });
+document.getElementById('recipe-date-meal-sub').textContent = isToday ? formatDateFR(dateToStr(recipeDateMealDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(recipeDateMealDate), { year: 'numeric' });
+document.getElementById('recipe-date-meal-date').value = dateToStr(recipeDateMealDate);
+}
+function moveRecipeDateMeal(d) {
+recipeDateMealDate.setDate(recipeDateMealDate.getDate() + d);
+updateRecipeDateMealUI();
+}
+function toggleRecipeDateMealCalendar() {
+recipeDateMealCalOpen = !recipeDateMealCalOpen;
+if (recipeDateMealCalOpen) {
+document.getElementById('recipe-date-meal-cal-dropdown').classList.add('open');
+renderRecipeDateMealCalendar();
+setTimeout(() => document.addEventListener('click', closeRecipeDateMealCal, { once: true }), 10);
+} else {
+closeRecipeDateMealCalendar();
+}
+}
+function closeRecipeDateMealCal() {
+recipeDateMealCalOpen = false;
+document.getElementById('recipe-date-meal-cal-dropdown').classList.remove('open');
+}
+function calNavRecipeDateMeal(d) {
+recipeDateMealDate.setMonth(recipeDateMealDate.getMonth() + d);
+renderRecipeDateMealCalendar();
+}
+function renderRecipeDateMealCalendar() {
+const y = recipeDateMealDate.getFullYear(), m = recipeDateMealDate.getMonth();
+document.getElementById('recipe-date-meal-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const sel = dateToStr(recipeDateMealDate);
+let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
+let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
+for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
+const dim = new Date(y, m + 1, 0).getDate();
+for (let d = 1; d <= dim; d++) {
+const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const dt = new Date(y, m, d, 0, 0, 0, 0);
+const isT = dt.getTime() === today.getTime(), isS = ds === sel;
+html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectRecipeDateMealCalDate('${ds}')">${d}</div>`;
+}
+document.getElementById('recipe-date-meal-cal-grid').innerHTML = html;
+}
+function selectRecipeDateMealCalDate(ds) {
+recipeDateMealDate = strToDate(ds);
+updateRecipeDateMealUI();
+closeRecipeDateMealCalendar();
+}
+function selectRecipeMeal(category) {
+document.getElementById('recipe-date-meal-category').value = category;
+const rid = document.getElementById('recipe-date-meal-rid').value;
+const date = document.getElementById('recipe-date-meal-date').value;
+journalDate = strToDate(date);
+updateJournalDateUI();
+addRecipeToToday(rid, category);
+closeRecipeDateMealModal();
 }
 function startOfWeek(d) {
 const r = new Date(d), dow = r.getDay(), diff = dow === 0 ? -6 : 1 - dow;
@@ -3121,6 +3291,30 @@ document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight
 }
 await loadWeightEntries(); renderWeightModal(); document.getElementById('w-val').value = '';
 }
+function openEditWeightModal(id) {
+const entry = weightEntries.find(e => e.id === id);
+if (!entry) return;
+editingWeightId = id;
+document.getElementById('edit-w-val').value = entry.weight;
+document.getElementById('edit-w-date').value = entry.date;
+document.getElementById('modal-edit-weight').classList.add('open');
+}
+function closeEditWeightModal() { document.getElementById('modal-edit-weight').classList.remove('open'); editingWeightId = null; }
+async function saveEditedWeight() {
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+const v = parseFloat(document.getElementById('edit-w-val').value), date = document.getElementById('edit-w-date').value;
+if (!v || !date) { alert('Renseigne poids et date.'); return; }
+await sb.from('weight_entries').update({ weight: v }).eq('id', editingWeightId);
+await loadWeightEntries();
+renderWeightModal();
+const last = weightEntries.length ? weightEntries[weightEntries.length - 1].weight : 75;
+userWeight = last;
+saveSettingsLocal();
+await pushSettingsRemote();
+document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight, userAge, userSexe);
+closeEditWeightModal();
+}
 async function deleteWeightEntry(id) {
 await sb.from('weight_entries').delete().eq('id', id);
 await loadWeightEntries();
@@ -3152,10 +3346,14 @@ if (weightEntries.length < 2) { svg.innerHTML = `<text x="200" y="80" text-ancho
 const vals = weightEntries.map(e => e.weight), minW = Math.min(...vals) - 1, maxW = Math.max(...vals) + 1, W = 400, H = 160, P = 32;
 const xs = i => (i / (weightEntries.length - 1)) * (W - P * 2) + P, ys = v => H - P - ((v - minW) / (maxW - minW)) * (H - P * 2);
 const pts = weightEntries.map((e, i) => `${xs(i)},${ys(e.weight)}`).join(' ');
+document.getElementById('y-axis-min').textContent = minW;
+document.getElementById('y-axis-max').textContent = maxW;
 svg.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>
 <polygon points="${P},${H - P} ${pts} ${W - P},${H - P}" fill="url(#wg)"/>
 <polyline points="${pts}" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-${weightEntries.map((e, i) => `<circle cx="${xs(i)}" cy="${ys(e.weight)}" r="3" fill="#5b7fff"/>`).join('')}
+${weightEntries.map((e, i) => `<circle class="tooltip" cx="${xs(i)}" cy="${ys(e.weight)}" r="3" fill="#5b7fff">
+<div class="tooltiptext">${e.weight} kg<br>${formatDateFR(e.date, { day: 'numeric', month: 'short' })}</div>
+</circle>`).join('')}
 <text x="${P}" y="${H - 8}" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' })}</text>
 <text x="${W - P}" y="${H - 8}" text-anchor="end" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' })}</text>`;
 }
@@ -3165,6 +3363,7 @@ if (!weightEntries.length) { el.innerHTML = `<div style="color:var(--muted);font
 el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-item">
 <div class="weight-entry-date">${formatDateFR(e.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
 <div class="weight-entry-val">${e.weight} kg</div>
+<button class="weight-entry-edit" onclick="openEditWeightModal('${e.id}')">✎</button>
 <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
 </div>`).join('');
 }
@@ -3180,21 +3379,22 @@ entries.forEach(e => {
 if (e.type === 'food') { tIn += e.val; tP += e.prot || 0; tG += e.gluc || 0; tL += e.lip || 0; }
 else { tSport += e.val; }
 });
-const bmr = calcBMR(userWeight, userHeight, userAge, userSexe), totalOut = bmr + tSport, remaining = userGoal - tIn, pct = Math.min(100, Math.round((tIn / Math.max(userGoal, 1)) * 100));
+const bmr = calcBMR(userWeight, userHeight, userAge, userSexe), totalOut = bmr + tSport, remaining = userGoal - tIn, bilan = tIn - totalOut;
 document.getElementById('kcal-left').textContent = remaining;
 document.getElementById('stat-in').textContent = tIn;
 document.getElementById('stat-out').textContent = totalOut;
 document.getElementById('stat-bmr').textContent = bmr;
 document.getElementById('stat-sport').textContent = tSport;
-document.getElementById('total-p').textContent = Math.round(tP) + '&nbsp;g';
-document.getElementById('total-g').textContent = Math.round(tG) + '&nbsp;g';
-document.getElementById('total-l').textContent = Math.round(tL) + '&nbsp;g';
-document.getElementById('progress-fill').style.width = pct + '%';
+document.getElementById('stat-bilan').textContent = bilan >= 0 ? `+${bilan}` : bilan;
+document.getElementById('total-p').textContent = Math.round(tP) + ' g';
+document.getElementById('total-g').textContent = Math.round(tG) + ' g';
+document.getElementById('total-l').textContent = Math.round(tL) + ' g';
+document.getElementById('progress-fill').style.width = Math.min(100, Math.round((tIn / Math.max(userGoal, 1)) * 100)) + '%';
 document.getElementById('progress-eaten').textContent = tIn + ' mangé';
 document.getElementById('progress-goal').textContent = userGoal + ' objectif';
 const bar = document.getElementById('progress-fill');
-if (pct > 95) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
-else if (pct > 75) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
+if (remaining < 0) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
+else if (remaining < 300) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
 else bar.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
 const ke = document.getElementById('kcal-left');
 if (remaining < 0) ke.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
@@ -3216,6 +3416,7 @@ html += `<div class="entry-group">
 <div class="entry-group-actions">
 <button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
 ${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>` : ''}
+${!isSport && items.length ? `<button class="entry-group-clear" onclick="clearMealEntries('${cat}')">✕ Tout supprimer</button>` : ''}
 <span class="entry-group-total ${isSport ? 'sport' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
@@ -3242,6 +3443,16 @@ document.getElementById('daily-list').innerHTML = html;
 } catch (e) { console.error('loadData:', e); }
 }
 async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
+async function clearMealEntries(cat) {
+if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');
+for (const entry of entriesToDelete) {
+await sb.from('entries').delete().eq('id', entry.id);
+}
+loadData();
+}
 async function handleAuth() {
 const email = document.getElementById('auth-email').value.trim(), pass = document.getElementById('auth-pass').value;
 document.getElementById('auth-error').style.display = 'none';
@@ -3269,30 +3480,28 @@ const el = document.getElementById('sport-favs-content');
 if (currentSportTab === 'walk') {
 if (!walkFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucun trajet favori.</div>`; }
 else {
-el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item">
+el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
 <div class="builder-main">
 <div class="builder-title">${f.name}</div>
 <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn primary" onclick="loadWalkFavQuick(${i})">Utiliser</button>
-<button class="food-btn" onclick="editWalkFav(${i})">✎</button>
-<button class="food-btn danger" onclick="deleteWalkFav(${i})">✕</button>
+<button class="food-btn" onclick="event.stopPropagation();editWalkFav(${i})">✎</button>
+<button class="food-btn danger" onclick="event.stopPropagation();deleteWalkFav(${i})">✕</button>
 </div>
 </div>`).join('');
 }
 } else {
 if (!bikeFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucune sortie vélo favorite.</div>`; }
 else {
-el.innerHTML = bikeFavorites.map((f, i) => `<div class="sport-fav-item">
+el.innerHTML = bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
 <div class="builder-main">
 <div class="builder-title">${f.name}</div>
 <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn primary" onclick="loadBikeFavQuick(${i})">Utiliser</button>
-<button class="food-btn" onclick="editBikeFav(${i})">✎</button>
-<button class="food-btn danger" onclick="deleteBikeFav(${i})">✕</button>
+<button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})">✎</button>
+<button class="food-btn danger" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
 </div>
 </div>`).join('');
 }
@@ -3335,6 +3544,79 @@ document.getElementById('in-kcal').value = f.speed;
 currentWalkFavName = f.name;
 recalc();
 }
+function openSportFavDateModal(rid, type) {
+document.getElementById('sport-fav-date-rid').value = rid;
+document.getElementById('sport-fav-date-type').value = type;
+updateSportFavDateUI();
+document.getElementById('modal-sport-fav-date').classList.add('open');
+}
+function closeSportFavDateModal() {
+document.getElementById('modal-sport-fav-date').classList.remove('open');
+}
+function updateSportFavDateUI() {
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const isToday = sportFavDateDate.getTime() === today.getTime();
+document.getElementById('sport-fav-date-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(sportFavDateDate), { weekday: 'long', day: 'numeric', month: 'long' });
+document.getElementById('sport-fav-date-sub').textContent = isToday ? formatDateFR(dateToStr(sportFavDateDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(sportFavDateDate), { year: 'numeric' });
+document.getElementById('sport-fav-date-date').value = dateToStr(sportFavDateDate);
+}
+function moveSportFavDate(d) {
+sportFavDateDate.setDate(sportFavDateDate.getDate() + d);
+updateSportFavDateUI();
+}
+function toggleSportFavDateCalendar() {
+sportFavDateCalOpen = !sportFavDateCalOpen;
+if (sportFavDateCalOpen) {
+document.getElementById('sport-fav-date-cal-dropdown').classList.add('open');
+renderSportFavDateCalendar();
+setTimeout(() => document.addEventListener('click', closeSportFavDateCal, { once: true }), 10);
+} else {
+closeSportFavDateCalendar();
+}
+}
+function closeSportFavDateCalendar() {
+sportFavDateCalOpen = false;
+document.getElementById('sport-fav-date-cal-dropdown').classList.remove('open');
+}
+function calNavSportFavDate(d) {
+sportFavDateDate.setMonth(sportFavDateDate.getMonth() + d);
+renderSportFavDateCalendar();
+}
+function renderSportFavDateCalendar() {
+const y = sportFavDateDate.getFullYear(), m = sportFavDateDate.getMonth();
+document.getElementById('sport-fav-date-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const sel = dateToStr(sportFavDateDate);
+let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
+let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
+for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
+const dim = new Date(y, m + 1, 0).getDate();
+for (let d = 1; d <= dim; d++) {
+const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const dt = new Date(y, m, d, 0, 0, 0, 0);
+const isT = dt.getTime() === today.getTime(), isS = ds === sel;
+html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectSportFavDateCalDate('${ds}')">${d}</div>`;
+}
+document.getElementById('sport-fav-date-cal-grid').innerHTML = html;
+}
+function selectSportFavDateCalDate(ds) {
+sportFavDateDate = strToDate(ds);
+updateSportFavDateUI();
+closeSportFavDateCalendar();
+}
+async function useSportFavOnDate() {
+const rid = document.getElementById('sport-fav-date-rid').value;
+const type = document.getElementById('sport-fav-date-type').value;
+const date = document.getElementById('sport-fav-date-date').value;
+journalDate = strToDate(date);
+updateJournalDateUI();
+if (type === 'walk') {
+loadWalkFavQuick(rid);
+} else if (type === 'bike') {
+loadBikeFavQuick(rid);
+}
+closeSportFavDateModal();
+}
 async function init() {
 document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 loadSettingsLocal();
@@ -3370,153 +3652,6 @@ if (e.key === 'Enter') { e.preventDefault(); saveCustomFood(); }
 document.getElementById('w-val').addEventListener('keydown', function (e) {
 if (e.key === 'Enter') { e.preventDefault(); addWeightEntry(); }
 });
-function openRecipeDateMealModal(rid) {
-    document.getElementById('recipe-date-meal-rid').value = rid;
-    updateRecipeDateMealUI();
-    document.getElementById('modal-recipe-date-meal').classList.add('open');
-}
-function closeRecipeDateMealModal() {
-    document.getElementById('modal-recipe-date-meal').classList.remove('open');
-}
-function updateRecipeDateMealUI() {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const isToday = recipeDateMealDate.getTime() === today.getTime();
-    document.getElementById('recipe-date-meal-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(recipeDateMealDate), { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('recipe-date-meal-sub').textContent = isToday ? formatDateFR(dateToStr(recipeDateMealDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(recipeDateMealDate), { year: 'numeric' });
-    document.getElementById('recipe-date-meal-date').value = dateToStr(recipeDateMealDate);
-}
-function moveRecipeDateMeal(d) {
-    recipeDateMealDate.setDate(recipeDateMealDate.getDate() + d);
-    updateRecipeDateMealUI();
-}
-function toggleRecipeDateMealCalendar() {
-    recipeDateMealCalOpen = !recipeDateMealCalOpen;
-    if (recipeDateMealCalOpen) {
-        document.getElementById('recipe-date-meal-cal-dropdown').classList.add('open');
-        renderRecipeDateMealCalendar();
-        setTimeout(() => document.addEventListener('click', closeRecipeDateMealCal, { once: true }), 10);
-    } else {
-        closeRecipeDateMealCalendar();
-    }
-}
-function closeRecipeDateMealCal() {
-    recipeDateMealCalOpen = false;
-    document.getElementById('recipe-date-meal-cal-dropdown').classList.remove('open');
-}
-function calNavRecipeDateMeal(d) {
-    recipeDateMealDate.setMonth(recipeDateMealDate.getMonth() + d);
-    renderRecipeDateMealCalendar();
-}
-function renderRecipeDateMealCalendar() {
-    const y = recipeDateMealDate.getFullYear(), m = recipeDateMealDate.getMonth();
-    document.getElementById('recipe-date-meal-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const sel = dateToStr(recipeDateMealDate);
-    let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
-    let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
-    for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
-    const dim = new Date(y, m + 1, 0).getDate();
-    for (let d = 1; d <= dim; d++) {
-        const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dt = new Date(y, m, d, 0, 0, 0, 0);
-        const isT = dt.getTime() === today.getTime(), isS = ds === sel;
-        html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectRecipeDateMealCalDate('${ds}')">${d}</div>`;
-    }
-    document.getElementById('recipe-date-meal-cal-grid').innerHTML = html;
-}
-function selectRecipeDateMealCalDate(ds) {
-    recipeDateMealDate = strToDate(ds);
-    updateRecipeDateMealUI();
-    closeRecipeDateMealCalendar();
-}
-function selectRecipeMeal(category) {
-    document.getElementById('recipe-date-meal-category').value = category;
-    const rid = document.getElementById('recipe-date-meal-rid').value;
-    const date = document.getElementById('recipe-date-meal-date').value;
-    journalDate = strToDate(date);
-    updateJournalDateUI();
-    addRecipeToToday(rid, category);
-    closeRecipeDateMealModal();
-}
-function openSportFavDateModal(rid, type) {
-    document.getElementById('sport-fav-date-rid').value = rid;
-    document.getElementById('sport-fav-date-type').value = type;
-    updateSportFavDateUI();
-    document.getElementById('modal-sport-fav-date').classList.add('open');
-}
-function closeSportFavDateModal() {
-    document.getElementById('modal-sport-fav-date').classList.remove('open');
-}
-function updateSportFavDateUI() {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const isToday = sportFavDateDate.getTime() === today.getTime();
-    document.getElementById('sport-fav-date-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(sportFavDateDate), { weekday: 'long', day: 'numeric', month: 'long' });
-    document.getElementById('sport-fav-date-sub').textContent = isToday ? formatDateFR(dateToStr(sportFavDateDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(sportFavDateDate), { year: 'numeric' });
-    document.getElementById('sport-fav-date-date').value = dateToStr(sportFavDateDate);
-}
-function moveSportFavDate(d) {
-    sportFavDateDate.setDate(sportFavDateDate.getDate() + d);
-    updateSportFavDateUI();
-}
-function toggleSportFavDateCalendar() {
-    sportFavDateCalOpen = !sportFavDateCalOpen;
-    if (sportFavDateCalOpen) {
-        document.getElementById('sport-fav-date-cal-dropdown').classList.add('open');
-        renderSportFavDateCalendar();
-        setTimeout(() => document.addEventListener('click', closeSportFavDateCal, { once: true }), 10);
-    } else {
-        closeSportFavDateCalendar();
-    }
-}
-function closeSportFavDateCalendar() {
-    sportFavDateCalOpen = false;
-    document.getElementById('sport-fav-date-cal-dropdown').classList.remove('open');
-}
-function calNavSportFavDate(d) {
-    sportFavDateDate.setMonth(sportFavDateDate.getMonth() + d);
-    renderSportFavDateCalendar();
-}
-function renderSportFavDateCalendar() {
-    const y = sportFavDateDate.getFullYear(), m = sportFavDateDate.getMonth();
-    document.getElementById('sport-fav-date-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const sel = dateToStr(sportFavDateDate);
-    let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
-    let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
-    for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
-    const dim = new Date(y, m + 1, 0).getDate();
-    for (let d = 1; d <= dim; d++) {
-        const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dt = new Date(y, m, d, 0, 0, 0, 0);
-        const isT = dt.getTime() === today.getTime(), isS = ds === sel;
-        html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectSportFavDateCalDate('${ds}')">${d}</div>`;
-    }
-    document.getElementById('sport-fav-date-cal-grid').innerHTML = html;
-}
-function selectSportFavDateCalDate(ds) {
-    sportFavDateDate = strToDate(ds);
-    updateSportFavDateUI();
-    closeSportFavDateCalendar();
-}
-async function useSportFavOnDate() {
-    const rid = document.getElementById('sport-fav-date-rid').value;
-    const type = document.getElementById('sport-fav-date-type').value;
-    const date = document.getElementById('sport-fav-date-date').value;
-    journalDate = strToDate(date);
-    updateJournalDateUI();
-    if (type === 'walk') {
-        loadWalkFavQuick(rid);
-    } else if (type === 'bike') {
-        loadBikeFavQuick(rid);
-    }
-    closeSportFavDateModal();
-}
-function loadWalkFavQuick(i) {
-    openSportFavDateModal(i, 'walk');
-}
-function loadBikeFavQuick(i) {
-    openSportFavDateModal(i, 'bike');
-}
 init();
 </script>
 </body>
