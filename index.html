@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-/* (Le CSS reste identique, sauf pour les ajustements d'affichage des "g" et des tailles de texte dans l'onglet poids) */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #0d0f14; --surface: #161921; --surface2: #1e2330; --surface3: #252c3c;
@@ -741,14 +740,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
   font-size: 10px; color: var(--muted); margin-top: 4px;
 }
 .bike-fav-section { margin-bottom: 14px; }
-
-/* Ajustements spécifiques */
-.macro-pill .val, .macro-kpi .val, .stat-box .s-val, .mini-kpi .val, .day-line-macro span, .builder-sub {
-  font-feature-settings: 'tnum'; /* Chiffres tabulaires pour alignement */
-}
-.imc-legend-text { font-size: 10px !important; } /* Taille augmentée pour les légendes IMC */
-.imc-scale span { font-size: 10px !important; } /* Taille augmentée pour l'échelle */
-#weight-svg text { font-size: 10px !important; } /* Taille des dates sur la courbe */
 .day-balance {
   background: var(--surface2); border: 1px solid var(--border); border-radius: 11px;
   padding: 8px 12px; margin-bottom: 12px; text-align: center; font-size: 11px;
@@ -756,6 +747,23 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .day-balance.positive { color: var(--green); }
 .day-balance.negative { color: var(--danger); }
 .day-balance.neutral { color: var(--muted); }
+.macro-pill .val, .macro-kpi .val, .stat-box .s-val, .mini-kpi .val, .day-line-macro span, .builder-sub {
+  font-feature-settings: 'tnum'; /* Chiffres tabulaires pour alignement */
+}
+.imc-legend-text { font-size: 10px !important; } /* Taille augmentée pour les légendes IMC */
+.imc-scale span { font-size: 10px !important; } /* Taille augmentée pour l'échelle */
+#weight-svg text { font-size: 10px !important; } /* Taille des dates sur la courbe */
+.meal-category-tabs {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 12px;
+}
+.meal-category-btn {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 10px; padding: 9px 6px; font-size: 10px; font-weight: 700; cursor: pointer;
+  text-align: center;
+}
+.meal-category-btn.active {
+  background: rgba(91,127,255,0.15); border-color: rgba(91,127,255,0.24); color: var(--text);
+}
 </style>
 </head>
 <body>
@@ -782,6 +790,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
   <section class="page active" id="page-journal">
     <div class="date-nav">
       <button class="date-nav-btn" onclick="moveJournalDay(-1)">←</button>
+      <button class="date-nav-btn" onclick="moveJournalDay(1)">→</button>
       <div class="date-nav-center" onclick="toggleCalendar()">
         <div class="date-nav-label" id="journal-date-label">Aujourd'hui</div>
         <div class="date-nav-sub" id="journal-date-sub"></div>
@@ -795,7 +804,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         </div>
       </div>
       <button class="date-nav-today" onclick="goToToday()" id="today-btn" style="display:none;">Aujourd'hui</button>
-      <button class="date-nav-btn" onclick="moveJournalDay(1)">→</button>
     </div>
     <div class="kcal-card">
       <div class="kcal-hero">
@@ -871,15 +879,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div class="cal-grid" id="modal-cal-grid"></div>
           </div>
         </div>
+        <button class="date-nav-btn" onclick="moveModalDate(1)">→</button>
       </div>
     </div>
-    <div class="category-picker-row" id="category-picker-row" style="display:none;">
-      <div class="range-tabs" style="margin-bottom:10px;">
-        <button class="range-btn" onclick="setModalCategory('Petit-déjeuner')">Petit-déjeuner</button>
-        <button class="range-btn" onclick="setModalCategory('Déjeuner')">Déjeuner</button>
-        <button class="range-btn" onclick="setModalCategory('Dîner')">Dîner</button>
-        <button class="range-btn" onclick="setModalCategory('Snack')">Snack</button>
-      </div>
+    <div class="meal-category-tabs" id="meal-category-tabs" style="display:none;">
+      <button class="meal-category-btn" onclick="setModalCategory('Petit-déjeuner')">Petit-déjeuner</button>
+      <button class="meal-category-btn" onclick="setModalCategory('Déjeuner')">Déjeuner</button>
+      <button class="meal-category-btn" onclick="setModalCategory('Dîner')">Dîner</button>
+      <button class="meal-category-btn" onclick="setModalCategory('Snack')">Snack</button>
     </div>
     <div class="search-row">
       <input id="in-desc" class="search-input" type="text" placeholder="Rechercher..."
@@ -1003,10 +1010,10 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
   <div class="settings-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title-row">
-      <div class="modal-title" id="recipe-link-title">Ajouter à une recette</div>
+      <div class="modal-title" id="recipe-link-title">Ajouter à un repas</div>
       <button class="modal-close" onclick="closeRecipeLinkModal()">×</button>
     </div>
-    <div class="date-picker-row" id="recipe-link-date-picker-row">
+    <div class="date-picker-row">
       <div class="date-nav" style="margin-bottom:10px;">
         <button class="date-nav-btn" onclick="moveRecipeLinkDate(-1)">←</button>
         <div class="date-nav-center" onclick="toggleRecipeLinkCalendar()">
@@ -1021,15 +1028,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
             <div class="cal-grid" id="recipe-link-cal-grid"></div>
           </div>
         </div>
+        <button class="date-nav-btn" onclick="moveRecipeLinkDate(1)">→</button>
       </div>
     </div>
-    <div class="category-picker-row" id="recipe-link-category-picker-row">
-      <div class="range-tabs" style="margin-bottom:10px;">
-        <button class="range-btn" onclick="setRecipeLinkCategory('Petit-déjeuner')">Petit-déjeuner</button>
-        <button class="range-btn" onclick="setRecipeLinkCategory('Déjeuner')">Déjeuner</button>
-        <button class="range-btn" onclick="setRecipeLinkCategory('Dîner')">Dîner</button>
-        <button class="range-btn" onclick="setRecipeLinkCategory('Snack')">Snack</button>
-      </div>
+    <div class="meal-category-tabs">
+      <button class="meal-category-btn active" onclick="setRecipeLinkCategory('Petit-déjeuner')">Petit-déjeuner</button>
+      <button class="meal-category-btn" onclick="setRecipeLinkCategory('Déjeuner')">Déjeuner</button>
+      <button class="meal-category-btn" onclick="setRecipeLinkCategory('Dîner')">Dîner</button>
+      <button class="meal-category-btn" onclick="setRecipeLinkCategory('Snack')">Snack</button>
     </div>
     <div id="recipe-link-content"></div>
   </div>
@@ -1286,14 +1292,13 @@ let walkFavorites = [];
 let bikeFavorites = [];
 let searchDebounceTimer = null;
 let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
-let calViewDate = new Date(), calOpen = false;
-let routeBaseDistance = 0, routeBaseDuration = 0, currentWalkFavName = '';
-let currentSportTab = 'walk';
 let modalDate = new Date(); modalDate.setHours(0, 0, 0, 0);
-let modalCalOpen = false;
 let recipeLinkDate = new Date(); recipeLinkDate.setHours(0, 0, 0, 0);
-let recipeLinkCalOpen = false;
 let recipeLinkCategory = "Déjeuner";
+let modalCalOpen = false;
+let recipeLinkCalOpen = false;
+let currentSportTab = 'walk';
+let routeBaseDistance = 0, routeBaseDuration = 0, currentWalkFavName = '';
 // Liste des légumes prioritaires
 const PRIORITY_VEGETABLES = [
   "ail", "oignon", "piment", "céleri", "chou chinois", "pak choy", "champignon de paris", "carotte", "courgette", "tomate", "salade", "épinard", "brocoli", "poivron", "aubergine", "concombre", "radis", "navet", "betterave", "poireau", "artichaut", "asperge", "chou-fleur", "chou rouge", "chou vert", "haricot vert", "petit pois", "maïs", "pomme de terre", "patate douce", "panais", "topinambour", "courge", "potiron", "butternut", "endive", "scarole", "frisée", "blette", "roquette", "cresson", "persil", "ciboulette", "basilic", "thym", "romarin", "menthe", "corriandre", "gingembre", "curcuma", "piment", "poivron"
@@ -1645,7 +1650,7 @@ function openModal(cat, date = null, isRecipe = false) {
   recalc();
   if (isRecipe) {
     document.getElementById('date-picker-row').style.display = 'block';
-    document.getElementById('category-picker-row').style.display = 'block';
+    document.getElementById('meal-category-tabs').style.display = 'block';
     modalDate = date || new Date();
     updateModalDateUI();
   }
@@ -1728,8 +1733,7 @@ function renderSportFavsQuick() {
 function loadWalkFavQuick(i) {
   const f = walkFavorites[i];
   if (!f) return;
-  document.getElementById('search-results').style.display = 'none';
-  document.getElementById('sport-favs-section').style.display = 'none';
+  openModal('Sport');
   selectWalkMode();
   setWalkMode('route');
   document.getElementById('walk-from').value = f.from || '';
@@ -1744,18 +1748,21 @@ function loadWalkFavQuick(i) {
   document.getElementById('walk-custom-dur-box').style.display = 'block';
   document.getElementById('walk-custom-dur').value = f.duration;
   updateRouteCalc(f.distance, f.duration);
+  document.getElementById('date-picker-row').style.display = 'block';
+  document.getElementById('meal-category-tabs').style.display = 'block';
 }
 function loadBikeFavQuick(i) {
   const f = bikeFavorites[i];
   if (!f) return;
-  document.getElementById('search-results').style.display = 'none';
-  document.getElementById('sport-favs-section').style.display = 'none';
+  openModal('Sport');
   selectBikeMode();
   document.getElementById('in-desc').value = 'Vélo';
   document.getElementById('in-qty').value = f.duration;
   document.getElementById('in-kcal').value = f.speed;
   currentWalkFavName = f.name;
   recalc();
+  document.getElementById('date-picker-row').style.display = 'block';
+  document.getElementById('meal-category-tabs').style.display = 'block';
 }
 function showDrinkSuggestions() {
   const div = document.getElementById('search-results');
@@ -1849,1107 +1856,4 @@ function selectWalkMode() {
   recalc();
 }
 function setWalkMode(mode) {
-  currentWalkMode = mode;
-  document.getElementById('walk-tab-simple').classList.toggle('active', mode === 'simple');
-  document.getElementById('walk-tab-route').classList.toggle('active', mode === 'route');
-  document.getElementById('walk-simple-section').style.display = mode === 'simple' ? 'block' : 'none';
-  document.getElementById('walk-route-section').style.display = mode === 'route' ? 'block' : 'none';
-  document.getElementById('speed-row').style.display = mode === 'simple' ? 'grid' : 'none';
-}
-function renderWalkFavsInModal() {
-  const el = document.getElementById('walk-favs-list');
-  if (!walkFavorites.length) { el.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:4px 0;">Aucun trajet favori.</div>`; return; }
-  el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFav(${i})">
-    <div>
-      <div class="sport-fav-name">⭐ ${f.name}</div>
-      <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
-    </div>
-    <button onclick="event.stopPropagation();deleteWalkFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button>
-  </div>`).join('');
-}
-function loadWalkFav(i) {
-  const f = walkFavorites[i];
-  if (!f) return;
-  setWalkMode('route');
-  document.getElementById('walk-from').value = f.from || '';
-  document.getElementById('walk-to').value = f.to || '';
-  document.getElementById('walk-roundtrip').checked = f.roundtrip || false;
-  routeBaseDistance = f.distance;
-  routeBaseDuration = f.duration;
-  currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
-  currentWalkFavName = f.name;
-  document.getElementById('walk-route-result').style.display = 'block';
-  document.getElementById('walk-route-result').innerHTML = `⭐ <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
-  document.getElementById('walk-custom-dur-box').style.display = 'block';
-  document.getElementById('walk-custom-dur').value = f.duration;
-  document.getElementById('save-route-btn').style.display = 'none';
-  updateRouteCalc(f.distance, f.duration);
-}
-function deleteWalkFav(i) { walkFavorites.splice(i, 1); saveSettingsLocal(); renderWalkFavsInModal(); renderSportFavsQuick(); }
-function onCustomDurationChange() {
-  const dur = parseFloat(document.getElementById('walk-custom-dur').value) || 0;
-  if (routeBaseDistance > 0 && dur > 0) updateRouteCalc(routeBaseDistance, dur);
-}
-function updateRouteCalc(dist, durMin) {
-  const speed = round1(dist / (durMin / 60));
-  const kcal = calcWalkKcal(speed, durMin);
-  document.getElementById('in-qty').value = durMin;
-  document.getElementById('in-speed').value = speed;
-  document.getElementById('in-kcal').value = calcWalkKcalH(speed);
-  document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · ${kcal} kcal · ${dist} km`;
-  recalc();
-}
-async function calcRoute() {
-  const from = document.getElementById('walk-from').value.trim(), to = document.getElementById('walk-to').value.trim();
-  if (!from || !to) { alert('Renseigne départ et arrivée.'); return; }
-  const box = document.getElementById('walk-route-result');
-  box.style.display = 'block';
-  box.innerHTML = '⏳ Calcul…';
-  document.getElementById('walk-custom-dur-box').style.display = 'none';
-  try {
-    const geo = async (addr) => {
-      const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(addr)}&size=1`);
-      const d = await r.json();
-      const f = d.features?.[0];
-      if (!f) throw new Error('Adresse introuvable : ' + addr);
-      return f.geometry.coordinates;
-    };
-    const [fc, tc] = await Promise.all([geo(from), geo(to)]);
-    const rt = document.getElementById('walk-roundtrip').checked;
-    const r = await fetch(`https://api.openrouteservice.org/v2/directions/foot-walking`, {
-      method: 'POST',
-      headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ coordinates: [fc, tc], units: 'km' })
-    });
-    const d = await r.json();
-    const route = d.routes?.[0];
-    if (!route) throw new Error('Itinéraire introuvable.');
-    const dist = round1(route.summary.distance * (rt ? 2 : 1));
-    const durMin = Math.round(route.summary.duration / 60 * (rt ? 2 : 1));
-    const speed = round1(dist / (durMin / 60));
-    const kcal = calcWalkKcal(speed, durMin);
-    routeBaseDistance = dist;
-    routeBaseDuration = durMin;
-    currentRouteData = { distance: dist, from, to, roundtrip: rt };
-    currentWalkFavName = '';
-    box.innerHTML = `<strong>${dist} km</strong> · ~${durMin} min (estimé) · ~${speed} km/h · <strong>${kcal} kcal</strong>`;
-    document.getElementById('walk-custom-dur-box').style.display = 'block';
-    document.getElementById('walk-custom-dur').value = durMin;
-    document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · ${kcal} kcal`;
-    document.getElementById('save-route-btn').style.display = 'inline-block';
-    document.getElementById('save-route-btn').dataset.dist = dist;
-    document.getElementById('save-route-btn').dataset.dur = durMin;
-    document.getElementById('save-route-btn').dataset.kcal = kcal;
-    updateRouteCalc(dist, durMin);
-  } catch (e) { box.innerHTML = `❌ ${e.message}`; }
-}
-function saveCurrentRoute() {
-  if (!currentRouteData) return;
-  const name = prompt('Nom de ce trajet :', 'Trajet favori');
-  if (!name) return;
-  const dur = parseInt(document.getElementById('walk-custom-dur').value) || routeBaseDuration;
-  const speed = round1(routeBaseDistance / (dur / 60));
-  const kcal = calcWalkKcal(speed, dur);
-  walkFavorites.unshift({ name, from: currentRouteData.from, to: currentRouteData.to, roundtrip: currentRouteData.roundtrip, distance: currentRouteData.distance, duration: dur, kcal });
-  saveSettingsLocal();
-  renderWalkFavsInModal();
-  document.getElementById('save-route-btn').style.display = 'none';
-}
-// VÉLO — avec favoris
-function selectBikeMode() {
-  document.getElementById('in-desc').value = 'Vélo';
-  document.getElementById('label-qty').textContent = 'Durée (min)';
-  document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
-  document.getElementById('in-qty').value = '40';
-  document.getElementById('in-kcal').value = '18';
-  document.getElementById('speed-row').style.display = 'none';
-  document.getElementById('search-results').style.display = 'none';
-  document.getElementById('sport-favs-section').style.display = 'none';
-  document.getElementById('walk-advanced').style.display = 'none';
-  currentWalkFavName = '';
-  renderBikeFavsInModal();
-  recalc();
-}
-function renderBikeFavsInModal() {
-  if (!bikeFavorites.length) return;
-  const el = document.getElementById('walk-advanced');
-  el.style.display = 'block';
-  el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;">
-    <div class="sport-fav-title">⭐ Sorties favorites</div>
-    ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFav(${i})">
-      <div>
-        <div class="sport-fav-name">⭐ ${f.name}</div>
-        <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
-      </div>
-      <button onclick="event.stopPropagation();deleteBikeFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button>
-    </div>`).join('')}
-  </div>
-  <button class="walk-fav-btn" onclick="saveBikeFav()">⭐ Sauvegarder cette sortie</button>`;
-}
-function loadBikeFav(i) {
-  const f = bikeFavorites[i];
-  if (!f) return;
-  currentWalkFavName = f.name;
-  document.getElementById('in-qty').value = f.duration;
-  document.getElementById('in-kcal').value = f.speed;
-  recalc();
-}
-function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); renderBikeFavsInModal(); }
-function saveBikeFav() {
-  const name = prompt('Nom de cette sortie :', 'Sortie vélo');
-  if (!name) return;
-  const spd = parseFloat(document.getElementById('in-kcal').value) || 18;
-  const dur = parseInt(document.getElementById('in-qty').value) || 40;
-  const kcal = calcBikeKcal(spd, dur);
-  bikeFavorites.unshift({ name, speed: spd, duration: dur, kcal });
-  saveSettingsLocal();
-  renderBikeFavsInModal();
-}
-// RECHERCHE
-function recalc() {
-  const q = parseFloat(document.getElementById('in-qty').value) || 0;
-  const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
-  const k = getEffectiveKcal();
-  const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
-  const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-  const total = isSport ? Math.round(k * (q / 60)) : Math.round(k * (q / 100));
-  document.getElementById('calc-res').textContent = total + ' kcal';
-  if (isSport && desc === 'marche' && currentWalkMode === 'simple') {
-    const spd = parseFloat(document.getElementById('in-speed').value) || 5, dist = round1(spd * (q / 60));
-    document.getElementById('in-distance').value = dist + ' km';
-    document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${userWeight}kg)`;
-  } else if (isSport && desc === 'vélo') {
-    document.getElementById('calc-sub').textContent = `${raw || 0} km/h · ${k} kcal/h (${userWeight}kg)`;
-  } else if (isSport && desc === 'marche') {
-    const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-    document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${userWeight}kg)`;
-  } else {
-    document.getElementById('in-distance').value = '—';
-    document.getElementById('calc-sub').textContent = isSport ? `pour ${q} min` : (isDrink ? `pour ${q}ml` : `pour ${q}g`);
-  }
-}
-function getEffectiveKcal() {
-  const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
-  const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-  if (currentCat === 'Sport' && desc === 'marche') { const spd = parseFloat(document.getElementById('in-speed').value) || 5; return calcWalkKcalH(spd); }
-  if (currentCat === 'Sport' && desc === 'vélo') { return calcBikeKcalH(raw); }
-  return raw;
-}
-// EDIT ENTRY — reconstruit proprement
-function editEntry(id) {
-  const entry = currentEntries.find(e => e.id === id);
-  if (!entry) return;
-  editingId = entry.id;
-  currentCat = entry.category;
-  const isSport = entry.type === 'burn', isDrink = entry.category === 'Boissons';
-  const rawD = entry.desc || '';
-  const qtyMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*(min|g|ml)/i);
-  const qty = qtyMatch ? parseFloat(qtyMatch[1]) : (isSport ? 30 : 100);
-  const cleanLabel = rawD.replace(/\s*\(.*$/, '').trim();
-  document.getElementById('modal-title').textContent = isSport ? 'Modifier activité' : 'Modifier entrée';
-  document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
-  document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
-  document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
-  document.getElementById('saved-meal-link').style.display = 'none';
-  document.getElementById('fav-link-btn').style.display = 'none';
-  document.getElementById('speed-row').style.display = 'none';
-  document.getElementById('walk-advanced').style.display = 'none';
-  document.getElementById('sport-favs-section').style.display = 'none';
-  document.getElementById('in-qty').value = qty;
-  document.getElementById('in-desc').value = cleanLabel;
-  if (isSport) {
-    const ll = cleanLabel.toLowerCase().replace('🚶', '').replace('🚴', '').trim();
-    const perHour = qty > 0 ? Math.round(entry.val / (qty / 60)) : 0;
-    if (ll.includes('marche') || ll.includes('trajet') || ll.includes('→')) {
-      const spdMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km\/h/);
-      const spd = spdMatch ? parseFloat(spdMatch[1]) : 5;
-      document.getElementById('in-desc').value = 'Marche';
-      document.getElementById('speed-row').style.display = 'grid';
-      document.getElementById('in-speed').value = spd;
-      document.getElementById('in-kcal').value = calcWalkKcalH(spd);
-    } else if (ll.includes('vélo')) {
-      const spdMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km\/h/);
-      const spd = spdMatch ? parseFloat(spdMatch[1]) : 18;
-      document.getElementById('in-desc').value = 'Vélo';
-      document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
-      document.getElementById('in-kcal').value = spd;
-    } else { document.getElementById('in-kcal').value = perHour; }
-    document.getElementById('in-p').value = '0';
-    document.getElementById('in-g').value = '0';
-    document.getElementById('in-l').value = '0';
-  } else {
-    const per100 = qty > 0 ? Math.round(entry.val / (qty / 100)) : 0;
-    document.getElementById('in-kcal').value = per100;
-    document.getElementById('in-p').value = round1((entry.prot || 0) / (qty / 100));
-    document.getElementById('in-g').value = round1((entry.gluc || 0) / (qty / 100));
-    document.getElementById('in-l').value = round1((entry.lip || 0) / (qty / 100));
-  }
-  document.getElementById('submit-btn').textContent = 'Enregistrer';
-  document.getElementById('cancel-edit-btn').style.display = 'block';
-  document.getElementById('search-results').style.display = 'none';
-  recalc();
-  document.getElementById('modal-add').classList.add('open');
-}
-// SUBMIT ENTRY
-async function submitEntry() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
-  const q = parseFloat(document.getElementById('in-qty').value) || 0;
-  if (q <= 0) { alert('Indique une quantité ou une durée.'); return; }
-  const rawKcal = parseFloat(document.getElementById('in-kcal').value) || 0;
-  const k = getEffectiveKcal(), factor = isSport ? q / 60 : q / 100;
-  const val = Math.round(k * factor);
-  const p = parseFloat(document.getElementById('in-p').value) || 0;
-  const g = parseFloat(document.getElementById('in-g').value) || 0;
-  const l = parseFloat(document.getElementById('in-l').value) || 0;
-  const unit = isSport ? 'min' : (isDrink ? 'ml' : 'g');
-  let descName = document.getElementById('in-desc').value.trim();
-  if (!descName) { document.getElementById('in-desc').focus(); return; }
-  let descFinal;
-  if (isSport) {
-    const dl = descName.toLowerCase();
-    if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
-      const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-      const dist = round1(spd * (q / 60));
-      const label = currentWalkFavName || `${currentRouteData.from} → ${currentRouteData.to}`;
-      descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
-    } else if (dl === 'marche') {
-      const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-      const dist = round1(spd * (q / 60));
-      descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
-    } else if (dl === 'vélo') {
-      const spd = rawKcal;
-      const dist = round1(spd * (q / 60));
-      const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
-      descFinal = `🚴 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
-    } else { descFinal = `${descName} (${q}${unit})`; }
-  } else { descFinal = `${descName} (${q}${unit})`; }
-  const payload = {
-    user_id: user.id,
-    type: isSport ? 'burn' : 'food',
-    category: currentCat,
-    desc: descFinal,
-    val: Math.round(val),
-    prot: Math.round(p * factor * 10) / 10,
-    gluc: Math.round(g * factor * 10) / 10,
-    lip: Math.round(l * factor * 10) / 10,
-    date: dateToStr(modalDate)
-  };
-  let error = null;
-  if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
-  else { const res = await sb.from('entries').insert([payload]); error = res.error; }
-  if (error) { console.error(error); alert('Erreur : ' + error.message); return; }
-  closeModal();
-  loadData();
-  if (currentPage === 'bilan') loadBilan();
-}
-// RECIPES
-function getMealEntries(cat) { return currentEntries.filter(e => e.type === 'food' && e.category === cat); }
-function cloneRecipeItem(entry) {
-  const p = parseDesc(entry.desc), qty = p.qty || 100;
-  return {
-    id: Date.now() + Math.random(),
-    desc: p.label,
-    qty,
-    kcal100: Math.round(entry.val / (qty / 100)),
-    prot100: round1((entry.prot || 0) / (qty / 100)),
-    gluc100: round1((entry.gluc || 0) / (qty / 100)),
-    lip100: round1((entry.lip || 0) / (qty / 100)),
-    val: entry.val,
-    prot: entry.prot || 0,
-    gluc: entry.gluc || 0,
-    lip: entry.lip || 0
-  };
-}
-function recipeTotals(items) {
-  return items.reduce((a, i) => ({
-    kcal: a.kcal + (i.val || 0),
-    prot: a.prot + (i.prot || 0),
-    gluc: a.gluc + (i.gluc || 0),
-    lip: a.lip + (i.lip || 0)
-  }), { kcal: 0, prot: 0, gluc: 0, lip: 0 });
-}
-function openLinkMealModal(cat) {
-  recipePickerTargetCategory = cat;
-  const items = getMealEntries(cat);
-  document.getElementById('recipe-link-title').textContent = `Ajouter ${cat} à une recette`;
-  const box = document.getElementById('recipe-link-content');
-  if (!items.length) {
-    box.innerHTML = `<div class="recipe-link-card">
-      <div class="recipe-name">${cat}</div>
-      <div class="recipe-meta">Aucun aliment.</div>
-    </div>`;
-    document.getElementById('modal-recipe-link').classList.add('open');
-    return;
-  }
-  const t = recipeTotals(items.map(cloneRecipeItem));
-  box.innerHTML = `<div class="recipe-link-card">
-    <div class="recipe-name">${cat}</div>
-    <div class="recipe-meta">${items.length} ingrédient(s) · ${Math.round(t.kcal)} kcal · ${round1(t.prot)}&nbsp;g P · ${round1(t.gluc)}&nbsp;g G · ${round1(t.lip)}&nbsp;g L</div>
-    <div class="recipe-items">${items.map(i => `• ${i.desc}`).join('<br>')}</div>
-    <div class="recipe-actions">
-      <button class="recipe-btn primary" onclick="openRecipePickerForCategory('${esc(cat)}')">Ajouter à une recette existante</button>
-      <button class="recipe-btn" onclick="createRecipeFromCategory('${esc(cat)}')">Créer nouvelle recette</button>
-    </div>
-  </div>`;
-  document.getElementById('modal-recipe-link').classList.add('open');
-}
-function closeRecipeLinkModal() { document.getElementById('modal-recipe-link').classList.remove('open'); }
-function openRecipePickerForCategory(cat) { recipePickerTargetCategory = cat; closeRecipeLinkModal(); renderRecipePicker(); document.getElementById('modal-recipe-picker').classList.add('open'); }
-function closeRecipePicker() { document.getElementById('modal-recipe-picker').classList.remove('open'); }
-function openRecipePickerToAdd() { recipePickerTargetCategory = currentCat; renderRecipePicker(true); document.getElementById('modal-recipe-picker').classList.add('open'); }
-function renderRecipePicker(fromAdd = false) {
-  const el = document.getElementById('recipe-picker-list');
-  if (!savedRecipes.length) {
-    el.innerHTML = `<div class="recipe-card">
-      <div class="recipe-name">Aucune recette</div>
-      <div class="recipe-meta">Crée d'abord une recette dans Recettes.</div>
-    </div>`;
-    return;
-  }
-  el.innerHTML = savedRecipes.map(r => `<div class="recipe-card">
-    <div class="recipe-name">${r.name}</div>
-    <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
-    <div class="recipe-actions">
-      <button class="recipe-btn primary" onclick="${fromAdd ? `addRecipeToCurrentMeal('${r.id}')` : `appendCategoryToRecipe('${r.id}')`}">Choisir</button>
-    </div>
-  </div>`).join('');
-}
-function addRecipeToCurrentMeal(rid) {
-  const r = savedRecipes.find(r => r.id === rid);
-  if (!r) return;
-  closeRecipePicker();
-  closeModal();
-  r.items.forEach(async item => {
-    const qty = item.qty || 100, f = qty / 100;
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    await sb.from('entries').insert([{
-      user_id: user.id,
-      type: 'food',
-      category: currentCat,
-      desc: `${item.desc} (${qty}${currentCat === 'Boissons' ? 'ml' : 'g'})`,
-      val: Math.round((item.kcal100 || 0) * f),
-      prot: round1((item.prot100 || 0) * f),
-      gluc: round1((item.gluc100 || 0) * f),
-      lip: round1((item.lip100 || 0) * f),
-      date: dateToStr(modalDate)
-    }]);
-  });
-  setTimeout(() => loadData(), 400);
-}
-function appendCategoryToRecipe(rid) {
-  const r = savedRecipes.find(r => r.id === rid), items = getMealEntries(recipePickerTargetCategory);
-  if (!r || !items.length) return;
-  r.items.push(...items.map(cloneRecipeItem));
-  recomputeRecipe(r);
-  saveAndSyncRecipes();
-  closeRecipePicker();
-  renderRecipesPage();
-}
-function createRecipeFromCategory(cat) {
-  const items = getMealEntries(cat).map(cloneRecipeItem);
-  closeRecipeLinkModal();
-  openRecipeEditorNew(cat + ' du jour', items);
-}
-function openRecipeEditorNew(name = '', seed = []) {
-  editingRecipeId = null;
-  recipeBuilder = seed.map(i => ({ ...i, id: Date.now() + Math.random() }));
-  document.getElementById('re-name').value = name || document.getElementById('recipe-new-name').value.trim();
-  document.getElementById('recipe-editor-title').textContent = 'Nouvelle recette';
-  resetRecipeDraft();
-  renderRecipeBuilder();
-  document.getElementById('modal-recipe-editor').classList.add('open');
-}
-function openRecipeEditorEdit(rid) {
-  const r = savedRecipes.find(r => r.id === rid);
-  if (!r) return;
-  editingRecipeId = r.id;
-  recipeBuilder = r.items.map(i => ({ ...i, id: Date.now() + Math.random() }));
-  document.getElementById('re-name').value = r.name;
-  document.getElementById('recipe-editor-title').textContent = 'Modifier la recette';
-  resetRecipeDraft();
-  renderRecipeBuilder();
-  document.getElementById('modal-recipe-editor').classList.add('open');
-}
-function closeRecipeEditor() { document.getElementById('modal-recipe-editor').classList.remove('open'); }
-function resetRecipeDraft() {
-  ['re-desc', 're-kcal'].forEach(id => document.getElementById(id).value = '');
-  ['re-p', 're-g', 're-l'].forEach(id => document.getElementById(id).value = '0');
-  document.getElementById('re-qty').value = '100';
-  document.getElementById('re-search-results').style.display = 'none';
-  document.getElementById('re-search-results').innerHTML = '';
-  recalcRecipeDraft();
-}
-function searchRecipeFood() { const v = document.getElementById('re-desc').value.trim(); if (!v) return; searchFood(v, 'recipe'); }
-function fillRecipeIngredient(n, k, pr, gl, lp) {
-  document.getElementById('re-desc').value = n;
-  document.getElementById('re-kcal').value = k;
-  document.getElementById('re-p').value = pr;
-  document.getElementById('re-g').value = gl;
-  document.getElementById('re-l').value = lp;
-  document.getElementById('re-search-results').style.display = 'none';
-  recalcRecipeDraft();
-}
-function recalcRecipeDraft() {
-  const q = parseFloat(document.getElementById('re-qty').value) || 0, k = parseFloat(document.getElementById('re-kcal').value) || 0;
-  document.getElementById('re-calc').textContent = Math.round(k * (q / 100)) + ' kcal';
-  document.getElementById('re-calc-sub').textContent = `pour ${q}g/ml`;
-}
-function addIngredientToRecipeBuilder() {
-  const desc = document.getElementById('re-desc').value.trim(),
-        qty = parseFloat(document.getElementById('re-qty').value) || 0,
-        k = parseFloat(document.getElementById('re-kcal').value) || 0,
-        p = parseFloat(document.getElementById('re-p').value) || 0,
-        g = parseFloat(document.getElementById('re-g').value) || 0,
-        l = parseFloat(document.getElementById('re-l').value) || 0;
-  if (!desc || qty <= 0) return;
-  const f = qty / 100;
-  recipeBuilder.push({
-    id: Date.now() + Math.random(),
-    desc, qty, kcal100: k, prot100: p, gluc100: g, lip100: l,
-    val: Math.round(k * f), prot: round1(p * f), gluc: round1(g * f), lip: round1(l * f)
-  });
-  resetRecipeDraft();
-  renderRecipeBuilder();
-}
-function removeBuilderItem(id) { recipeBuilder = recipeBuilder.filter(i => i.id !== id); renderRecipeBuilder(); }
-function renderRecipeBuilder() {
-  const el = document.getElementById('recipe-builder-list');
-  if (!recipeBuilder.length) { el.innerHTML = `<div class="recipe-card"><div class="recipe-meta">Aucun ingrédient.</div></div>`; return; }
-  const t = recipeTotals(recipeBuilder);
-  el.innerHTML = `${recipeBuilder.map(i => `<div class="builder-item">
-    <div class="builder-main">
-      <div class="builder-title">${i.desc}</div>
-      <div class="builder-sub">${i.qty}&nbsp;g/ml · ${i.val} kcal · ${round1(i.prot)}&nbsp;g P · ${round1(i.gluc)}&nbsp;g G · ${round1(i.lip)}&nbsp;g L</div>
-    </div>
-    <div class="food-item-actions">
-      <button class="food-btn" onclick="editRecipeIngredient(${i.id})">✎</button>
-      <button class="food-btn danger" onclick="removeBuilderItem(${i.id})">✕</button>
-    </div>
-  </div>`).join('')}
-  <div class="recipe-card">
-    <div class="recipe-name">Total</div>
-    <div class="recipe-items">${Math.round(t.kcal)} kcal · ${round1(t.prot)}&nbsp;g P · ${round1(t.gluc)}&nbsp;g G · ${round1(t.lip)}&nbsp;g L</div>
-  </div>`;
-}
-function editRecipeIngredient(id) {
-  const item = recipeBuilder.find(i => i.id === id);
-  if (!item) return;
-  document.getElementById('re-desc').value = item.desc;
-  document.getElementById('re-qty').value = item.qty;
-  document.getElementById('re-kcal').value = item.kcal100;
-  document.getElementById('re-p').value = item.prot100;
-  document.getElementById('re-g').value = item.gluc100;
-  document.getElementById('re-l').value = item.lip100;
-  removeBuilderItem(id);
-  recalcRecipeDraft();
-}
-function recomputeRecipe(r) {
-  const t = recipeTotals(r.items);
-  r.totalKcal = Math.round(t.kcal);
-  r.totalProt = round1(t.prot);
-  r.totalGluc = round1(t.gluc);
-  r.totalLip = round1(t.lip);
-}
-async function saveAndSyncRecipes() { saveSettingsLocal(); await pushSettingsRemote(); }
-async function saveRecipeFromBuilder() {
-  const name = document.getElementById('re-name').value.trim();
-  if (!name || !recipeBuilder.length) { alert('Nom + ingrédients requis.'); return; }
-  const payload = { id: editingRecipeId || String(Date.now()), name, items: recipeBuilder.map(({ id, ...r }) => r) };
-  recomputeRecipe(payload);
-  if (editingRecipeId) { const i = savedRecipes.findIndex(r => r.id === editingRecipeId); if (i >= 0) savedRecipes[i] = payload; }
-  else { savedRecipes.unshift(payload); }
-  await saveAndSyncRecipes();
-  closeRecipeEditor();
-  document.getElementById('recipe-new-name').value = '';
-  renderRecipesPage();
-}
-async function deleteRecipe(rid) { savedRecipes = savedRecipes.filter(r => r.id !== rid); await saveAndSyncRecipes(); renderRecipesPage(); }
-function addRecipeToToday(rid, cat = 'Déjeuner', date = null) {
-  currentCat = cat;
-  modalDate = date || new Date();
-  openModal(cat, modalDate, true);
-  addRecipeToCurrentMeal(rid);
-}
-function renderRecipesPage() {
-  const el = document.getElementById('recipes-list');
-  if (!savedRecipes.length) {
-    el.innerHTML = `<div class="recipe-card">
-      <div class="recipe-name">Aucune recette</div>
-      <div class="recipe-meta">Crée ta première recette.</div>
-    </div>`;
-    return;
-  }
-  el.innerHTML = savedRecipes.map(r => `<div class="recipe-card">
-    <div class="recipe-name" onclick="openRecipeEditorEdit('${r.id}')">${r.name}</div>
-    <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
-    <div class="recipe-items">${r.items.slice(0, 4).map(i => `• ${i.desc} (${i.qty}&nbsp;g/ml)`).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
-    <div class="recipe-actions">
-      <button class="recipe-btn primary" onclick="openRecipePickerDateChoice('${r.id}')">Ajouter aujourd'hui</button>
-      <button class="recipe-btn" onclick="openRecipeEditorEdit('${r.id}')">Modifier</button>
-      <button class="recipe-btn danger" onclick="deleteRecipe('${r.id}')">Supprimer</button>
-    </div>
-  </div>`).join('');
-}
-function openRecipePickerDateChoice(rid) {
-  document.getElementById('modal-recipe-link').classList.add('open');
-  document.getElementById('recipe-link-date-picker-row').style.display = 'block';
-  document.getElementById('recipe-link-category-picker-row').style.display = 'block';
-  document.getElementById('recipe-link-title').textContent = 'Choisir date et repas';
-  document.getElementById('recipe-link-content').innerHTML = `
-    <button class="btn-primary" onclick="openRecipePickerCategoryChoice('${rid}')">Valider</button>
-    <button class="btn-cancel" onclick="closeRecipeLinkModal()">Annuler</button>
-  `;
-  recipeLinkDate = new Date();
-  updateRecipeLinkDateUI();
-}
-function openRecipePickerCategoryChoice(rid) {
-  const cat = recipeLinkCategory;
-  addRecipeToToday(rid, cat, recipeLinkDate);
-  closeRecipeLinkModal();
-}
-// BILAN — 7 jours exacts + macros
-function startOfWeek(d) {
-  const r = new Date(d), dow = r.getDay(), diff = dow === 0 ? -6 : 1 - dow;
-  r.setDate(r.getDate() + diff);
-  r.setHours(0, 0, 0, 0);
-  return r;
-}
-function endOfWeek(d) {
-  const r = startOfWeek(d);
-  r.setDate(r.getDate() + 6);
-  r.setHours(23, 59, 59, 999);
-  return r;
-}
-function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0); }
-function endOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999); }
-function startOfQuarter(d) { const q = Math.floor(d.getMonth() / 3) * 3; return new Date(d.getFullYear(), q, 1, 0, 0, 0, 0); }
-function endOfQuarter(d) { const q = Math.floor(d.getMonth() / 3) * 3; return new Date(d.getFullYear(), q + 3, 0, 23, 59, 59, 999); }
-function startOfYear(d) { return new Date(d.getFullYear(), 0, 1, 0, 0, 0, 0); }
-function endOfYear(d) { return new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999); }
-function daysBetween(s, e) { return Math.round((e.getTime() - s.getTime()) / 86400000) + 1; }
-function setBilanRange(r) { bilanRange = r; bilanCursor = new Date(); ['week', 'month', 'quarter', 'year'].forEach(x => document.getElementById('range-' + x).classList.toggle('active', x === r)); loadBilan(); }
-function moveBilan(d) {
-  if (bilanRange === 'week') bilanCursor.setDate(bilanCursor.getDate() + (d * 7));
-  else if (bilanRange === 'month') bilanCursor.setMonth(bilanCursor.getMonth() + d);
-  else if (bilanRange === 'quarter') bilanCursor.setMonth(bilanCursor.getMonth() + (d * 3));
-  else bilanCursor.setFullYear(bilanCursor.getFullYear() + d);
-  loadBilan();
-}
-function resetBilanToToday() { bilanCursor = new Date(); loadBilan(); }
-function renderBilanNav(s, e) {
-  document.getElementById('bilan-nav').innerHTML = `<div class="nav-card">
-    <div class="week-nav">
-      <button class="nav-btn" onclick="moveBilan(-1)">← Préc.</button>
-      <div class="nav-center">${formatDateFR(s, { day: 'numeric', month: 'short' })} → ${formatDateFR(e, { day: 'numeric', month: 'short' })}</div>
-      <button class="nav-btn" onclick="moveBilan(1)">Suiv. →</button>
-    </div>
-    <div class="recipe-actions" style="margin-top:8px;">
-      <button class="nav-btn primary" onclick="resetBilanToToday()">Aujourd'hui</button>
-    </div>
-  </div>`;
-}
-async function loadBilan() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  const now = new Date(bilanCursor);
-  let start, end, label;
-  if (bilanRange === 'week') { start = startOfWeek(now); end = endOfWeek(now); label = 'Semaine'; }
-  else if (bilanRange === 'month') { start = startOfMonth(now); end = endOfMonth(now); label = 'Mois'; }
-  else if (bilanRange === 'quarter') { start = startOfQuarter(now); end = endOfQuarter(now); label = 'Trimestre'; }
-  else { start = startOfYear(now); end = endOfYear(now); label = 'Année'; }
-  const startStr = dateToStr(start), endStr = dateToStr(end);
-  renderBilanNav(startStr, endStr);
-  const { data } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
-  const rows = data || [];
-  const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
-  const totalDays = daysBetween(start, end);
-  const byDay = {};
-  for (let i = 0; i < totalDays; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    byDay[dateToStr(d)] = { food: 0, sport: 0, out: bmr, prot: 0, gluc: 0, lip: 0 };
-  }
-  rows.forEach(e => {
-    if (!byDay[e.date]) return;
-    if (e.type === 'food') { byDay[e.date].food += e.val; byDay[e.date].prot += (e.prot || 0); byDay[e.date].gluc += (e.gluc || 0); byDay[e.date].lip += (e.lip || 0); }
-    if (e.type === 'burn') byDay[e.date].sport += e.val;
-  });
-  Object.keys(byDay).forEach(d => { byDay[d].out = bmr + byDay[d].sport; });
-  const values = Object.entries(byDay);
-  const sumIn = values.reduce((s, [, v]) => s + v.food, 0);
-  const sumOut = values.reduce((s, [, v]) => s + v.out, 0);
-  const sumProt = values.reduce((s, [, v]) => s + v.prot, 0);
-  const sumGluc = values.reduce((s, [, v]) => s + v.gluc, 0);
-  const sumLip = values.reduce((s, [, v]) => s + v.lip, 0);
-  const avgIn = Math.round(sumIn / totalDays);
-  const avgOut = Math.round(sumOut / totalDays);
-  const avgProt = Math.round(sumProt / totalDays);
-  const avgGluc = Math.round(sumGluc / totalDays);
-  const avgLip = Math.round(sumLip / totalDays);
-  document.getElementById('bilan-summary').innerHTML = `
-    <div class="summary-card">
-      <div class="summary-title">${label}</div>
-      <div class="summary-sub">${formatDateFR(startStr, { day: 'numeric', month: 'short', year: 'numeric' })} → ${formatDateFR(endStr, { day: 'numeric', month: 'short', year: 'numeric' })} · ${totalDays} jours</div>
-      <div class="summary-kpi-row">
-        <div class="mini-kpi in"><div class="label">Moy. ingérée / jour</div><div class="val">${avgIn}</div></div>
-        <div class="mini-kpi out"><div class="label">Moy. dépensée / jour</div><div class="val">${avgOut}</div></div>
-      </div>
-      <div class="macro-kpi-row">
-        <div class="macro-kpi p"><div class="label">Prot. moy/j</div><div class="val">${avgProt}&nbsp;g</div></div>
-        <div class="macro-kpi g"><div class="label">Gluc. moy/j</div><div class="val">${avgGluc}&nbsp;g</div></div>
-        <div class="macro-kpi l"><div class="label">Lip. moy/j</div><div class="val">${avgLip}&nbsp;g</div></div>
-      </div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-title">Totaux période</div>
-      <div class="summary-sub">${totalDays} jours</div>
-      <div class="summary-kpi-row">
-        <div class="mini-kpi in"><div class="label">Total ingéré</div><div class="val">${sumIn}</div></div>
-        <div class="mini-kpi out"><div class="label">Total dépensé</div><div class="val">${sumOut}</div></div>
-      </div>
-      <div class="macro-kpi-row">
-        <div class="macro-kpi p"><div class="label">Protéines</div><div class="val">${Math.round(sumProt)}&nbsp;g</div></div>
-        <div class="macro-kpi g"><div class="label">Glucides</div><div class="val">${Math.round(sumGluc)}&nbsp;g</div></div>
-        <div class="macro-kpi l"><div class="label">Lipides</div><div class="val">${Math.round(sumLip)}&nbsp;g</div></div>
-      </div>
-    </div>`;
-  if (bilanRange === 'week') {
-    document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
-      values.map(([date, v]) => {
-        const bal = v.food - v.out;
-        const balClass = bal >= 0 ? 'neg' : 'pos';
-        return `<div class="day-line">
-          <div class="day-line-header">
-            <div class="day-line-name">${formatDateFR(date, { weekday: 'long', day: 'numeric', month: 'short' })}</div>
-            <div class="day-line-bal ${balClass}">${bal >= 0 ? '+' : ''}${bal} kcal</div>
-          </div>
-          <div class="day-line-details">
-            <div class="day-line-item">🍽️ Ingéré : <span>${v.food} kcal</span></div>
-            <div class="day-line-item">🔥 Dépensé : <span>${v.out} kcal</span></div>
-          </div>
-          <div class="day-line-macros">
-            <div class="day-line-macro p">P : <span>${Math.round(v.prot)}&nbsp;g</span></div>
-            <div class="day-line-macro g">G : <span>${Math.round(v.gluc)}&nbsp;g</span></div>
-            <div class="day-line-macro l">L : <span>${Math.round(v.lip)}&nbsp;g</span></div>
-          </div>
-        </div>`;
-      }).join('');
-  } else {
-    document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Vue synthétique</div><div class="summary-sub">Moyennes et totaux affichés ci-dessus.</div></div>`;
-  }
-}
-// POIDS
-async function loadWeightEntries() {
-  try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('weight_entries').select('*').eq('user_id', user.id).order('date', { ascending: true }); weightEntries = data || []; } catch (e) { console.error(e); }
-}
-function openWeightModal() { document.getElementById('w-date').value = todayStr(); renderWeightModal(); document.getElementById('modal-weight').classList.add('open'); }
-function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); }
-function renderWeightModal() { renderIMC(); renderWeightChart(); renderWeightHistory(); }
-async function addWeightEntry() {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  const v = parseFloat(document.getElementById('w-val').value), date = document.getElementById('w-date').value;
-  if (!v || !date) { alert('Renseigne poids et date.'); return; }
-  await sb.from('weight_entries').upsert({ user_id: user.id, weight: v, date }, { onConflict: 'user_id,date' });
-  const last = weightEntries.length ? weightEntries[weightEntries.length - 1].date : '';
-  if (!last || date >= last) { userWeight = v; saveSettingsLocal(); await pushSettingsRemote(); document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight, userAge, userSexe); }
-  await loadWeightEntries(); renderWeightModal(); document.getElementById('w-val').value = '';
-}
-async function deleteWeightEntry(id) {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  const entry = weightEntries.find(e => e.id === id);
-  if (!entry) return;
-  await sb.from('weight_entries').delete().eq('id', id);
-  // Restaurer le dernier poids si on supprime le dernier
-  if (entry.date === weightEntries[weightEntries.length - 1].date) {
-    const lastEntry = weightEntries.slice().reverse().find(e => e.date !== entry.date);
-    if (lastEntry) {
-      userWeight = lastEntry.weight;
-      saveSettingsLocal();
-      await pushSettingsRemote();
-      document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight, userAge, userSexe);
-    }
-  }
-  await loadWeightEntries(); renderWeightModal();
-}
-function renderIMC() {
-  if (!weightEntries.length) return;
-  const lw = weightEntries[weightEntries.length - 1].weight, h = userHeight / 100, imc = round1(lw / (h * h));
-  document.getElementById('imc-val').textContent = imc;
-  let label, color;
-  if (imc < 16.5) { label = 'Dénutrition sévère'; color = '#3b82f6'; }
-  else if (imc < 18.5) { label = 'Maigreur'; color = '#60a5fa'; }
-  else if (imc < 25) { label = 'Corpulence normale ✓'; color = '#22c55e'; }
-  else if (imc < 30) { label = 'Surpoids'; color = '#f59e0b'; }
-  else if (imc < 35) { label = 'Obésité modérée'; color = '#ef4444'; }
-  else { label = 'Obésité sévère'; color = '#7c2d12'; }
-  document.getElementById('imc-label').textContent = label;
-  document.getElementById('imc-val').style.color = color;
-  document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((imc - 16) / (40 - 16)) * 100)) + '%';
-}
-function renderWeightChart() {
-  const svg = document.getElementById('weight-svg');
-  if (weightEntries.length < 2) { svg.innerHTML = `<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="DM Sans">Ajoute au moins 2 entrées.</text>`; return; }
-  const vals = weightEntries.map(e => e.weight), minW = Math.min(...vals) - 1, maxW = Math.max(...vals) + 1, W = 400, H = 160, P = 32;
-  const xs = i => (i / (weightEntries.length - 1)) * (W - P * 2) + P, ys = v => H - P - ((v - minW) / (maxW - minW)) * (H - P * 2);
-  const pts = weightEntries.map((e, i) => `${xs(i)},${ys(e.weight)}`).join(' ');
-  // Ajout des valeurs au survol
-  svg.innerHTML = `
-    <defs>
-      <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/>
-        <stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
-      </linearGradient>
-      <style>
-        .weight-tooltip { display: none; }
-        .weight-tooltip.active { display: block; }
-      </style>
-    </defs>
-    <polygon points="${P},${H - P} ${pts} ${W - P},${H - P}" fill="url(#wg)"/>
-    <polyline points="${pts}" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    ${weightEntries.map((e, i) => `
-      <circle cx="${xs(i)}" cy="${ys(e.weight)}" r="3" fill="#5b7fff" data-index="${i}" onmouseover="showWeightTooltip(${i}, event)" onmouseout="hideWeightTooltip()"/>
-    `).join('')}
-    <text x="${P}" y="${H - 8}" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' })}</text>
-    <text x="${W - P}" y="${H - 8}" text-anchor="end" fill="#7a8098" font-size="9" font-family="DM Sans">${formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' })}</text>
-    <!-- Échelle des ordonnées -->
-    <text x="${P - 10}" y="12" fill="#7a8098" font-size="9" font-family="DM Sans" text-anchor="end">${Math.round(maxW)}</text>
-    <text x="${P - 10}" y="${H - 8}" fill="#7a8098" font-size="9" font-family="DM Sans" text-anchor="end">${Math.round(minW)}</text>
-    <line x1="${P}" y1="12" x2="${W - P}" y2="12" stroke="var(--border)" stroke-width="1" stroke-dasharray="2"/>
-    <line x1="${P}" y1="${H - 8}" x2="${W - P}" y2="${H - 8}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2"/>
-    <foreignObject x="0" y="0" width="${W}" height="${H}" class="weight-tooltip" id="weight-tooltip">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text);position:absolute;pointer-events:none;"></div>
-    </foreignObject>
-  `;
-}
-function showWeightTooltip(i, e) {
-  const entry = weightEntries[i];
-  const tooltip = document.getElementById('weight-tooltip');
-  tooltip.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text);position:absolute;pointer-events:none;left:${e.clientX}px;top:${e.clientY - 40}px">${entry.weight} kg<br>${formatDateFR(entry.date, { day: 'numeric', month: 'short' })}</div>`;
-  tooltip.classList.add('active');
-}
-function hideWeightTooltip() {
-  document.getElementById('weight-tooltip').classList.remove('active');
-}
-function renderWeightHistory() {
-  const el = document.getElementById('weight-history-list');
-  if (!weightEntries.length) { el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:12px 0;">Aucune entrée.</div>`; return; }
-  el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-item">
-    <div class="weight-entry-date">${formatDateFR(e.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
-    <div class="weight-entry-val">${e.weight} kg</div>
-    <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
-    <button class="weight-entry-del" onclick="editWeightEntry('${e.id}', '${e.weight}')">✎</button>
-  </div>`).join('');
-}
-function editWeightEntry(id, currentValue) {
-  const newValue = prompt('Nouveau poids (kg) :', currentValue);
-  if (!newValue) return;
-  const v = parseFloat(newValue);
-  if (isNaN(v)) { alert('Valeur invalide.'); return; }
-  sb.from('weight_entries').update({ weight: v }).eq('id', id).then(() => {
-    loadWeightEntries().then(renderWeightModal);
-  });
-}
-// LOAD DATA (journal)
-async function loadData() {
-  try {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', dateToStr(modalDate));
-    let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
-    const entries = (data || []).sort((a, b) => a.id - b.id);
-    currentEntries = entries;
-    entries.forEach(e => {
-      if (e.type === 'food') { tIn += e.val; tP += e.prot || 0; tG += e.gluc || 0; tL += e.lip || 0; }
-      else { tSport += e.val; }
-    });
-    const bmr = calcBMR(userWeight, userHeight, userAge, userSexe), totalOut = bmr + tSport, remaining = userGoal - tIn, pct = Math.min(100, Math.round((tIn / Math.max(userGoal, 1)) * 100));
-    document.getElementById('kcal-left').textContent = remaining;
-    document.getElementById('stat-in').textContent = tIn;
-    document.getElementById('stat-out').textContent = totalOut;
-    document.getElementById('stat-bmr').textContent = bmr;
-    document.getElementById('stat-sport').textContent = tSport;
-    document.getElementById('total-p').textContent = Math.round(tP) + '&nbsp;g';
-    document.getElementById('total-g').textContent = Math.round(tG) + '&nbsp;g';
-    document.getElementById('total-l').textContent = Math.round(tL) + '&nbsp;g';
-    document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('progress-eaten').textContent = tIn + ' mangé';
-    document.getElementById('progress-goal').textContent = userGoal + ' objectif';
-    const bar = document.getElementById('progress-fill');
-    if (pct > 95) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316)';
-    else if (pct > 75) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
-    else bar.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
-    const ke = document.getElementById('kcal-left');
-    if (remaining < 0) ke.style.background = 'linear-gradient(135deg,#ef4444,#f87171)';
-    else if (remaining < 300) ke.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
-    else ke.style.background = 'linear-gradient(135deg,#fff 30%,#7a8098)';
-    ke.style.webkitBackgroundClip = 'text';
-    ke.style.webkitTextFillColor = 'transparent';
-    // Bilan du jour
-    const balance = tIn - totalOut;
-    const balanceEl = document.getElementById('day-balance');
-    balanceEl.textContent = balance >= 0 ? `+${balance} kcal` : `${balance} kcal`;
-    balanceEl.className = 'day-balance ' + (balance > 0 ? 'negative' : balance < 0 ? 'positive' : 'neutral');
-    const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Sport'];
-    const ICONS = { 'Petit-déjeuner': '🥐', 'Déjeuner': '🍽️', 'Dîner': '🌙', 'Snack': '🍎', 'Boissons': '🥤', 'Sport': '🔥' };
-    const groups = {};
-    ORDER.forEach(c => groups[c] = []);
-    entries.forEach(e => { if (groups[e.category] !== undefined) groups[e.category].push(e); });
-    let html = '';
-    ORDER.forEach(cat => {
-      const items = groups[cat], sub = items.reduce((s, e) => s + e.val, 0), isSport = cat === 'Sport';
-      html += `<div class="entry-group">
-        <div class="entry-group-header">
-          <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span></div>
-          <div class="entry-group-actions">
-            <button class="entry-add-btn" onclick="openModal('${cat}', modalDate)">+ Ajouter</button>
-            ${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>` : ''}
-            ${!isSport && items.length ? `<button class="entry-add-btn danger" onclick="deleteAllMealEntries('${cat}')">✕ Tout</button>` : ''}
-            <span class="entry-group-total ${isSport ? 'sport' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
-          </div>
-        </div>
-        <div class="entry-group-items">${items.length ? items.map(e => {
-          const raw = e.desc || '';
-          const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
-          let main = raw, sub2 = '';
-          if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
-          return `<div class="entry-item">
-            <div class="entry-main">
-              <div class="entry-desc">${main}</div>
-              ${sub2 ? `<div class="entry-sub">${sub2}</div>` : ''}
-            </div>
-            <div class="entry-right">
-              <span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val}</span>
-              <button class="entry-action" onclick="editEntry(${e.id})">✎</button>
-              <button class="entry-action delete" onclick="del(${e.id})">✕</button>
-            </div>
-          </div>`;
-        }).join('') : `<div class="entry-item"><div class="entry-main"><div class="entry-desc" style="color:var(--muted)">Aucune entrée</div></div></div>`}</div>
-      </div>`;
-    });
-    document.getElementById('daily-list').innerHTML = html;
-  } catch (e) { console.error('loadData:', e); }
-}
-async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
-async function deleteAllMealEntries(cat) {
-  if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');
-  for (const entry of entriesToDelete) {
-    await sb.from('entries').delete().eq('id', entry.id);
-  }
-  loadData();
-}
-// AUTH
-async function handleAuth() {
-  const email = document.getElementById('auth-email').value.trim(), pass = document.getElementById('auth-pass').value;
-  document.getElementById('auth-error').style.display = 'none';
-  try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = error.message; }
-    else { await init(); }
-  } catch (e) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = 'Erreur de connexion.'; }
-}
-function logout() { sb.auth.signOut().then(() => location.reload()); }
-// MODAL SPORTS FAVORIS
-function openSportFavsModal() {
-  currentSportTab = 'walk';
-  renderSportFavsTabBtns();
-  renderSportFavsContent();
-  document.getElementById('modal-sport-favs').classList.add('open');
-}
-function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }
-function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }
-function renderSportFavsTabBtns() {
-  document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');
-  document.getElementById('sport-tab-bike').classList.toggle('active', currentSportTab === 'bike');
-}
-function renderSportFavsContent() {
-  const el = document.getElementById('sport-favs-content');
-  if (currentSportTab === 'walk') {
-    if (!walkFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucun trajet favori.</div>`; }
-    else {
-      el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item">
-        <div class="builder-main">
-          <div class="builder-title">${f.name}</div>
-          <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
-        </div>
-        <div class="food-item-actions">
-          <button class="food-btn primary" onclick="loadWalkFavQuick(${i})">Utiliser</button>
-          <button class="food-btn" onclick="editWalkFav(${i})">✎</button>
-          <button class="food-btn danger" onclick="deleteWalkFav(${i})">✕</button>
-        </div>
-      </div>`).join('');
-    }
-  } else {
-    if (!bikeFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucune sortie vélo favorite.</div>`; }
-    else {
-      el.innerHTML = bikeFavorites.map((f, i) => `<div class="sport-fav-item">
-        <div class="builder-main">
-          <div class="builder-title">${f.name}</div>
-          <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
-        </div>
-        <div class="food-item-actions">
-          <button class="food-btn primary" onclick="loadBikeFavQuick(${i})">Utiliser</button>
-          <button class="food-btn" onclick="editBikeFav(${i})">✎</button>
-          <button class="food-btn danger" onclick="deleteBikeFav(${i})">✕</button>
-        </div>
-      </div>`).join('');
-    }
-  }
-}
-function openWalkAdvanced() { closeSportFavsModal(); openModal('Sport'); selectWalkMode(); }
-function openBikeAdvanced() { closeSportFavsModal(); openModal('Sport'); selectBikeMode(); }
-function editWalkFav(i) {
-  const f = walkFavorites[i];
-  if (!f) return;
-  closeSportFavsModal();
-  openModal('Sport');
-  selectWalkMode();
-  setWalkMode('route');
-  document.getElementById('walk-from').value = f.from || '';
-  document.getElementById('walk-to').value = f.to || '';
-  document.getElementById('walk-roundtrip').checked = f.roundtrip || false;
-  routeBaseDistance = f.distance;
-  routeBaseDuration = f.duration;
-  currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
-  currentWalkFavName = f.name;
-  document.getElementById('walk-route-result').style.display = 'block';
-  document.getElementById('walk-route-result').innerHTML = `⭐ <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
-  document.getElementById('walk-custom-dur-box').style.display = 'block';
-  document.getElementById('walk-custom-dur').value = f.duration;
-  document.getElementById('save-route-btn').style.display = 'inline-block';
-  document.getElementById('save-route-btn').dataset.dist = f.distance;
-  document.getElementById('save-route-btn').dataset.dur = f.duration;
-  document.getElementById('save-route-btn').dataset.kcal = f.kcal;
-  updateRouteCalc(f.distance, f.duration);
-}
-function editBikeFav(i) {
-  const f = bikeFavorites[i];
-  if (!f) return;
-  closeSportFavsModal();
-  openModal('Sport');
-  selectBikeMode();
-  document.getElementById('in-qty').value = f.duration;
-  document.getElementById('in-kcal').value = f.speed;
-  currentWalkFavName = f.name;
-  recalc();
-}
-// CALENDRIER MODAL
-function updateModalDateUI() {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const isToday = modalDate.getTime() === today.getTime();
-  document.getElementById('modal-date-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(modalDate), { weekday: 'long', day: 'numeric', month: 'long' });
-  document.getElementById('modal-date-sub').textContent = isToday ? formatDateFR(dateToStr(modalDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(modalDate), { year: 'numeric' });
-}
-function moveModalDate(d) { closeModalCalendar(); modalDate.setDate(modalDate.getDate() + d); updateModalDateUI(); }
-function toggleModalCalendar() {
-  modalCalOpen = !modalCalOpen;
-  if (modalCalOpen) { modalCalViewDate = new Date(modalDate); renderModalCalendar(); document.getElementById('modal-cal-dropdown').classList.add('open'); setTimeout(() => document.addEventListener('click', closeModalCal, { once: true }), 10); }
-  else { closeModalCalendar(); }
-}
-function closeModalCal() { closeModalCalendar(); }
-function closeModalCalendar() { modalCalOpen = false; document.getElementById('modal-cal-dropdown').classList.remove('open'); }
-function modalCalNav(d) { modalCalViewDate.setMonth(modalCalViewDate.getMonth() + d); renderModalCalendar(); }
-function renderModalCalendar() {
-  const y = modalCalViewDate.getFullYear(), m = modalCalViewDate.getMonth();
-  document.getElementById('modal-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const sel = dateToStr(modalDate);
-  let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
-  let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
-  for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
-  const dim = new Date(y, m + 1, 0).getDate();
-  for (let d = 1; d <= dim; d++) {
-    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const dt = new Date(y, m, d, 0, 0, 0, 0);
-    const isT = dt.getTime() === today.getTime(), isS = ds === sel;
-    html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectModalCalDate('${ds}')">${d}</div>`;
-  }
-  document.getElementById('modal-cal-grid').innerHTML = html;
-}
-function selectModalCalDate(ds) { modalDate = strToDate(ds); updateModalDateUI(); closeModalCalendar(); }
-// CALENDRIER RECIPE LINK
-function updateRecipeLinkDateUI() {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const isToday = recipeLinkDate.getTime() === today.getTime();
-  document.getElementById('recipe-link-date-label').textContent = isToday ? "Aujourd'hui" : formatDateFR(dateToStr(recipeLinkDate), { weekday: 'long', day: 'numeric', month: 'long' });
-  document.getElementById('recipe-link-date-sub').textContent = isToday ? formatDateFR(dateToStr(recipeLinkDate), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(dateToStr(recipeLinkDate), { year: 'numeric' });
-}
-function moveRecipeLinkDate(d) { closeRecipeLinkCalendar(); recipeLinkDate.setDate(recipeLinkDate.getDate() + d); updateRecipeLinkDateUI(); }
-function toggleRecipeLinkCalendar() {
-  recipeLinkCalOpen = !recipeLinkCalOpen;
-  if (recipeLinkCalOpen) { recipeLinkCalViewDate = new Date(recipeLinkDate); renderRecipeLinkCalendar(); document.getElementById('recipe-link-cal-dropdown').classList.add('open'); setTimeout(() => document.addEventListener('click', closeRecipeLinkCal, { once: true }), 10); }
-  else { closeRecipeLinkCalendar(); }
-}
-function closeRecipeLinkCal() { closeRecipeLinkCalendar(); }
-function closeRecipeLinkCalendar() { recipeLinkCalOpen = false; document.getElementById('recipe-link-cal-dropdown').classList.remove('open'); }
-function recipeLinkCalNav(d) { recipeLinkCalViewDate.setMonth(recipeLinkCalViewDate.getMonth() + d); renderRecipeLinkCalendar(); }
-function renderRecipeLinkCalendar() {
-  const y = recipeLinkCalViewDate.getFullYear(), m = recipeLinkCalViewDate.getMonth();
-  document.getElementById('recipe-link-cal-month-label').textContent = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const sel = dateToStr(recipeLinkDate);
-  let html = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'].map(d => `<div class="cal-day-label">${d}</div>`).join('');
-  let dow = new Date(y, m, 1).getDay(); dow = dow === 0 ? 6 : dow - 1;
-  for (let i = 0; i < dow; i++) html += `<div class="cal-day empty"></div>`;
-  const dim = new Date(y, m + 1, 0).getDate();
-  for (let d = 1; d <= dim; d++) {
-    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const dt = new Date(y, m, d, 0, 0, 0, 0);
-    const isT = dt.getTime() === today.getTime(), isS = ds === sel;
-    html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectRecipeLinkCalDate('${ds}')">${d}</div>`;
-  }
-  document.getElementById('recipe-link-cal-grid').innerHTML = html;
-}
-function selectRecipeLinkCalDate(ds) { recipeLinkDate = strToDate(ds); updateRecipeLinkDateUI(); closeRecipeLinkCalendar(); }
-function setModalCategory(cat) { recipeLinkCategory = cat; }
-function setRecipeLinkCategory(cat) { recipeLinkCategory = cat; }
-// INIT
-async function init() {
-  document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  loadSettingsLocal();
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
-    else {
-      document.getElementById('auth-screen').classList.add('hidden');
-      await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
-      journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
-      modalDate = new Date(); modalDate.setHours(0, 0, 0, 0);
-      updateJournalDateUI();
-      updateModalDateUI();
-      await loadData();
-      if (currentPage === 'recipes') renderRecipesPage();
-      document.getElementById('loading-screen').classList.add('hidden');
-    }
-  } catch (e) { console.error('Init:', e); document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
-}
-// Écouteurs pour la touche Entrée
-document.getElementById('in-desc').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); startSearch(); }
-});
-document.getElementById('in-qty').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); submitEntry(); }
-});
-document.getElementById('re-desc').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); searchRecipeFood(); }
-});
-document.getElementById('re-qty').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); addIngredientToRecipeBuilder(); }
-});
-document.getElementById('cf-name').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); saveCustomFood(); }
-});
-document.getElementById('w-val').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); addWeightEntry(); }
-});
-init();
-</script>
-</body>
-</html>
+  currentWalk
