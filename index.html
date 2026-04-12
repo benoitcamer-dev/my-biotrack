@@ -2276,6 +2276,8 @@ userHeight = data.height || 175;
 userAge = data.age || 30;
 userSexe = data.sexe || 'H';
 try { const p = typeof data.recipes === 'string' ? JSON.parse(data.recipes) : (data.recipes || []); savedRecipes = Array.isArray(p) ? p : []; } catch { savedRecipes = []; }
+try { const wf = typeof data.walk_favorites === 'string' ? JSON.parse(data.walk_favorites) : (data.walk_favorites || []); walkFavorites = Array.isArray(wf) ? wf : []; } catch { walkFavorites = []; }
+try { const bf = typeof data.bike_favorites === 'string' ? JSON.parse(data.bike_favorites) : (data.bike_favorites || []); bikeFavorites = Array.isArray(bf) ? bf : []; } catch { bikeFavorites = []; }
 saveSettingsLocal();
 } else { await pushSettingsRemote(); }
 } catch (e) { console.error('loadSettingsRemote:', e); }
@@ -2284,6 +2286,8 @@ async function pushSettingsRemote() {
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
+const ts = new Date().toISOString();
+_lastPushTs = ts;
 await sb.from('user_settings').upsert({
 user_id: user.id,
 goal: userGoal,
@@ -2292,7 +2296,9 @@ height: userHeight,
 age: userAge,
 sexe: userSexe,
 recipes: savedRecipes,
-updated_at: new Date().toISOString()
+walk_favorites: walkFavorites,
+bike_favorites: bikeFavorites,
+updated_at: ts
 }, { onConflict: 'user_id' });
 } catch (e) { console.error('pushSettingsRemote:', e); }
 }
@@ -2732,7 +2738,7 @@ document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'none';
 updateRouteCalc(f.distance, f.duration);
 }
-function deleteWalkFav(i) { walkFavorites.splice(i, 1); saveSettingsLocal(); renderWalkFavsInModal(); renderSportFavsQuick(); }
+function deleteWalkFav(i) { walkFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderWalkFavsInModal(); renderSportFavsQuick(); }
 function onCustomDurationChange() {
 const dur = parseFloat(document.getElementById('walk-custom-dur').value) || 0;
 if (routeBaseDistance > 0 && dur > 0) updateRouteCalc(routeBaseDistance, dur);
@@ -2798,7 +2804,7 @@ const dur = parseInt(document.getElementById('walk-custom-dur').value) || routeB
 const speed = round1(routeBaseDistance / (dur / 60));
 const kcal = calcWalkKcal(speed, dur);
 walkFavorites.unshift({ name, from: currentRouteData.from, to: currentRouteData.to, roundtrip: currentRouteData.roundtrip, distance: currentRouteData.distance, duration: dur, kcal });
-saveSettingsLocal();
+saveSettingsLocal(); pushSettingsRemote();
 renderWalkFavsInModal();
 document.getElementById('save-route-btn').style.display = 'none';
 }
@@ -2843,7 +2849,7 @@ document.getElementById('in-qty').value = f.duration;
 document.getElementById('in-kcal').value = f.speed;
 recalc();
 }
-function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); renderBikeFavsInModal(); }
+function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); }
 function saveBikeFav() {
 const name = prompt('Nom de cette sortie :', 'Sortie vélo');
 if (!name) return;
@@ -2851,7 +2857,7 @@ const spd = parseFloat(document.getElementById('in-kcal').value) || 18;
 const dur = parseInt(document.getElementById('in-qty').value) || 40;
 const kcal = calcBikeKcal(spd, dur);
 bikeFavorites.unshift({ name, speed: spd, duration: dur, kcal });
-saveSettingsLocal();
+saveSettingsLocal(); pushSettingsRemote();
 renderBikeFavsInModal();
 }
 function recalc() {
@@ -3858,9 +3864,33 @@ updateJournalDateUI();
 await loadData();
 if (currentPage === 'recipes') renderRecipesPage();
 document.getElementById('loading-screen').classList.add('hidden');
+// ── Realtime sync cross-appareils ──────────────────────────────────
+const { data: { user } } = await sb.auth.getUser();
+if (user) {
+sb.channel('realtime-sync')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${user.id}` }, () => {
+    loadData();
+    if (currentPage === 'bilan') loadBilan();
+  })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${user.id}` }, async (payload) => {
+    if (payload.new && payload.new.updated_at !== _lastPushTs) {
+      await loadSettingsRemote();
+      if (currentPage === 'recipes') renderRecipesPage();
+      renderSportFavsQuick();
+    }
+  })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'weight_entries', filter: `user_id=eq.${user.id}` }, () => {
+    loadWeightEntries();
+  })
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_foods', filter: `user_id=eq.${user.id}` }, () => {
+    loadCustomFoods();
+  })
+  .subscribe();
+}
 }
 } catch (e) { console.error('Init:', e); document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
 }
+let _lastPushTs = null;
 document.getElementById('in-desc').addEventListener('keydown', function (e) {
 if (e.key === 'Enter') { e.preventDefault(); startSearch(); }
 });
