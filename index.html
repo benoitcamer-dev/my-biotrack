@@ -1448,6 +1448,22 @@ writing-mode: vertical-rl;
 transform: rotate(180deg);
 text-align: center;
 }
+.imc-weight-display {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 8px;
+}
+.imc-weight-val {
+font-family: 'Syne', sans-serif;
+font-size: 24px;
+font-weight: 800;
+}
+.imc-weight-unit {
+font-size: 11px;
+color: var(--muted);
+margin-left: 4px;
+}
 </style>
 </head>
 <body>
@@ -1836,7 +1852,12 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 </div>
 <div class="imc-wrap">
-<div class="imc-title">IMC actuel</div>
+<div class="imc-title">Dernier poids</div>
+<div class="imc-weight-display">
+<div class="imc-weight-val" id="last-weight-val">—</div>
+<div class="imc-weight-unit">kg</div>
+</div>
+<div class="imc-title" style="margin-top: 12px;">IMC actuel</div>
 <div class="imc-val" id="imc-val">—</div>
 <div class="imc-label" id="imc-label">Renseigne ton poids</div>
 <div class="imc-bar-wrap">
@@ -2668,7 +2689,10 @@ ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFav(
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
-<button onclick="event.stopPropagation();deleteBikeFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button>
+<div class="food-item-actions">
+<button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})">✎</button>
+<button class="food-btn danger" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
+</div>
 </div>`).join('')}
 </div>
 <button class="walk-fav-btn" onclick="saveBikeFav()">⭐ Sauvegarder cette sortie</button>`;
@@ -3328,6 +3352,7 @@ document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight
 function renderIMC() {
 if (!weightEntries.length) return;
 const lw = weightEntries[weightEntries.length - 1].weight, h = userHeight / 100, imc = round1(lw / (h * h));
+document.getElementById('last-weight-val').textContent = lw;
 document.getElementById('imc-val').textContent = imc;
 let label, color;
 if (imc < 16.5) { label = 'Dénutrition sévère'; color = '#3b82f6'; }
@@ -3343,11 +3368,14 @@ document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((i
 function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
 if (weightEntries.length < 2) { svg.innerHTML = `<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="DM Sans">Ajoute au moins 2 entrées.</text>`; return; }
-const vals = weightEntries.map(e => e.weight), minW = Math.min(...vals) - 1, maxW = Math.max(...vals) + 1, W = 400, H = 160, P = 32;
-const xs = i => (i / (weightEntries.length - 1)) * (W - P * 2) + P, ys = v => H - P - ((v - minW) / (maxW - minW)) * (H - P * 2);
+const vals = weightEntries.map(e => e.weight);
+const minW = Math.min(...vals) - 1, maxW = Math.max(...vals) + 1;
+const W = 400, H = 160, P = 32;
+const xs = i => (i / (weightEntries.length - 1)) * (W - P * 2) + P;
+const ys = v => H - P - ((v - minW) / (maxW - minW)) * (H - P * 2);
 const pts = weightEntries.map((e, i) => `${xs(i)},${ys(e.weight)}`).join(' ');
-document.getElementById('y-axis-min').textContent = minW;
-document.getElementById('y-axis-max').textContent = maxW;
+document.getElementById('y-axis-min').textContent = Math.floor(minW);
+document.getElementById('y-axis-max').textContent = Math.ceil(maxW);
 svg.innerHTML = `<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>
 <polygon points="${P},${H - P} ${pts} ${W - P},${H - P}" fill="url(#wg)"/>
 <polyline points="${pts}" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
@@ -3574,7 +3602,7 @@ setTimeout(() => document.addEventListener('click', closeSportFavDateCal, { once
 closeSportFavDateCalendar();
 }
 }
-function closeSportFavDateCalendar() {
+function closeSportFavDateCal() {
 sportFavDateCalOpen = false;
 document.getElementById('sport-fav-date-cal-dropdown').classList.remove('open');
 }
@@ -3608,14 +3636,51 @@ async function useSportFavOnDate() {
 const rid = document.getElementById('sport-fav-date-rid').value;
 const type = document.getElementById('sport-fav-date-type').value;
 const date = document.getElementById('sport-fav-date-date').value;
-journalDate = strToDate(date);
+const selectedDate = strToDate(date);
+journalDate = selectedDate;
 updateJournalDateUI();
-if (type === 'walk') {
-loadWalkFavQuick(rid);
-} else if (type === 'bike') {
-loadBikeFavQuick(rid);
-}
 closeSportFavDateModal();
+if (type === 'walk') {
+const fav = walkFavorites[rid];
+if (!fav) return;
+const dur = fav.duration;
+const spd = round1(fav.distance / (dur / 60));
+const kcal = calcWalkKcal(spd, dur);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+await sb.from('entries').insert([{
+user_id: user.id,
+type: 'burn',
+category: 'Sport',
+desc: `🚶 ${fav.name} (${dur}min · ${fav.distance}km · ${spd}km/h)`,
+val: kcal,
+prot: 0,
+gluc: 0,
+lip: 0,
+date: dateToStr(selectedDate)
+}]);
+loadData();
+} else if (type === 'bike') {
+const fav = bikeFavorites[rid];
+if (!fav) return;
+const dur = fav.duration;
+const spd = fav.speed;
+const kcal = calcBikeKcal(spd, dur);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+await sb.from('entries').insert([{
+user_id: user.id,
+type: 'burn',
+category: 'Sport',
+desc: `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`,
+val: kcal,
+prot: 0,
+gluc: 0,
+lip: 0,
+date: dateToStr(selectedDate)
+}]);
+loadData();
+}
 }
 async function init() {
 document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
