@@ -3610,20 +3610,24 @@ ${sub2 ? `
   const pass  = document.getElementById('auth-pass').value;
   const errEl = document.getElementById('auth-error');
   errEl.style.display = 'none';
+  if (!email || !pass) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Remplis email et mot de passe.';
+    return;
+  }
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
       errEl.style.display = 'block';
       errEl.textContent = error.message;
     } else {
-      // Hide auth screen immediately on success
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.remove('hidden');
       await bootApp();
     }
   } catch (e) {
     errEl.style.display = 'block';
-    errEl.textContent = 'Erreur de connexion.';
+    errEl.textContent = 'Erreur de connexion : ' + (e.message || e);
   }
 }function logout() { sb.auth.signOut().then(() => location.reload()); }function openSportFavsModal() {currentSportTab = 'walk';renderSportFavsTabBtns();renderSportFavsContent();document.getElementById('modal-sport-favs').classList.add('open');}function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }function renderSportFavsTabBtns() {document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');document.getElementById('sport-tab-bike').classList.toggle('active', currentSportTab === 'bike');}function renderSportFavsContent() {const el = document.getElementById('sport-favs-content');if (currentSportTab === 'walk') {if (!walkFavorites.length) { el.innerHTML = `
 <div style="text-align:center;padding:28px;color:var(--muted);">Aucun trajet favori.</div>
@@ -3663,34 +3667,54 @@ ${sub2 ? `
   document.getElementById('header-date').textContent =
     new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   loadSettingsLocal();
+
+  function showAuth() {
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+
+  // Timeout de sécurité : si getSession() prend plus de 5s, on affiche l'auth
+  const safetyTimer = setTimeout(showAuth, 5000);
+
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const { data, error } = await sb.auth.getSession();
+    clearTimeout(safetyTimer);
+    const session = data && data.session;
     if (!session) {
-      document.getElementById('loading-screen').classList.add('hidden');
-      document.getElementById('auth-screen').classList.remove('hidden');
+      showAuth();
     } else {
       document.getElementById('auth-screen').classList.add('hidden');
       await bootApp();
     }
   } catch (e) {
+    clearTimeout(safetyTimer);
     console.error('Init error:', e);
-    document.getElementById('loading-screen').classList.add('hidden');
-    document.getElementById('auth-screen').classList.remove('hidden');
+    showAuth();
   }
 }
 
 async function bootApp() {
+  document.getElementById('loading-screen').classList.remove('hidden');
+  document.getElementById('auth-screen').classList.add('hidden');
   try {
-    document.getElementById('loading-screen').classList.remove('hidden');
-    document.getElementById('auth-screen').classList.add('hidden');
-    await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
-    journalDate = new Date();
-    journalDate.setHours(0, 0, 0, 0);
-    updateJournalDateUI();
-    await loadData();
-    if (currentPage === 'recipes') renderRecipesPage();
-    document.getElementById('loading-screen').classList.add('hidden');
-    // ── Realtime sync cross-appareils ──
+    await Promise.all([
+      loadSettingsRemote().catch(e => console.warn('loadSettingsRemote:', e)),
+      loadCustomFoods().catch(e => console.warn('loadCustomFoods:', e)),
+      loadFavorites().catch(e => console.warn('loadFavorites:', e)),
+      loadWeightEntries().catch(e => console.warn('loadWeightEntries:', e))
+    ]);
+  } catch(e) {
+    console.warn('bootApp parallel load error:', e);
+  }
+  journalDate = new Date();
+  journalDate.setHours(0, 0, 0, 0);
+  updateJournalDateUI();
+  try { await loadData(); } catch(e) { console.warn('loadData:', e); }
+  if (currentPage === 'recipes') { try { renderRecipesPage(); } catch(e) {} }
+  document.getElementById('loading-screen').classList.add('hidden');
+
+  // Realtime sync
+  try {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
       sb.channel('realtime-sync')
@@ -3713,10 +3737,8 @@ async function bootApp() {
         })
         .subscribe();
     }
-  } catch (e) {
-    console.error('bootApp error:', e);
-    document.getElementById('loading-screen').classList.add('hidden');
-    document.getElementById('auth-screen').classList.remove('hidden');
+  } catch(e) {
+    console.warn('Realtime sync setup error:', e);
   }
 }let _lastPushTs = null;
 // Input keydown listeners
