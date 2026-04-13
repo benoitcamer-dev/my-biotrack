@@ -2434,7 +2434,7 @@ else { el.innerHTML = fav.map(f => `<div class="food-item"><div class="food-item
 document.getElementById('modal-favs-quick').classList.add('open');
 }
 function closeFavoritesQuickModal() { document.getElementById('modal-favs-quick').classList.remove('open'); }
-function useFavFood(id) { const f = customFoods.find(f => f.id === id); if (!f) return; fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100); closeFavoritesQuickModal(); }
+function useFavFood(id) { const f = customFoods.find(f => f.id === id); if (!f) return; closeFavoritesQuickModal(); if (document.getElementById('modal-recipe-editor').classList.contains('open')) { fillRecipeIngredient(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100); } else { fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100); } }
 function openSettings() {
 document.getElementById('s-goal').value = userGoal;
 document.getElementById('s-weight').value = userWeight;
@@ -2543,7 +2543,7 @@ div.innerHTML = [...fav, ...oth].slice(0, 5).map(f => buildCustomItem(f, false))
 function buildCustomItem(f, isRecipe) {
 const isFav = favoriteIds.includes(f.id);
 const fn = isRecipe ? `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})` : `fillFood('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
-return `<div class="result-item" onmousedown="event.preventDefault();eval('('+fn+')')();">
+return `<div class="result-item" onclick="event.stopPropagation();eval('('+fn+')')();">
 <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
 <div class="result-name">${f.name}</div>
 <div class="result-kcal">${f.kcal_100} kcal/100g</div>
@@ -2605,7 +2605,7 @@ openSportFavDateModal(i, 'bike');
 function showDrinkSuggestions() {
 const div = document.getElementById('search-results');
 div.style.display = 'block';
-div.innerHTML = DRINK_DB.map(a => `<div class="result-item" onmousedown="event.preventDefault();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
+div.innerHTML = DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
@@ -2628,14 +2628,14 @@ div.style.display = 'block';
 div.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">⏳ Recherche…</div></div>`;
 const lv = v.toLowerCase();
 const cH = customFoods.filter(f => f.name.toLowerCase().includes(lv)).map(f => buildCustomItem(f, isR)).join('');
-const lH = DRINK_DB.filter(a => a.name.toLowerCase().includes(lv)).map(a => `<div class="result-item" onmousedown="event.preventDefault();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
+const lH = DRINK_DB.filter(a => a.name.toLowerCase().includes(lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
 // Local food DB (raw ingredients)
 const localMatches = LOCAL_FOOD_DB.filter(a => a.name.toLowerCase().includes(lv));
-const localH = localMatches.map(a => `<div class="result-item" onmousedown="event.preventDefault();${isR ? `fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `fillFood('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`}">
+const localH = localMatches.map(a => `<div class="result-item" onclick="event.stopPropagation();${isR ? `fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `fillFood('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})`}">
 <div><span class="result-tag" style="background:rgba(52,211,153,0.15);color:#34d399;">🥦 Brut</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100g</div>
@@ -2655,7 +2655,7 @@ if (!n) return '';
 const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
 if (k <= 0) return '';
 const pr = p.nutriments?.proteins_100g || 0, gl = p.nutriments?.carbohydrates_100g || 0, lp = p.nutriments?.fat_100g || 0;
-return `<div class="result-item" onmousedown="event.preventDefault();${isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`}">
+return `<div class="result-item" onclick="event.stopPropagation();${isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`}">
 <div class="result-name">${n}</div>
 <div class="result-kcal">${k} kcal/100g</div>
 </div>`;
