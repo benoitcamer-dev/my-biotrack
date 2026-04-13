@@ -2433,16 +2433,15 @@ if (!fav.length) { el.innerHTML = `<div style="text-align:center;padding:28px;co
 else { el.innerHTML = fav.map(f => `<div class="food-item"><div class="food-item-main"><div class="food-item-name">${f.name}</div><div class="food-item-meta">${f.kcal_100} kcal/100g</div></div><div class="food-item-actions"><button class="food-btn primary" onclick="useFavFood('${f.id}')">Utiliser</button></div></div>`).join(''); }
 document.getElementById('modal-favs-quick').classList.add('open');
 }
-function closeFavoritesQuickModal() { document.getElementById('modal-favs-quick').classList.remove('open'); }
-function useFavFood(id) { const f = customFoods.find(f => f.id === id); if (!f) return; closeFavoritesQuickModal(); fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100); }
-function openSettings() {
-document.getElementById('s-goal').value = userGoal;
-document.getElementById('s-weight').value = userWeight;
-document.getElementById('s-height').value = userHeight;
-document.getElementById('s-age').value = userAge;
-document.getElementById('s-sexe').value = userSexe;
-updateBMRLive();
-document.getElementById('modal-settings').classList.add('open');
+function closeFavoritesQuickModal() {
+    document.getElementById('modal-favs-quick').classList.remove('open');
+}
+function useFavFood(id) {
+    const f = customFoods.find(f => f.id === id);
+    if (!f) return;
+    fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100);
+    closeFavoritesQuickModal();
+    recalc();
 }
 function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); }
 function onSettingChange() { updateBMRLive(); }
@@ -2543,15 +2542,15 @@ div.style.display = 'block';
 div.innerHTML = [...fav, ...oth].slice(0, 5).map(f => buildCustomItem(f, false)).join('') + `<button class="create-food-btn" onclick="openCustomFoodModal('')">+ Créer un aliment</button>`;
 }
 function buildCustomItem(f, isRecipe) {
-const isFav = favoriteIds.includes(f.id);
-const fn = isRecipe ? `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})` : `fillFood('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
-return `<div class="result-item" onmousedown="isClickingResult=true;eval('('+fn+')')();setTimeout(()=>isClickingResult=false,200)">
-<div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
-<div class="result-name">${f.name}</div>
-<div class="result-kcal">${f.kcal_100} kcal/100g</div>
-</div>`;
+    const isFav = favoriteIds.includes(f.id);
+    const fn = isRecipe ? `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})` : `fillFood('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
+    return `<div class="result-item" onclick="${fn};closeModal();event.stopPropagation();">
+        <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
+        <div class="result-name">${f.name}</div>
+        <div class="result-kcal">${f.kcal_100} kcal/100g</div>
+    </div>`;
 }
-function showAllSports() {
+isSubmitting function showAllSports() {
 const div = document.getElementById('search-results');
 div.style.display = 'block';
 div.innerHTML = `<div class="result-item" onclick="selectWalkMode()">
@@ -2668,13 +2667,13 @@ const combined = cH + localH + lH + oH;
 div.innerHTML = combined ? (combined + cb) : `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
 }
 function fillFood(n, k, pr, gl, lp) {
-document.getElementById('in-desc').value = n;
-document.getElementById('in-kcal').value = k;
-document.getElementById('in-p').value = pr;
-document.getElementById('in-g').value = gl;
-document.getElementById('in-l').value = lp;
-document.getElementById('search-results').style.display = 'none';
-recalc();
+    document.getElementById('in-desc').value = n;
+    document.getElementById('in-kcal').value = k;
+    document.getElementById('in-p').value = pr;
+    document.getElementById('in-g').value = gl;
+    document.getElementById('in-l').value = lp;
+    document.getElementById('search-results').style.display = 'none';
+    setTimeout(recalc, 50);
 }
 function fillDrink(n, k, pr, gl, lp, qty, kind) {
 document.getElementById('in-desc').value = n;
@@ -2943,58 +2942,96 @@ document.getElementById('search-results').style.display = 'none';
 recalc();
 document.getElementById('modal-add').classList.add('open');
 }
+let isSubmitting = false;
+
 async function submitEntry() {
-const { data: { user } } = await sb.auth.getUser();
-if (!user) return;
-const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
-const q = parseFloat(document.getElementById('in-qty').value) || 0;
-if (q <= 0) { alert('Indique une quantité ou une durée.'); return; }
-const rawKcal = parseFloat(document.getElementById('in-kcal').value) || 0;
-const k = getEffectiveKcal(), factor = isSport ? q / 60 : q / 100;
-const val = Math.round(k * factor);
-const p = parseFloat(document.getElementById('in-p').value) || 0;
-const g = parseFloat(document.getElementById('in-g').value) || 0;
-const l = parseFloat(document.getElementById('in-l').value) || 0;
-const unit = isSport ? 'min' : (isDrink ? 'ml' : 'g');
-let descName = document.getElementById('in-desc').value.trim();
-if (!descName) { document.getElementById('in-desc').focus(); return; }
-let descFinal;
-if (isSport) {
-const dl = descName.toLowerCase();
-if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-const dist = round1(spd * (q / 60));
-const label = currentWalkFavName || `${currentRouteData.from} → ${currentRouteData.to}`;
-descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
-} else if (dl === 'marche') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-const dist = round1(spd * (q / 60));
-descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
-} else if (dl === 'vélo') {
-const spd = rawKcal;
-const dist = round1(spd * (q / 60));
-const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
-descFinal = `🚴 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
-} else { descFinal = `${descName} (${q}${unit})`; }
-} else { descFinal = `${descName} (${q}${unit})`; }
-const payload = {
-user_id: user.id,
-type: isSport ? 'burn' : 'food',
-category: currentCat,
-desc: descFinal,
-val: Math.round(val),
-prot: Math.round(p * factor * 10) / 10,
-gluc: Math.round(g * factor * 10) / 10,
-lip: Math.round(l * factor * 10) / 10,
-date: journalDateStr()
-};
-let error = null;
-if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
-else { const res = await sb.from('entries').insert([payload]); error = res.error; }
-if (error) { console.error(error); alert('Erreur : ' + error.message); return; }
-closeModal();
-loadData();
-if (currentPage === 'bilan') loadBilan();
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) {
+        isSubmitting = false;
+        return;
+    }
+
+    const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
+    const q = parseFloat(document.getElementById('in-qty').value) || 0;
+    if (q <= 0) {
+        alert('Indique une quantité ou une durée.');
+        isSubmitting = false;
+        return;
+    }
+
+    const rawKcal = parseFloat(document.getElementById('in-kcal').value) || 0;
+    const k = getEffectiveKcal(), factor = isSport ? q / 60 : q / 100;
+    const val = Math.round(k * factor);
+    const p = parseFloat(document.getElementById('in-p').value) || 0;
+    const g = parseFloat(document.getElementById('in-g').value) || 0;
+    const l = parseFloat(document.getElementById('in-l').value) || 0;
+    const unit = isSport ? 'min' : (isDrink ? 'ml' : 'g');
+    let descName = document.getElementById('in-desc').value.trim();
+    if (!descName) {
+        document.getElementById('in-desc').focus();
+        isSubmitting = false;
+        return;
+    }
+
+    let descFinal;
+    if (isSport) {
+        const dl = descName.toLowerCase();
+        if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
+            const spd = parseFloat(document.getElementById('in-speed').value) || 5;
+            const dist = round1(spd * (q / 60));
+            const label = currentWalkFavName || `${currentRouteData.from} → ${currentRouteData.to}`;
+            descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
+        } else if (dl === 'marche') {
+            const spd = parseFloat(document.getElementById('in-speed').value) || 5;
+            const dist = round1(spd * (q / 60));
+            descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
+        } else if (dl === 'vélo') {
+            const spd = rawKcal;
+            const dist = round1(spd * (q / 60));
+            const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
+            descFinal = `🚴 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
+        } else {
+            descFinal = `${descName} (${q}${unit})`;
+        }
+    } else {
+        descFinal = `${descName} (${q}${unit})`;
+    }
+
+    const payload = {
+        user_id: user.id,
+        type: isSport ? 'burn' : 'food',
+        category: currentCat,
+        desc: descFinal,
+        val: Math.round(val),
+        prot: Math.round(p * factor * 10) / 10,
+        gluc: Math.round(g * factor * 10) / 10,
+        lip: Math.round(l * factor * 10) / 10,
+        date: journalDateStr()
+    };
+
+    let error = null;
+    if (editingId) {
+        const res = await sb.from('entries').update(payload).eq('id', editingId);
+        error = res.error;
+    } else {
+        const res = await sb.from('entries').insert([payload]);
+        error = res.error;
+    }
+
+    if (error) {
+        console.error(error);
+        alert('Erreur : ' + error.message);
+        isSubmitting = false;
+        return;
+    }
+
+function closeModal() {
+    if (isSubmitting) return;
+    document.getElementById('modal-add').classList.remove('open');
+    editingId = null;
 }
 function getMealEntries(cat) { return currentEntries.filter(e => e.type === 'food' && e.category === cat); }
 function cloneRecipeItem(entry) {
