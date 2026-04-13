@@ -2426,7 +2426,6 @@ if (!f) return;
 pendingFoodToAdd = f;
 recipeDateMealDate = new Date();
 document.getElementById('recipe-date-meal-rid').value = '';
-document.getElementById('recipe-date-meal-title') && (document.getElementById('recipe-date-meal-title').textContent = '+ ' + f.name);
 updateRecipeDateMealUI();
 document.getElementById('modal-recipe-date-meal').classList.add('open');
 }
@@ -3321,6 +3320,8 @@ if (pendingFoodToAdd) {
 const f = pendingFoodToAdd;
 pendingFoodToAdd = null;
 closeRecipeDateMealModal();
+closeAlimentsModal();
+showPage('journal');
 sb.auth.getUser().then(({ data: { user } }) => {
 if (!user) return;
 const qty = 100, factor = qty / 100;
@@ -3830,6 +3831,7 @@ journalDate = selectedDate;
 updateJournalDateUI();
 closeSportFavDateModal();
 closeSportFavsModal();
+closeModal();
 if (type === 'walk') {
 const fav = walkFavorites[rid];
 if (!fav) return;
