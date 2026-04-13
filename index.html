@@ -2555,7 +2555,7 @@ div.innerHTML = [...fav, ...oth].slice(0, 5).map(f => buildCustomItem(f, false))
 function buildCustomItem(f, isRecipe) {
 const isFav = favoriteIds.includes(f.id);
 const fn = isRecipe ? `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})` : `fillFood('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
-return `<div class="result-item" onclick="event.stopPropagation();eval('('+fn+')')();">
+return `<div class="result-item" onclick="event.stopPropagation();eval(fn);">
 <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
 <div class="result-name">${f.name}</div>
 <div class="result-kcal">${f.kcal_100} kcal/100g</div>
