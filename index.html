@@ -2077,6 +2077,7 @@ const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
 const ORS_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjIwMzk5Yzc0MDY2YzQxNDNhOWU2YWM1OWI4YWI0MWFlIiwiaCI6Im11cm11cjY0In0=";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let isSubmitting = false;
 let currentCat = "";
 let userGoal = 2300, userWeight = 75, userHeight = 175, userAge = 30, userSexe = "H";
 let editingId = null, currentEntries = [], currentPage = "journal";
@@ -2440,7 +2441,7 @@ function useFavFood(id) {
     const f = customFoods.find(f => f.id === id);
     if (!f) return;
     fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100);
-    closeFavoritesQuickModal();
+    closeFavoritesQuickModal();isSubmitting
     recalc();
 }
 function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); }
@@ -3685,15 +3686,24 @@ await sb.from('entries').delete().eq('id', entry.id);
 }
 loadData();
 }
+
 async function handleAuth() {
-const email = document.getElementById('auth-email').value.trim(), pass = document.getElementById('auth-pass').value;
-document.getElementById('auth-error').style.display = 'none';
-try {
-const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-if (error) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = error.message; }
-else { await init(); }
-} catch (e) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = 'Erreur de connexion.'; }
+    const email = document.getElementById('auth-email').value.trim(), pass = document.getElementById('auth-pass').value;
+    document.getElementById('auth-error').style.display = 'none';
+    try {
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if (error) {
+            document.getElementById('auth-error').style.display = 'block';
+            document.getElementById('auth-error').textContent = error.message;
+        } else {
+            await init();
+        }
+    } catch (e) {
+        document.getElementById('auth-error').style.display = 'block';
+        document.getElementById('auth-error').textContent = 'Erreur de connexion.';
+    }
 }
+
 function logout() { sb.auth.signOut().then(() => location.reload()); }
 function openSportFavsModal() {
 currentSportTab = 'walk';
