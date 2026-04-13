@@ -2228,7 +2228,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 </div>
 </div>
 <!-- AUTH -->
-<div id="auth-screen">
+<div id="auth-screen" class="hidden">
 <div class="auth-card">
 <div class="auth-logo">LeGros<span>Barbu</span></div>
 
@@ -3605,7 +3605,27 @@ ${sub2 ? `
 </div>
 `}</div>
 </div>
-`;});document.getElementById('daily-list').innerHTML = html;} catch (e) { console.error('loadData:', e); }}async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }async function clearMealEntries(cat) {if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;const { data: { user } } = await sb.auth.getUser();if (!user) return;const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');for (const entry of entriesToDelete) {await sb.from('entries').delete().eq('id', entry.id);}loadData();}async function handleAuth() {const email = document.getElementById('auth-email').value.trim(), pass = document.getElementById('auth-pass').value;document.getElementById('auth-error').style.display = 'none';try {const { error } = await sb.auth.signInWithPassword({ email, password: pass });if (error) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = error.message; }else { await init(); }} catch (e) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = 'Erreur de connexion.'; }}function logout() { sb.auth.signOut().then(() => location.reload()); }function openSportFavsModal() {currentSportTab = 'walk';renderSportFavsTabBtns();renderSportFavsContent();document.getElementById('modal-sport-favs').classList.add('open');}function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }function renderSportFavsTabBtns() {document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');document.getElementById('sport-tab-bike').classList.toggle('active', currentSportTab === 'bike');}function renderSportFavsContent() {const el = document.getElementById('sport-favs-content');if (currentSportTab === 'walk') {if (!walkFavorites.length) { el.innerHTML = `
+`;});document.getElementById('daily-list').innerHTML = html;} catch (e) { console.error('loadData:', e); }}async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }async function clearMealEntries(cat) {if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;const { data: { user } } = await sb.auth.getUser();if (!user) return;const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');for (const entry of entriesToDelete) {await sb.from('entries').delete().eq('id', entry.id);}loadData();}async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      errEl.style.display = 'block';
+      errEl.textContent = error.message;
+    } else {
+      // Hide auth screen immediately on success
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('loading-screen').classList.remove('hidden');
+      await bootApp();
+    }
+  } catch (e) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'Erreur de connexion.';
+  }
+}function logout() { sb.auth.signOut().then(() => location.reload()); }function openSportFavsModal() {currentSportTab = 'walk';renderSportFavsTabBtns();renderSportFavsContent();document.getElementById('modal-sport-favs').classList.add('open');}function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }function renderSportFavsTabBtns() {document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');document.getElementById('sport-tab-bike').classList.toggle('active', currentSportTab === 'bike');}function renderSportFavsContent() {const el = document.getElementById('sport-favs-content');if (currentSportTab === 'walk') {if (!walkFavorites.length) { el.innerHTML = `
 <div style="text-align:center;padding:28px;color:var(--muted);">Aucun trajet favori.</div>
 `; }else {el.innerHTML = walkFavorites.map((f, i) => `
 <div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
@@ -3639,7 +3659,66 @@ ${sub2 ? `
 <div class="cal-day empty"></div>
 `;const dim = new Date(y, m + 1, 0).getDate();for (let d = 1; d <= dim; d++) {const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;const dt = new Date(y, m, d, 0, 0, 0, 0);const isT = dt.getTime() === today.getTime(), isS = ds === sel;html += `
 <div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onclick="selectSportFavDateCalDate('${ds}')">${d}</div>
-`;}document.getElementById('sport-fav-date-cal-grid').innerHTML = html;}function selectSportFavDateCalDate(ds) {sportFavDateDate = strToDate(ds);updateSportFavDateUI();closeSportFavDateCalendar();}async function useSportFavOnDate() {const rid = document.getElementById('sport-fav-date-rid').value;const type = document.getElementById('sport-fav-date-type').value;const date = document.getElementById('sport-fav-date-date').value;const selectedDate = strToDate(date);journalDate = selectedDate;updateJournalDateUI();closeSportFavDateModal();closeSportFavsModal();if (type === 'walk') {const fav = walkFavorites[rid];if (!fav) return;const dur = fav.duration;const spd = round1(fav.distance / (dur / 60));const kcal = calcWalkKcal(spd, dur);const { data: { user } } = await sb.auth.getUser();if (!user) return;await sb.from('entries').insert([{user_id: user.id,type: 'burn',category: 'Sport',desc: `🚶 ${fav.name} (${dur}min · ${fav.distance}km · ${spd}km/h)`,val: kcal,prot: 0,gluc: 0,lip: 0,date: dateToStr(selectedDate)}]);loadData();} else if (type === 'bike') {const fav = bikeFavorites[rid];if (!fav) return;const dur = fav.duration;const spd = fav.speed;const kcal = calcBikeKcal(spd, dur);const { data: { user } } = await sb.auth.getUser();if (!user) return;await sb.from('entries').insert([{user_id: user.id,type: 'burn',category: 'Sport',desc: `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`,val: kcal,prot: 0,gluc: 0,lip: 0,date: dateToStr(selectedDate)}]);loadData();}}async function init() {document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });loadSettingsLocal();try {const { data: { session } } = await sb.auth.getSession();if (!session) { document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }else {document.getElementById('auth-screen').classList.add('hidden');await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);updateJournalDateUI();await loadData();if (currentPage === 'recipes') renderRecipesPage();document.getElementById('loading-screen').classList.add('hidden');// ── Realtime sync cross-appareils ──────────────────────────────────const { data: { user } } = await sb.auth.getUser();if (user) {sb.channel('realtime-sync')  .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${user.id}` }, () => {    loadData();    if (currentPage === 'bilan') loadBilan();  })  .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${user.id}` }, async (payload) => {    if (payload.new && payload.new.updated_at !== _lastPushTs) {      await loadSettingsRemote();      if (currentPage === 'recipes') renderRecipesPage();      renderSportFavsQuick();    }  })  .on('postgres_changes', { event: '*', schema: 'public', table: 'weight_entries', filter: `user_id=eq.${user.id}` }, () => {    loadWeightEntries();  })  .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_foods', filter: `user_id=eq.${user.id}` }, () => {    loadCustomFoods();  })  .subscribe();}}} catch (e) { console.error('Init:', e); document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }}let _lastPushTs = null;
+`;}document.getElementById('sport-fav-date-cal-grid').innerHTML = html;}function selectSportFavDateCalDate(ds) {sportFavDateDate = strToDate(ds);updateSportFavDateUI();closeSportFavDateCalendar();}async function useSportFavOnDate() {const rid = document.getElementById('sport-fav-date-rid').value;const type = document.getElementById('sport-fav-date-type').value;const date = document.getElementById('sport-fav-date-date').value;const selectedDate = strToDate(date);journalDate = selectedDate;updateJournalDateUI();closeSportFavDateModal();closeSportFavsModal();if (type === 'walk') {const fav = walkFavorites[rid];if (!fav) return;const dur = fav.duration;const spd = round1(fav.distance / (dur / 60));const kcal = calcWalkKcal(spd, dur);const { data: { user } } = await sb.auth.getUser();if (!user) return;await sb.from('entries').insert([{user_id: user.id,type: 'burn',category: 'Sport',desc: `🚶 ${fav.name} (${dur}min · ${fav.distance}km · ${spd}km/h)`,val: kcal,prot: 0,gluc: 0,lip: 0,date: dateToStr(selectedDate)}]);loadData();} else if (type === 'bike') {const fav = bikeFavorites[rid];if (!fav) return;const dur = fav.duration;const spd = fav.speed;const kcal = calcBikeKcal(spd, dur);const { data: { user } } = await sb.auth.getUser();if (!user) return;await sb.from('entries').insert([{user_id: user.id,type: 'burn',category: 'Sport',desc: `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`,val: kcal,prot: 0,gluc: 0,lip: 0,date: dateToStr(selectedDate)}]);loadData();}}async function init() {
+  document.getElementById('header-date').textContent =
+    new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  loadSettingsLocal();
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('auth-screen').classList.remove('hidden');
+    } else {
+      document.getElementById('auth-screen').classList.add('hidden');
+      await bootApp();
+    }
+  } catch (e) {
+    console.error('Init error:', e);
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+}
+
+async function bootApp() {
+  try {
+    document.getElementById('loading-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
+    journalDate = new Date();
+    journalDate.setHours(0, 0, 0, 0);
+    updateJournalDateUI();
+    await loadData();
+    if (currentPage === 'recipes') renderRecipesPage();
+    document.getElementById('loading-screen').classList.add('hidden');
+    // ── Realtime sync cross-appareils ──
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      sb.channel('realtime-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${user.id}` }, () => {
+          loadData();
+          if (currentPage === 'bilan') loadBilan();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${user.id}` }, async (payload) => {
+          if (payload.new && payload.new.updated_at !== _lastPushTs) {
+            await loadSettingsRemote();
+            if (currentPage === 'recipes') renderRecipesPage();
+            renderSportFavsQuick();
+          }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'weight_entries', filter: `user_id=eq.${user.id}` }, () => {
+          loadWeightEntries();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_foods', filter: `user_id=eq.${user.id}` }, () => {
+          loadCustomFoods();
+        })
+        .subscribe();
+    }
+  } catch (e) {
+    console.error('bootApp error:', e);
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+}let _lastPushTs = null;
 // Input keydown listeners
 function _bindInputListeners() {
   var pairs = [
@@ -3657,7 +3736,12 @@ _bindInputListeners();// ─── BARCODE SCANNER ─────────�
 <input id="bc-manual-code" type="text" inputmode="numeric" placeholder="Saisir le code EAN..." style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;color:#fff;width:150px;font-size:13px;text-align:center;">
 <button onclick="document.getElementById('bc-manual-code').value&&lookupBarcode(document.getElementById('bc-manual-code').value)" style="background:#5b7fff;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;margin-left:6px;cursor:pointer;">OK</button></div>
 `;    }  } catch(e) {    document.getElementById('barcode-status').textContent = '❌ Caméra non disponible. Vérifie les permissions.';  }}function stopBarcodeCamera() {  barcodeScanning = false;  if (barcodeAnimFrame) { cancelAnimationFrame(barcodeAnimFrame); barcodeAnimFrame = null; }  if (barcodeStream) { barcodeStream.getTracks().forEach(t => t.stop()); barcodeStream = null; }}async function scanBarcodeLoop() {  if (!barcodeScanning) return;  const video = document.getElementById('barcode-video');  if (video.readyState === video.HAVE_ENOUGH_DATA) {    try {      const results = await barcodeDetector.detect(video);      if (results.length > 0) {        const code = results[0].rawValue;        if (code !== barcodeLastCode) {          barcodeLastCode = code;          stopBarcodeCamera();          await lookupBarcode(code);          return;        }      }    } catch(e) {}  }  barcodeAnimFrame = requestAnimationFrame(scanBarcodeLoop);}async function lookupBarcode(code) {  document.getElementById('barcode-camera-wrap').style.display = 'block';  document.getElementById('barcode-status').textContent = `🔍 Recherche du code ${code}…`;  try {    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);    const d = await res.json();    if (d.status === 1 && d.product) {      const p = d.product;      const name = (p.product_name_fr || p.product_name || '').trim() || `Produit ${code}`;      const kcal = Math.round(p.nutriments?.['energy-kcal_100g'] || ((p.nutriments?.['energy-kj_100g']||0) / 4.184) || 0);      const prot = parseFloat((p.nutriments?.proteins_100g || 0).toFixed(1));      const gluc = parseFloat((p.nutriments?.carbohydrates_100g || 0).toFixed(1));      const lip = parseFloat((p.nutriments?.fat_100g || 0).toFixed(1));      document.getElementById('bc-name').value = name;      document.getElementById('bc-kcal').value = kcal;      document.getElementById('bc-prot').value = prot;      document.getElementById('bc-gluc').value = gluc;      document.getElementById('bc-lip').value = lip;      document.getElementById('barcode-camera-wrap').style.display = 'none';      document.getElementById('barcode-result-form').style.display = 'block';      document.getElementById('barcode-not-found').style.display = 'none';    } else {      document.getElementById('barcode-camera-wrap').style.display = 'none';      document.getElementById('barcode-not-found').style.display = 'block';    }  } catch(e) {    document.getElementById('barcode-status').textContent = '❌ Erreur réseau. Réessaie.';    barcodeScanning = true;    scanBarcodeLoop();  }}function confirmBarcodeProduct() {  const name = document.getElementById('bc-name').value.trim();  const k = parseFloat(document.getElementById('bc-kcal').value) || 0;  const pr = parseFloat(document.getElementById('bc-prot').value) || 0;  const gl = parseFloat(document.getElementById('bc-gluc').value) || 0;  const lp = parseFloat(document.getElementById('bc-lip').value) || 0;  if (!name) { alert('Nom requis'); return; }  closeBarcodeScanner();  if (barcodeTarget === 'main') { fillFood(name, k, pr, gl, lp); }  else if (barcodeTarget === 'recipe') { fillRecipeIngredient(name, k, pr, gl, lp); }  else if (barcodeTarget === 'aliments') {    openCustomFoodModal(name, null, true);    setTimeout(() => {      document.getElementById('cf-name').value = name;      document.getElementById('cf-kcal').value = k;      document.getElementById('cf-prot').value = pr;      document.getElementById('cf-gluc').value = gl;      document.getElementById('cf-lip').value = lp;    }, 150);  }}function openCustomFoodFromBarcode() { closeBarcodeScanner(); openCustomFoodModal('', null, true); }// ─── FIN BARCODE SCANNER ───────────────────────────────────────────────────
-init();
+// ── Start app ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 </body>
 </html>
