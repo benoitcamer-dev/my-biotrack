@@ -2446,7 +2446,15 @@ el.querySelectorAll('[data-fav-id]').forEach(item => { item.querySelector('butto
 document.getElementById('modal-favs-quick').classList.add('open');
 }
 function closeFavoritesQuickModal() { document.getElementById('modal-favs-quick').classList.remove('open'); }
-function useFavFood(id) { const f = customFoods.find(f => f.id === id); if (!f) return; fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100); closeFavoritesQuickModal(); }
+async function useFavFood(id) {
+const f = customFoods.find(f => f.id === id);
+if (!f) return;
+closeFavoritesQuickModal();
+fillFood(f.name, f.kcal_100, f.prot_100, f.gluc_100, f.lip_100);
+document.getElementById('in-qty').value = 100;
+recalc();
+await submitEntry();
+}
 function openSettings() {
 document.getElementById('s-goal').value = userGoal;
 document.getElementById('s-weight').value = userWeight;
