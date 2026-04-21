@@ -4968,46 +4968,52 @@ async function askAI() {
   const query = document.getElementById('ai-input').value.trim();
   if (!query) return;
   document.getElementById('ai-input').value = '';
+  // Replace shortcuts BEFORE displaying or sending
+  const HOME_ADDRESS = '74 rue Pierre Corneille Lyon 69003';
+  const WORK_ADDRESS = '18 rue Juiverie Lyon 69005';
+  const processedQuery = query
+    .replace(/chez moi/gi, HOME_ADDRESS)
+    .replace(/mon domicile/gi, HOME_ADDRESS)
+    .replace(/au travail/gi, WORK_ADDRESS)
+    .replace(/le travail/gi, WORK_ADDRESS)
+    .replace(/\btravail\b/gi, WORK_ADDRESS)
+    .replace(/au bureau/gi, WORK_ADDRESS)
+    .replace(/le bureau/gi, WORK_ADDRESS)
+    .replace(/\bbureau\b/gi, WORK_ADDRESS);
   addChatMessage('user', query);
   const isSport = aiCurrentCat === 'Sport';
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
-  const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed'; // 'always' or 'needed'
-  const allowQuestions = true; // always allow question type response
+  const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
   const questionsAlways = aiQMode === 'always';
-  // Inject user profile for personalized calorie calculation
-  const userProfile = `Profil utilisateur : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
-  // Replace shortcuts
-  const HOME_ADDRESS = '74 rue Pierre Corneille Lyon 69003';
-  const WORK_ADDRESS = '18 rue Juiverie Lyon 69005';
+  const userProfile = `Profil : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
   const qLine = questionsAlways
-    ? "- Pose une question de clarification avant de donner un resultat, sauf si la demande est parfaitement claire."
-    : "- Pose une question seulement si une info CRITIQUE manque et que tu ne peux pas estimer.";
+    ? "- Pose une question de clarification si la demande n est pas claire."
+    : "- Pose une question seulement si une info vraiment CRITIQUE manque et que tu ne peux absolument pas estimer.";
   const sysP = isSport
     ? `Tu es un assistant sport et nutrition. ${userProfile}
-Utilise ce profil pour calculer des calories personnalisees selon poids/taille/sexe.
-"chez moi" = "${HOME_ADDRESS}", "travail" = "${WORK_ADDRESS}".
-Pour la MARCHE : extrais les adresses si donnees, sinon utilise duree et vitesse estimee.
-Reponds TOUJOURS en JSON pur, sans texte autour.
-- Si tu as assez d infos : {"type":"sport","activity":"nom","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_from":null,"walk_to":null,"walk_distance_km":0,"walk_speed_kmh":0,"note":"courte"}
-- Si type question : {"type":"question","message":"ta question"}
+Utilise ce profil pour calculer des calories selon poids/taille/sexe.
+Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse.
+Tu connais la geographie de Lyon et peux estimer les distances entre adresses lyonnaises.
+REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre, zero explication.
+Format : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_from":"premiere adresse","walk_to":"derniere adresse","walk_distance_km":0,"walk_speed_kmh":0,"note":"detail court"}
+Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}`
     : `Tu es un assistant nutritionnel expert. ${userProfile}
-Reponds TOUJOURS en JSON pur, sans texte autour.
-REPAS SIMPLE (un seul aliment) : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE (plusieurs elements : burger+frites, plat+dessert, etc.) : calcule le TOTAL combine en un seul JSON : {"type":"food","food":"description complete","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":PROT_TOTAL_DIVISE_PAR_POIDS,"gluc_per_100g":GLUC_TOTAL_DIVISE_PAR_POIDS,"lip_per_100g":LIP_TOTAL_DIVISE_PAR_POIDS,"note":"detail des elements et leurs kcal"}
-Exemple : "burger 580kcal + frites 320kcal = 900kcal total, 550g" -> qty_g:550, kcal_per_100g:164
-- Si type question : {"type":"question","message":"ta question"}
+REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
+REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
+REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"detail kcal par element"}
+Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}
-Valeurs pour 100g. 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
+Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
   const contents = [
-    { parts: [{ text: sysP }], role: 'user' },
-    { parts: [{ text: 'Compris.' }], role: 'model' },
+    { role: 'user', parts: [{ text: sysP }] },
+    { role: 'model', parts: [{ text: 'OK.' }] },
     ...aiChatHistory.map(m => ({ parts: [{ text: m.content }], role: m.role === 'user' ? 'user' : 'model' })),
-    { parts: [{ text: query }], role: 'user' }
+    { role: 'user', parts: [{ text: processedQuery }] }
   ];
-  const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
   async function callGemini(modelName, body) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
       method: 'POST',
