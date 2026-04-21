@@ -1627,7 +1627,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
 <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">📚 Ajouter une recette</button>
-<button id="fav-link-btn" class="fav-link-btn" onclick="openFavoritesQuickModal()">⭐ Favoris</button>
+<button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
 <button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;touch-action:manipulation;">🤖 IA</button>
 </div>
@@ -2780,7 +2780,7 @@ el.innerHTML = foods.map(f => {
 const isFav = favoriteIds.includes(f.id);
 const doseInfo = f.default_qty ? `· ${f.default_qty}${f.unit_label && f.unit_label !== 'g' ? ' ' + (f.unit_label === 'cac' ? 'c.café' : f.unit_label === 'cas' ? 'c.soupe' : f.unit_label) : 'g'}/dose` : '';
 return `<div class="food-item">
-<div class="food-item-main" onclick="fillFoodWithUnit({name:'${f.name.replace(/'/g,"\'")}',kcal_100:${f.kcal_100},prot_100:${f.prot_100},gluc_100:${f.gluc_100},lip_100:${f.lip_100},unit_label:'${f.unit_label||'g'}',unit_g:${f.unit_g||1},default_qty:${f.default_qty||100}});closeAlimentsModal();" style="cursor:pointer;">
+<div class="food-item-main" onclick="selectFoodFromAliments({name:'${f.name.replace(/'/g,"\'")}',kcal_100:${f.kcal_100},prot_100:${f.prot_100},gluc_100:${f.gluc_100},lip_100:${f.lip_100},unit_label:'${f.unit_label||'g'}',unit_g:${f.unit_g||1},default_qty:${f.default_qty||100}})" style="cursor:pointer;">
 <div class="food-item-name">${f.name}</div>
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
@@ -2830,6 +2830,21 @@ async function importLocalFoodDBIfNeeded() {
     console.log(`Import done. Total custom foods: ${customFoods.length}`);
   } catch(e) { console.error('importLocalFoodDBIfNeeded:', e); }
 }
+function selectFoodFromAliments(f) {
+  closeAlimentsModal();
+  if (_alimentsFromAdd) {
+    _alimentsFromAdd = false;
+    // Fill the add modal with this food
+    fillFoodWithUnit(f);
+    // Reopen add modal if it was closed
+    if (!document.getElementById('modal-add').classList.contains('open')) {
+      document.getElementById('modal-add').classList.add('open');
+    }
+  } else {
+    fillFoodWithUnit(f);
+  }
+}
+
 async function toggleFavFromAliments(id) { await toggleFavoriteById(id); renderAlimentsList(); }
 function openAddFoodToMealModal(id) {
 const f = customFoods.find(f => f.id === id);
@@ -2964,7 +2979,7 @@ document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : '
 document.getElementById('in-qty').value = isSport ? '30' : '100';
 document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
 document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'inline-block';
-document.getElementById('fav-link-btn').style.display = (isSport || favoriteIds.length === 0) ? 'none' : 'inline-block';
+document.getElementById('fav-link-btn').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('scanner-btn').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('ai-btn').style.display = 'inline-block';
 document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
@@ -5535,6 +5550,14 @@ function openAIFromBase() {
   document.getElementById('modal-ai').classList.add('open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
 }
+
+function openAlimentsFromAdd() {
+  // Open aliments modal — clicking on a food item will fill the add form
+  // We temporarily mark that we came from add modal
+  _alimentsFromAdd = true;
+  openAlimentsModal('favs');
+}
+let _alimentsFromAdd = false;
 
 function openAddFavFromAliments() {
   // If already on "all" tab with custom foods, just show hint to use stars
