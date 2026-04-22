@@ -3343,6 +3343,53 @@ document.getElementById('in-kcal').value = calcWalkKcalH(speed);
 document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · ${kcal} kcal · ${dist} km`;
 recalc();
 }
+// Geocode a place name using ORS + Nominatim fallback, biased to Lyon
+async function geocodePlace(name) {
+  const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
+  const query = name.toLowerCase().includes('lyon') ? name : name + ' Lyon';
+  // Try ORS first
+  try {
+    const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
+    const d = await r.json();
+    const f = d.features?.[0];
+    if (f) return { coords: f.geometry.coordinates, label: f.properties.label };
+  } catch(e) {}
+  // Fallback: Nominatim
+  const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`, {
+    headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
+  });
+  const nd = await nr.json();
+  if (nd[0]) return { coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label: nd[0].display_name };
+  return null;
+}
+
+// Calculate multi-leg walking route through N waypoints
+async function calcMultiLegRoute(places) {
+  // Geocode all places
+  const geocoded = [];
+  for (const p of places) {
+    const g = await geocodePlace(p);
+    if (!g) throw new Error(`Lieu introuvable : "${p}"`);
+    geocoded.push(g);
+  }
+  if (geocoded.length < 2) throw new Error('Il faut au moins 2 lieux.');
+  // ORS multi-waypoint route
+  const coordinates = geocoded.map(g => g.coords);
+  const r = await fetch('https://api.openrouteservice.org/v2/directions/foot-walking', {
+    method: 'POST',
+    headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coordinates, units: 'km' })
+  });
+  const d = await r.json();
+  const route = d.routes?.[0];
+  if (!route) throw new Error('Itinéraire introuvable.');
+  return {
+    distanceKm: round1(route.summary.distance),
+    durationMin: Math.round(route.summary.duration / 60),
+    waypoints: geocoded.map(g => g.label)
+  };
+}
+
 async function calcRoute() {
 const from = document.getElementById('walk-from').value.trim(), to = document.getElementById('walk-to').value.trim();
 if (!from || !to) { alert('Renseigne départ et arrivée.'); return; }
@@ -4994,10 +5041,14 @@ async function askAI() {
   const sysP = isSport
     ? `Tu es un assistant sport et nutrition. ${userProfile}
 Utilise ce profil pour calculer des calories selon poids/taille/sexe.
-Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse.
-Tu connais la geographie de Lyon et peux estimer les distances entre adresses lyonnaises.
+Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
+Tu connais la geographie de Lyon. Sauf mention contraire, tous les lieux sont a Lyon. Tu peux estimer les distances entre lieux lyonnais connus (quartiers, monuments, restaurants connus).
+Vitesse de marche par defaut : 6 km/h sauf indication contraire de l utilisateur.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre, zero explication.
-Format : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_from":"premiere adresse","walk_to":"derniere adresse","walk_distance_km":0,"walk_speed_kmh":0,"note":"detail court"}
+Format marche SIMPLE (A vers B) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
+Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B","adresse C"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
+Toujours mettre les etapes dans "walk_steps" (tableau). Ne pas mettre walk_from/walk_to.
+Format sport non-marche : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
 Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}`
     : `Tu es un assistant nutritionnel expert. ${userProfile}
@@ -5064,16 +5115,53 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
     if (p.type === 'question') {
       addChatMessage('ai', p.message);
     } else if (p.type === 'sport') {
-      addChatMessage('ai', p.note || 'Voici :');
-      const noteEl = document.getElementById('ai-note-text'); if (noteEl) noteEl.textContent = p.note || '';
       document.getElementById('ai-label-qty').textContent = 'Durée (min)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / heure';
       document.getElementById('ai-macro-fields').style.display = 'none';
-      document.getElementById('ai-qty').value = p.duration_min || 30;
-      document.getElementById('ai-kcal').value = p.kcal_per_hour || 0;
-      document.getElementById('ai-calc-sub').textContent = p.activity || query;
-      // Store walk data for favorite saving
       _aiLastSportData = p;
+      if (p.is_walk && p.walk_steps && p.walk_steps.length >= 2) {
+        // Geocode + real route calculation
+        addChatMessage('ai', '📍 Calcul de l\'itinéraire…');
+        document.getElementById('ai-loading').style.display = 'block';
+        try {
+          const routeResult = await calcMultiLegRoute(p.walk_steps);
+          const walkSpd = p.walk_speed_kmh || 6;
+          p.walk_speed_kmh = walkSpd;
+          p.walk_distance_km = routeResult.distanceKm;
+          p.walk_from = p.walk_steps[0];
+          p.walk_to = p.walk_steps[p.walk_steps.length - 1];
+          const durMin = Math.round(routeResult.distanceKm / walkSpd * 60);
+          p.duration_min = durMin;
+          const realKcalH = calcWalkKcalH(walkSpd);
+          p.kcal_per_hour = realKcalH;
+          document.getElementById('ai-loading').style.display = 'none';
+          addChatMessage('ai', `📍 ${routeResult.distanceKm} km · ${durMin} min · ${p.walk_steps.length} étapes`);
+          document.getElementById('ai-qty').value = durMin;
+          document.getElementById('ai-kcal').value = realKcalH;
+        } catch(geoErr) {
+          document.getElementById('ai-loading').style.display = 'none';
+          addChatMessage('ai', '⚠️ ' + geoErr.message + ' — durée estimée par l\'IA utilisée.');
+          const walkSpd = p.walk_speed_kmh || 6;
+          p.walk_speed_kmh = walkSpd;
+          const realKcalH = calcWalkKcalH(walkSpd);
+          p.kcal_per_hour = realKcalH;
+          document.getElementById('ai-qty').value = p.duration_min || 30;
+          document.getElementById('ai-kcal').value = realKcalH;
+        }
+      } else if (p.is_walk) {
+        const walkSpd = p.walk_speed_kmh || 6;
+        p.walk_speed_kmh = walkSpd;
+        const realKcalH = calcWalkKcalH(walkSpd);
+        p.kcal_per_hour = realKcalH;
+        document.getElementById('ai-qty').value = p.duration_min || 30;
+        document.getElementById('ai-kcal').value = realKcalH;
+      } else {
+        document.getElementById('ai-qty').value = p.duration_min || 30;
+        document.getElementById('ai-kcal').value = p.kcal_per_hour || 0;
+      }
+      const noteEl = document.getElementById('ai-note-text'); if (noteEl) noteEl.textContent = p.note || '';
+      addChatMessage('ai', p.note || 'Voici :');
+      document.getElementById('ai-calc-sub').textContent = p.activity || query;
       document.getElementById('ai-result').style.display = 'block';
       document.getElementById('ai-add-btn').textContent = '✓ Ajouter l\'activité';
       document.getElementById('ai-save-fav-btn').style.display = 'block';
