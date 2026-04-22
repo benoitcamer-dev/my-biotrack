@@ -1645,14 +1645,18 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 </div>
 <div id="walk-simple-section"></div>
 <div id="walk-route-section" style="display:none;">
-<div class="walk-addr-row">
-<input id="walk-from" class="walk-addr-input" type="text" placeholder="Adresse de départ...">
+<div id="walk-steps-container">
+<div class="walk-addr-row" style="position:relative;">
+<input class="walk-addr-input walk-step-input" type="text" placeholder="Départ…" data-step="0">
 </div>
-<div class="walk-addr-row">
-<input id="walk-to" class="walk-addr-input" type="text" placeholder="Adresse d'arrivée...">
+<div class="walk-addr-row" style="position:relative;">
+<input class="walk-addr-input walk-step-input" type="text" placeholder="Arrivée…" data-step="1">
+<button onclick="removeWalkStep(this)" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
 </div>
-<div style="display:flex;gap:7px;margin-bottom:10px;">
-<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;">
+</div>
+<div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
+<button onclick="addWalkStep()" style="background:rgba(91,127,255,0.12);border:1px solid rgba(91,127,255,0.3);color:var(--accent);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Étape</button>
+<label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto;">
 <input type="checkbox" id="walk-roundtrip" style="accent-color:var(--accent)"> Aller-retour
 </label>
 <button class="walk-calc-btn" onclick="calcRoute()">Calculer</button>
@@ -2477,13 +2481,14 @@ if (!m) return { label: desc, qty: null, unit: null };
 return { label: m[1].trim(), qty: parseFloat(m[2].replace(',', '.')), unit: m[3].toLowerCase() };
 }
 function getMETWalk(spd) {
-if (spd <= 3) return 2.5;
-if (spd <= 4) return 3.0;
-if (spd <= 4.8) return 3.5;
-if (spd <= 5.5) return 4.3;
-if (spd <= 6.5) return 5.0;
-if (spd <= 7.5) return 6.3;
-return 7.5;
+// Source: Compendium of Physical Activities (Ainsworth 2011)
+if (spd <= 2.5) return 2.0;  // très lente
+if (spd <= 3.5) return 2.8;  // lente
+if (spd <= 4.5) return 3.3;  // modérée
+if (spd <= 5.5) return 3.8;  // normale
+if (spd <= 6.5) return 4.3;  // rapide (6km/h = ~280 kcal/h pour 65kg)
+if (spd <= 7.5) return 5.0;  // très rapide
+return 6.0;                   // jogging-marche
 }
 function getMETBike(spd) {
 if (spd <= 0) return 0;
@@ -3303,20 +3308,38 @@ document.getElementById('speed-row').style.display = mode === 'simple' ? 'grid' 
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
 if (!walkFavorites.length) { el.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:4px 0;">Aucun trajet favori.</div>`; return; }
-el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFav(${i})">
-<div>
+el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+<div style="flex:1;cursor:pointer;" onclick="loadWalkFav(${i})">
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
 </div>
-<button onclick="event.stopPropagation();deleteWalkFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button>
+<button onclick="event.stopPropagation();deleteWalkFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
 </div>`).join('');
+// Drag & drop reorder
+let dragIdx = null;
+el.querySelectorAll('[data-idx]').forEach(item => {
+  item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+  item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
+  item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.borderColor = 'var(--accent)'; });
+  item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+  item.addEventListener('drop', e => {
+    e.preventDefault(); item.style.borderColor = '';
+    const dropIdx = parseInt(item.dataset.idx);
+    if (dragIdx === null || dragIdx === dropIdx) return;
+    const moved = walkFavorites.splice(dragIdx, 1)[0];
+    walkFavorites.splice(dropIdx, 0, moved);
+    saveSettingsLocal(); pushSettingsRemote();
+    renderWalkFavsInModal(); renderSportFavsQuick();
+  });
+});
 }
 function loadWalkFav(i) {
 const f = walkFavorites[i];
 if (!f) return;
 setWalkMode('route');
-document.getElementById('walk-from').value = f.from || '';
-document.getElementById('walk-to').value = f.to || '';
+const wSteps = document.querySelectorAll('.walk-step-input'); if(wSteps[0]) wSteps[0].value = f.from || '';
+if(wSteps[wSteps.length-1]) wSteps[wSteps.length-1].value = f.to || '';
 document.getElementById('walk-roundtrip').checked = f.roundtrip || false;
 routeBaseDistance = f.distance;
 routeBaseDuration = f.duration;
@@ -3344,6 +3367,46 @@ document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · 
 recalc();
 }
 // Geocode a place name using ORS + Nominatim fallback, biased to Lyon
+function addWalkStep() {
+  const container = document.getElementById('walk-steps-container');
+  const steps = container.querySelectorAll('.walk-step-input');
+  if (steps.length >= 6) return; // max 6 étapes
+  const idx = steps.length;
+  const row = document.createElement('div');
+  row.className = 'walk-addr-row';
+  row.style.position = 'relative';
+  row.innerHTML = `<input class="walk-addr-input walk-step-input" type="text" placeholder="Étape ${idx}…" data-step="${idx}">
+    <button onclick="removeWalkStep(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>`;
+  // Insert before last step
+  const lastRow = steps[steps.length - 1].closest('.walk-addr-row');
+  container.insertBefore(row, lastRow);
+  // Re-index + show remove buttons
+  updateWalkStepIndices();
+}
+
+function removeWalkStep(btn) {
+  const row = btn.closest('.walk-addr-row');
+  row.remove();
+  updateWalkStepIndices();
+}
+
+function updateWalkStepIndices() {
+  const container = document.getElementById('walk-steps-container');
+  const rows = container.querySelectorAll('.walk-addr-row');
+  rows.forEach((row, i) => {
+    const inp = row.querySelector('.walk-step-input');
+    if (inp) inp.dataset.step = i;
+    const btn = row.querySelector('button');
+    if (btn) btn.style.display = (rows.length > 2) ? 'block' : 'none';
+  });
+}
+
+function getWalkSteps() {
+  return Array.from(document.querySelectorAll('.walk-step-input'))
+    .map(inp => inp.value.trim())
+    .filter(Boolean);
+}
+
 async function geocodePlace(name) {
   const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
   const query = name.toLowerCase().includes('lyon') ? name : name + ' Lyon';
@@ -3391,39 +3454,25 @@ async function calcMultiLegRoute(places) {
 }
 
 async function calcRoute() {
-const from = document.getElementById('walk-from').value.trim(), to = document.getElementById('walk-to').value.trim();
-if (!from || !to) { alert('Renseigne départ et arrivée.'); return; }
+const steps = getWalkSteps();
+if (steps.length < 2) { alert('Renseigne au moins départ et arrivée.'); return; }
 const box = document.getElementById('walk-route-result');
 box.style.display = 'block';
 box.innerHTML = '⏳ Calcul…';
 document.getElementById('walk-custom-dur-box').style.display = 'none';
 try {
-const geo = async (addr) => {
-const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(addr)}&size=1`);
-const d = await r.json();
-const f = d.features?.[0];
-if (!f) throw new Error('Adresse introuvable : ' + addr);
-return f.geometry.coordinates;
-};
-const [fc, tc] = await Promise.all([geo(from), geo(to)]);
 const rt = document.getElementById('walk-roundtrip').checked;
-const r = await fetch(`https://api.openrouteservice.org/v2/directions/foot-walking`, {
-method: 'POST',
-headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
-body: JSON.stringify({ coordinates: [fc, tc], units: 'km' })
-});
-const d = await r.json();
-const route = d.routes?.[0];
-if (!route) throw new Error('Itinéraire introuvable.');
-const dist = round1(route.summary.distance * (rt ? 2 : 1));
-const durMin = Math.round(route.summary.duration / 60 * (rt ? 2 : 1));
+const routeResult = await calcMultiLegRoute(steps);
+const dist = round1(routeResult.distanceKm * (rt ? 2 : 1));
+const durMin = Math.round(routeResult.durationMin * (rt ? 2 : 1));
 const speed = round1(dist / (durMin / 60));
 const kcal = calcWalkKcal(speed, durMin);
 routeBaseDistance = dist;
 routeBaseDuration = durMin;
-currentRouteData = { distance: dist, from, to, roundtrip: rt };
+currentRouteData = { distance: dist, from: steps[0], to: steps[steps.length-1], roundtrip: rt };
 currentWalkFavName = '';
-box.innerHTML = `<strong>${dist} km</strong> · ~${durMin} min (estimé) · ~${speed} km/h · <strong>${kcal} kcal</strong>`;
+const stepsLabel = steps.length > 2 ? ` · ${steps.length} étapes` : '';
+box.innerHTML = `<strong>${dist} km</strong>${stepsLabel} · ~${durMin} min · ~${speed} km/h · <strong>${kcal} kcal</strong>`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = durMin;
 document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · ${kcal} kcal`;
@@ -3461,13 +3510,11 @@ renderBikeFavsInModal();
 recalc();
 }
 function renderBikeFavsInModal() {
-if (!bikeFavorites.length) return;
 const el = document.getElementById('walk-advanced');
 el.style.display = 'block';
-el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;">
-<div class="sport-fav-title">⭐ Sorties favorites</div>
-${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFav(${i})">
-<div>
+const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+<div style="flex:1;cursor:pointer;" onclick="loadBikeFav(${i})">
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
@@ -3475,9 +3522,29 @@ ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFav(
 <button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})">✎</button>
 <button class="food-btn danger" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
 </div>
-</div>`).join('')}
+</div>`).join('') : '';
+el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;" id="bike-favs-drag-list">
+<div class="sport-fav-title">⭐ Sorties favorites</div>
+${listHTML}
 </div>
 <button class="walk-fav-btn" onclick="saveBikeFav()">⭐ Sauvegarder cette sortie</button>`;
+// Drag & drop
+let dragIdx = null;
+el.querySelectorAll('[data-idx]').forEach(item => {
+  item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+  item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
+  item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.borderColor = 'var(--accent)'; });
+  item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+  item.addEventListener('drop', e => {
+    e.preventDefault(); item.style.borderColor = '';
+    const dropIdx = parseInt(item.dataset.idx);
+    if (dragIdx === null || dragIdx === dropIdx) return;
+    const moved = bikeFavorites.splice(dragIdx, 1)[0];
+    bikeFavorites.splice(dropIdx, 0, moved);
+    saveSettingsLocal(); pushSettingsRemote();
+    renderBikeFavsInModal();
+  });
+});
 }
 function loadBikeFav(i) {
 const f = bikeFavorites[i];
@@ -4665,8 +4732,8 @@ closeSportFavsModal();
 openModal('Sport');
 selectWalkMode();
 setWalkMode('route');
-document.getElementById('walk-from').value = f.from || '';
-document.getElementById('walk-to').value = f.to || '';
+const wSteps = document.querySelectorAll('.walk-step-input'); if(wSteps[0]) wSteps[0].value = f.from || '';
+if(wSteps[wSteps.length-1]) wSteps[wSteps.length-1].value = f.to || '';
 document.getElementById('walk-roundtrip').checked = f.roundtrip || false;
 routeBaseDistance = f.distance;
 routeBaseDuration = f.duration;
