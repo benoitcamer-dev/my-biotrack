@@ -2989,6 +2989,7 @@ function renderPlacesList() {
 <div class="food-item-main">
 <div class="food-item-name">📍 ${p.name}</div>
 <div class="food-item-meta">${p.address}</div>
+${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
 <div class="food-item-actions">
 <button class="food-btn" onclick="openEditPlaceForm(${i})">✎</button>
@@ -3018,14 +3019,28 @@ function closePlaceForm() {
   document.getElementById('place-form').style.display = 'none';
 }
 
-function savePlace() {
+async function savePlace() {
   const name = document.getElementById('place-form-name').value.trim();
   const address = document.getElementById('place-form-addr').value.trim();
   if (!name || !address) { alert("Remplis le nom et l'adresse."); return; }
+  const btn = document.querySelector('#place-form .btn-primary');
+  if (btn) { btn.textContent = '⏳ Géocodage…'; btn.disabled = true; }
+  // Geocode address to store coords
+  const query = address.toLowerCase().includes('lyon') ? address : address + ' Lyon';
+  const result = await geocodeAddress(query);
+  const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
+  // Show resolved address for confirmation
+  if (result) {
+    const confirm = window.confirm(`Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
+    if (!confirm) {
+      if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
+      return;
+    }
+  }
   if (_editingPlaceIdx >= 0) {
-    savedPlaces[_editingPlaceIdx] = { name, address };
+    savedPlaces[_editingPlaceIdx] = place;
   } else {
-    savedPlaces.push({ name, address });
+    savedPlaces.push(place);
   }
   saveSettingsLocal(); pushSettingsRemote();
   closePlaceForm();
@@ -3541,31 +3556,58 @@ function getWalkSteps() {
     .filter(Boolean);
 }
 
-const KNOWN_PLACES = {
-  "affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
-  "l'affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
-  "l affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
-};
+const KNOWN_PLACES = {}; // populated from savedPlaces at load time
+
+function normalizeForLookup(str) {
+  return str.toLowerCase()
+    .replace(/’/g, "'") // apostrophe typographique → droite
+    .replace(/‘/g, "'")
+    .replace(/l'/g, "l ")    // "l'affreux" → "l affreux"
+    .replace(/d'/g, "d ")
+    .trim();
+}
 
 async function geocodePlace(name) {
   const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
-  // Check known places first
-  const nameLower = name.toLowerCase().trim();
-  const knownAddr = KNOWN_PLACES[nameLower];
-  const query = knownAddr ? knownAddr : (name.toLowerCase().includes('lyon') ? name : name + ' Lyon');
-  // Try ORS first
+  const normalized = normalizeForLookup(name);
+  // 1. Check saved places by name — use stored coords if available
+  for (const p of savedPlaces) {
+    if (normalizeForLookup(p.name) === normalized || normalized.includes(normalizeForLookup(p.name))) {
+      if (p.coords) {
+        return { coords: p.coords, label: p.name + (p.resolvedLabel ? ' — ' + p.resolvedLabel : '') };
+      }
+      // Saved place but no coords yet — geocode and store
+      const result = await geocodeAddress(p.address);
+      if (result) {
+        p.coords = result.coords;
+        p.resolvedLabel = result.label;
+        saveSettingsLocal(); pushSettingsRemote();
+        return { coords: result.coords, label: p.name + ' — ' + result.label };
+      }
+    }
+  }
+  // 2. ORS geocoding
+  const result = await geocodeAddress(name.toLowerCase().includes('lyon') ? name : name + ' Lyon');
+  if (result) return result;
+  return null;
+}
+
+async function geocodeAddress(query) {
+  const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
   try {
     const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
     const d = await r.json();
     const f = d.features?.[0];
     if (f) return { coords: f.geometry.coordinates, label: f.properties.label };
   } catch(e) {}
-  // Fallback: Nominatim
-  const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`, {
-    headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
-  });
-  const nd = await nr.json();
-  if (nd[0]) return { coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label: nd[0].display_name };
+  // Nominatim fallback
+  try {
+    const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`, {
+      headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
+    });
+    const nd = await nr.json();
+    if (nd[0]) return { coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label: nd[0].display_name };
+  } catch(e) {}
   return null;
 }
 
