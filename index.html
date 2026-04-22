@@ -2324,7 +2324,12 @@ let walkFavorites = [];
 let savedPlaces = []; // [{name, address}]
 let bikeFavorites = [];
 let searchDebounceTimer = null;
-let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
+let journalDate = (() => {
+  const saved = localStorage.getItem('bt_journal_date');
+  const d = saved ? strToDate(saved) : new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+})();
 let calViewDate = new Date(), calOpen = false;
 let routeBaseDistance = 0, routeBaseDuration = 0, currentWalkFavName = '';
 let currentSportTab = 'walk';
@@ -2680,7 +2685,7 @@ document.getElementById('journal-date-sub').textContent = isToday ? formatDateFR
 document.getElementById('today-btn').style.display = isToday ? 'none' : 'block';
 }
 function moveJournalDay(d) { closeCalendar(); journalDate.setDate(journalDate.getDate() + d); updateJournalDateUI(); loadData(); }
-function goToToday() { closeCalendar(); journalDate = new Date(); journalDate.setHours(0, 0, 0, 0); updateJournalDateUI(); loadData(); }
+function goToToday() { closeCalendar(); journalDate = new Date(); journalDate.setHours(0, 0, 0, 0); localStorage.setItem('bt_journal_date', dateToStr(journalDate)); updateJournalDateUI(); loadData(); }
 function toggleCalendar() {
 calOpen = !calOpen;
 if (calOpen) { calViewDate = new Date(journalDate); renderCalendar(); document.getElementById('cal-dropdown').classList.add('open'); setTimeout(() => document.addEventListener('click', closeCal, { once: true }), 10); }
@@ -2706,7 +2711,7 @@ html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onc
 }
 document.getElementById('cal-grid').innerHTML = html;
 }
-function selectCalDate(ds) { journalDate = strToDate(ds); updateJournalDateUI(); closeCalendar(); loadData(); }
+function selectCalDate(ds) { journalDate = strToDate(ds); localStorage.setItem('bt_journal_date', ds); updateJournalDateUI(); closeCalendar(); loadData(); }
 async function loadCustomFoods() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('custom_foods').select('*').eq('user_id', user.id).order('created_at', { ascending: false }); customFoods = data || []; } catch (e) { console.error(e); }
 }
@@ -2999,11 +3004,11 @@ const el = document.getElementById(id); if (el) el.addEventListener('click', fun
 document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
 function showPage(page) {
 currentPage = page;
+localStorage.setItem('bt_current_page', page);
 ['journal', 'bilan'].forEach(p => {
 document.getElementById('page-' + p).classList.toggle('active', p === page);
 document.getElementById('tab-' + p).classList.toggle('active', p === page);
 });
-// recipes is now a modal — hide page-recipes if somehow active
 const rp = document.getElementById('page-recipes');
 if (rp) rp.classList.remove('active');
 if (page === 'bilan') loadBilan();
@@ -4425,7 +4430,7 @@ function selectRecipeMeal(category) {
 document.getElementById('recipe-date-meal-category').value = category;
 const rid = document.getElementById('recipe-date-meal-rid').value;
 const date = document.getElementById('recipe-date-meal-date').value;
-journalDate = strToDate(date);
+journalDate = strToDate(date); localStorage.setItem('bt_journal_date', date);
 updateJournalDateUI();
 if (pendingFoodToAdd) {
 const f = pendingFoodToAdd;
@@ -4501,17 +4506,7 @@ renderBilanNav(startStr, endStr);
 const { data: currData } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
 const rows = currData || [];
 
-// Load previous period for comparison
-let prevStart, prevEnd;
-const periodDays = daysBetween(start, end);
-prevEnd = new Date(start); prevEnd.setDate(prevEnd.getDate() - 1);
-prevStart = new Date(prevEnd);
-if (bilanRange === 'week') { prevStart = startOfWeek(prevEnd); prevEnd = endOfWeek(prevEnd); }
-else if (bilanRange === 'month') { prevStart = startOfMonth(prevEnd); prevEnd = endOfMonth(prevEnd); }
-else if (bilanRange === 'quarter') { prevStart = startOfQuarter(prevEnd); prevEnd = endOfQuarter(prevEnd); }
-else { prevStart = startOfYear(prevEnd); prevEnd = endOfYear(prevEnd); }
-const { data: prevData } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', dateToStr(prevStart)).lte('date', dateToStr(prevEnd));
-const prevRows = prevData || [];
+// No previous period comparison
 
 const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
 const totalDays = daysBetween(start, end);
@@ -4559,37 +4554,8 @@ const daysUnder = activeValues.filter(([,v]) => v.food > 0 && v.food <= userGoal
 const daysOver = activeValues.filter(([,v]) => v.food > userGoal).length;
 const daysProtOk = userProtGoal > 0 ? activeValues.filter(([,v]) => v.prot >= userProtGoal).length : null;
 
-// Previous period comparison
-const prevByDay = {};
-prevRows.forEach(e => {
-  if (!prevByDay[e.date]) prevByDay[e.date] = { food: 0, prot: 0 };
-  if (e.type === 'food') { prevByDay[e.date].food += e.val; prevByDay[e.date].prot += (e.prot||0); }
-});
-const prevActive = Object.values(prevByDay).filter(v => v.food > 0);
-const prevAvgIn = prevActive.length ? Math.round(prevActive.reduce((s,v) => s+v.food, 0) / prevActive.length) : null;
-const prevAvgProt = prevActive.length ? Math.round(prevActive.reduce((s,v) => s+v.prot, 0) / prevActive.length) : null;
-const diffKcal = prevAvgIn !== null ? avgIn - prevAvgIn : null;
-const diffProt = prevAvgProt !== null ? avgProt - prevAvgProt : null;
-
-// Trend (linear regression on active days)
-let trendStr = '';
-if (activeValues.length >= 3) {
-  const xArr = activeValues.map((_,i) => i);
-  const yArr = activeValues.map(([,v]) => v.food);
-  const xM = xArr.reduce((a,b)=>a+b,0)/xArr.length, yM = yArr.reduce((a,b)=>a+b,0)/yArr.length;
-  const num = xArr.reduce((s,x,i)=>s+(x-xM)*(yArr[i]-yM),0);
-  const den = xArr.reduce((s,x)=>s+(x-xM)**2,0);
-  const slope = den !== 0 ? num/den : 0;
-  if (Math.abs(slope) > 5) trendStr = slope > 0 ? '📈 Tendance à la hausse' : '📉 Tendance à la baisse';
-}
-
 // Period label
 const periodLabel = { week: 'Semaine', month: 'Mois', quarter: 'Trimestre', year: 'Année' }[bilanRange];
-const prevLabel = { week: 'semaine préc.', month: 'mois préc.', quarter: 'trimestre préc.', year: 'année préc.' }[bilanRange];
-
-// Render summary
-const compKcal = diffKcal !== null ? `<span style="color:${diffKcal > 0 ? 'var(--danger)' : 'var(--green)'};">${diffKcal > 0 ? '+' : ''}${diffKcal} vs ${prevLabel}</span>` : '';
-const compProt = diffProt !== null ? `<span style="color:${diffProt > 0 ? 'var(--green)' : 'var(--muted)'};">${diffProt > 0 ? '+' : ''}${diffProt}g vs ${prevLabel}</span>` : '';
 
 document.getElementById('bilan-summary').innerHTML = `
 <div class="summary-card">
@@ -4607,7 +4573,7 @@ document.getElementById('bilan-summary').innerHTML = `
     </div>
     ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:6px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
   </div>
-  ${trendStr ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">${trendStr}</div>` : ''}
+
   ${totalBikeSessions > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;">🚴 Vélo : <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${totalBikeKcal}</strong> kcal brûlées</div>` : ''}
 </div>`;
 
@@ -6103,21 +6069,7 @@ function renderBilanChart(values, goal, range) {
   const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(goal);
 
-  // Trend line on active data
-  const active = chartData.map((d,i) => d.isEmpty ? null : {x: i, y: d.food}).filter(Boolean);
-  let trendLine = '';
-  if (active.length >= 3) {
-    const xM = active.reduce((s,p)=>s+p.x,0)/active.length;
-    const yM = active.reduce((s,p)=>s+p.y,0)/active.length;
-    const num = active.reduce((s,p)=>s+(p.x-xM)*(p.y-yM),0);
-    const den = active.reduce((s,p)=>s+(p.x-xM)**2,0);
-    const slope = den !== 0 ? num/den : 0;
-    const intercept = yM - slope * xM;
-    const tx0 = xs(active[0].x), ty0 = Math.max(PT, Math.min(H-PB, ys(slope*active[0].x+intercept)));
-    const tx1 = xs(active[active.length-1].x), ty1 = Math.max(PT, Math.min(H-PB, ys(slope*active[active.length-1].x+intercept)));
-    const col = slope > 20 ? '#ef4444' : slope < -20 ? '#3dd68c' : 'var(--muted)';
-    trendLine = `<line x1="${tx0}" y1="${ty0}" x2="${tx1}" y2="${ty1}" stroke="${col}" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`;
-  }
+  const trendLine = ''; // trend line removed
 
   // Bars
   const bars = chartData.map((d, i) => {
