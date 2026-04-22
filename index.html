@@ -3988,8 +3988,9 @@ const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
 descFinal = `🚴 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else { descFinal = `${descName} (${q}min)`; }
 } else {
-// Store qty in desc invisibly for editEntry to recover, but display only name
-descFinal = descName;
+// Include qty in description for display
+const unitLbl = _currentFoodUnit ? `${q} ${_currentFoodUnit.label === 'cac' ? 'c.café' : _currentFoodUnit.label === 'cas' ? 'c.soupe' : _currentFoodUnit.label}` : `${q}${unitDisplay}`;
+descFinal = `${descName} (${unitLbl})`;
 }
 const payload = {
 user_id: user.id,
