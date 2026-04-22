@@ -4605,8 +4605,9 @@ el.innerHTML = walkFavorites.map((f, i) => {
 </div>
 </div>`;
   }
-  return `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
-<div class="builder-main">
+  return `<div class="sport-fav-item" data-idx="${i}" data-type="walk" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+<div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadWalkFavQuick(${i})">
 <div class="builder-title">${f.name}</div>
 <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
 </div>
@@ -4616,6 +4617,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
 </div>
 </div>`;
 }).join('');
+initSportFavsDrag(el, 'walk');
 } else {
 if (!bikeFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucune sortie vélo favorite.</div>`; return; }
 el.innerHTML = bikeFavorites.map((f, i) => {
@@ -4634,8 +4636,9 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 </div>
 </div>`;
   }
-  return `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
-<div class="builder-main">
+  return `<div class="sport-fav-item" data-idx="${i}" data-type="bike" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+<div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadBikeFavQuick(${i})">
 <div class="builder-title">${f.name}</div>
 <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
@@ -4645,8 +4648,33 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 </div>
 </div>`;
 }).join('');
+initSportFavsDrag(el, 'bike');
 }
 }
+function initSportFavsDrag(container, type) {
+  let dragIdx = null;
+  container.querySelectorAll('[data-idx]').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      dragIdx = parseInt(item.dataset.idx);
+      item.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
+    item.addEventListener('dragover', e => { e.preventDefault(); item.style.borderColor = 'var(--accent)'; });
+    item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+    item.addEventListener('drop', e => {
+      e.preventDefault(); item.style.borderColor = '';
+      const dropIdx = parseInt(item.dataset.idx);
+      if (dragIdx === null || dragIdx === dropIdx) return;
+      const arr = type === 'walk' ? walkFavorites : bikeFavorites;
+      const moved = arr.splice(dragIdx, 1)[0];
+      arr.splice(dropIdx, 0, moved);
+      saveSettingsLocal(); pushSettingsRemote();
+      renderSportFavsContent();
+    });
+  });
+}
+
 function saveWalkFavEdit(i) {
   const name = document.getElementById('sf-edit-name')?.value.trim();
   const dist = parseFloat(document.getElementById('sf-edit-dist')?.value) || 0;
