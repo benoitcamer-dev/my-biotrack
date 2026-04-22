@@ -3490,8 +3490,8 @@ function promptSaveStepPlace(btn) {
   const row = btn.closest('.walk-addr-row');
   const inp = row.querySelector('.walk-step-input');
   const address = inp ? inp.value.trim() : '';
-  if (!address) { alert('Entre une adresse d'abord.'); return; }
-  const name = prompt('Nom court pour ce lieu :', '');
+  if (!address) { alert("Entre une adresse d'abord."); return; }
+  const name = prompt("Nom court pour ce lieu :", "");
   if (!name) return;
   saveQuickPlace(name, address);
   const toast = document.createElement('div');
@@ -3628,7 +3628,7 @@ updateRouteCalc(dist, durMin);
 }
 function saveCurrentRoute() {
 if (!currentRouteData) return;
-const name = prompt('Nom de ce trajet :', 'Trajet favori');
+const name = prompt("Nom de ce trajet :", "Trajet favori");
 if (!name) return;
 const dur = parseInt(document.getElementById('walk-custom-dur').value) || routeBaseDuration;
 const speed = round1(routeBaseDistance / (dur / 60));
@@ -3699,7 +3699,7 @@ recalc();
 }
 function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); }
 function saveBikeFav() {
-const name = prompt('Nom de cette sortie :', 'Sortie vélo');
+const name = prompt("Nom de cette sortie :", "Sortie vélo");
 if (!name) return;
 const spd = parseFloat(document.getElementById('in-kcal').value) || 18;
 const dur = parseInt(document.getElementById('in-qty').value) || 40;
