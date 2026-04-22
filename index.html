@@ -5338,6 +5338,10 @@ async function askAI() {
   const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
   const questionsAlways = aiQMode === 'always';
   const userProfile = `Profil : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
+  // Inject saved places into prompt so AI can resolve shortcuts
+  const placesContext = savedPlaces.length > 0
+    ? 'Lieux enregistres par l utilisateur : ' + savedPlaces.map(p => `"${p.name}" = ${p.address}`).join(', ') + '. Utilise ces adresses exactes dans walk_steps.'
+    : '';
   const qLine = questionsAlways
     ? "- Pose une question de clarification si la demande n est pas claire."
     : "- Pose une question seulement si une info vraiment CRITIQUE manque et que tu ne peux absolument pas estimer.";
@@ -5347,6 +5351,7 @@ Utilise ce profil pour calculer des calories selon poids/taille/sexe.
 Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
 Tu connais la geographie de Lyon. Sauf mention contraire, tous les lieux sont a Lyon. Tu peux estimer les distances entre lieux lyonnais connus (quartiers, monuments, restaurants connus).
 Vitesse de marche par defaut : 6 km/h sauf indication contraire de l utilisateur.
+${placesContext}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre, zero explication.
 Format marche SIMPLE (A vers B) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
 Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B","adresse C"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
