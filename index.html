@@ -4588,6 +4588,17 @@ document.getElementById('bilan-summary').innerHTML = `
     ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${totalWalkKcal}</strong> kcal</div>` : ''}
     <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total activités : <strong>${totalSportKcal}</strong> kcal</div>
   </div>` : ''}
+  ${(() => {
+    const netTotal = activeValues.reduce((s,[,v]) => s + v.food - v.out, 0);
+    if (!activeValues.length || !netTotal) return '';
+    const kg = Math.abs(Math.round(netTotal/7700*100)/100);
+    const isD = netTotal < 0;
+    return `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net période</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${netTotal} kcal</div>
+      <div style="font-size:12px;color:${isD ? 'var(--green)' : 'var(--danger)'};">≈ ${kg} kg ${isD ? 'perdu' : 'pris'}</div>
+    </div>`;
+  })()}
 </div>`;
 
 // Render chart + detail
@@ -6178,7 +6189,11 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
   }).join('');
 
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">⚖️ Bilan net / jour · cumul : <span style="color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</span> · <span style="color:${lineCol};font-size:11px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'perdu' : 'pris'}</span></div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net / jour</div>
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</div>
+      <div style="font-size:13px;font-weight:700;color:${lineCol};margin-top:2px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'de graisse perdue' : 'de graisse prise'}</div>
+    </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       ${bars}
