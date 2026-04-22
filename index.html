@@ -5762,15 +5762,32 @@ async function addAIEntry() {
   const p = parseFloat(document.getElementById('ai-p').value) || 0;
   const g = parseFloat(document.getElementById('ai-g').value) || 0;
   const l = parseFloat(document.getElementById('ai-l').value) || 0;
-  const label = document.getElementById('ai-calc-sub').textContent || document.getElementById('ai-input').value;
   const factor = isSport ? q / 60 : q / 100;
   const val = Math.round(k * factor);
   const unit = isSport ? 'min' : 'g';
+  // Build description — for walk with steps, show the route
+  let label = document.getElementById('ai-calc-sub').textContent || document.getElementById('ai-input').value;
+  let desc;
+  if (isSport && _aiLastSportData?.is_walk && _aiLastSportData?.walk_steps?.length >= 2) {
+    const p2 = _aiLastSportData;
+    const spd = p2.walk_speed_kmh || 6;
+    const dist = p2.walk_distance_km || round1(spd * (q / 60));
+    // Use saved place names if matching, else use raw steps
+    const stepsLabel = p2.walk_steps.map(s => {
+      const match = savedPlaces.find(sp => sp.address && sp.address.toLowerCase() === s.toLowerCase());
+      return match ? match.name : s;
+    }).join(' → ');
+    desc = `🚶 ${stepsLabel} (${q}min · ${dist}km · ${spd}km/h)`;
+  } else if (isSport) {
+    desc = `${label} (${q}${unit})`;
+  } else {
+    desc = `${label} (${q}${unit})`;
+  }
   await sb.from('entries').insert([{
     user_id: user.id,
     type: isSport ? 'burn' : 'food',
     category: aiCurrentCat,
-    desc: `${label} (${q}${unit})`,
+    desc,
     val,
     prot: isSport ? 0 : round1(p * factor),
     gluc: isSport ? 0 : round1(g * factor),
