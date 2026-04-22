@@ -3017,6 +3017,10 @@ function openEditPlaceForm(i) {
 function closePlaceForm() {
   _editingPlaceIdx = -1;
   document.getElementById('place-form').style.display = 'none';
+  document.getElementById('place-form-name').value = '';
+  document.getElementById('place-form-addr').value = '';
+  const btn = document.querySelector('#place-form .btn-primary');
+  if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
 }
 
 async function savePlace() {
@@ -3586,7 +3590,7 @@ async function geocodePlace(name) {
   for (const p of savedPlaces) {
     if (normalizeForLookup(p.name) === normalized || normalized.includes(normalizeForLookup(p.name))) {
       if (p.coords) {
-        return { coords: p.coords, label: p.name + (p.resolvedLabel ? ' — ' + p.resolvedLabel : '') };
+        return { coords: p.coords, label: p.address };
       }
       // Saved place but no coords yet — geocode and store
       const result = await geocodeAddress(p.address);
@@ -3594,7 +3598,7 @@ async function geocodePlace(name) {
         p.coords = result.coords;
         p.resolvedLabel = result.label;
         saveSettingsLocal(); pushSettingsRemote();
-        return { coords: result.coords, label: p.name + ' — ' + result.label };
+        return { coords: result.coords, label: p.address };
       }
     }
   }
