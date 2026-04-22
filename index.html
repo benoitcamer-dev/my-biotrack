@@ -1504,6 +1504,7 @@ margin-left: 4px;
 <div class="header-btns">
 <button class="btn-icon gold" onclick="openAlimentsModal()">⭐ Aliments</button>
 <button class="btn-icon" onclick="openRecipesModal()">📚 Recettes</button>
+<button class="btn-icon" onclick="openPlacesModal()">📍 Lieux</button>
 
 <button class="btn-icon" onclick="openSportFavsModal()">⭐ Sports</button>
 <button class="btn-icon green" onclick="openWeightModal()">⚖️ Poids</button>
@@ -1574,6 +1575,28 @@ margin-left: 4px;
 </section>
 <section class="page" id="page-recipes">
 </section>
+<!-- MODAL LIEUX -->
+<div id="modal-places" class="modal-overlay z84">
+<div class="settings-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">📍 Mes lieux</div>
+<button class="modal-close" onclick="closePlacesModal()">×</button>
+</div>
+<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Ces lieux sont utilisables comme raccourcis dans l'IA et le formulaire itinéraire.</div>
+<div id="places-list"></div>
+<button class="btn-primary" style="margin-top:10px;width:100%;" onclick="openAddPlaceForm()">+ Ajouter un lieu</button>
+<div id="place-form" style="display:none;margin-top:12px;background:var(--surface2);border-radius:12px;padding:12px;">
+<div class="setting-row"><label>Nom court</label><input id="place-form-name" class="text-input" type="text" placeholder="Ex: Gym, Affreux Jojo…"></div>
+<div class="setting-row"><label>Adresse complète</label><input id="place-form-addr" class="text-input" type="text" placeholder="Ex: 61 Rue de la Part-Dieu, Lyon"></div>
+<div style="display:flex;gap:8px;margin-top:8px;">
+<button class="btn-cancel" style="flex:1;" onclick="closePlaceForm()">Annuler</button>
+<button class="btn-primary" style="flex:2;" onclick="savePlace()">✓ Enregistrer</button>
+</div>
+</div>
+</div>
+</div>
+
 <!-- MODAL RECETTES -->
 <div id="modal-recipes" class="modal-overlay z70">
 <div class="settings-sheet" style="max-height:92dvh;">
@@ -1647,11 +1670,13 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <div id="walk-route-section" style="display:none;">
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" type="text" placeholder="Départ…" data-step="0">
+<input class="walk-addr-input walk-step-input" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;">
+<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" type="text" placeholder="Arrivée…" data-step="1">
-<button onclick="removeWalkStep(this)" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+<input class="walk-addr-input walk-step-input" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;">
+<button onclick="removeWalkStep(this)" class="step-remove-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 </div>
 <div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
@@ -2221,6 +2246,7 @@ Oui si nécessaire
 <button class="btn-primary" id="ai-save-fav-btn" onclick="saveAIEntryAsFavorite()" style="flex:1;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);">⭐ Favori</button>
 <button class="btn-primary" id="ai-save-base-btn" onclick="saveAIEntryToBase()" style="flex:1;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);">📦 Base</button>
 </div>
+<button class="btn-primary" id="ai-save-place-btn" onclick="openSavePlaceFromAI()" style="display:none;margin-top:6px;width:100%;background:rgba(91,127,255,0.12);color:var(--accent);border:1px solid rgba(91,127,255,0.3);">📍 Sauvegarder un lieu</button>
 </div>
 <div id="ai-loading" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">⏳ Analyse en cours...</div>
 <div id="ai-error" style="display:none;color:var(--danger);font-size:12px;padding:8px 0;"></div>
@@ -2257,6 +2283,7 @@ let weightEntries = [];
 let currentWalkMode = 'simple';
 let currentRouteData = null;
 let walkFavorites = [];
+let savedPlaces = []; // [{name, address}]
 let bikeFavorites = [];
 let searchDebounceTimer = null;
 let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
@@ -2564,6 +2591,7 @@ localStorage.setItem('bt_prot_goal', userProtGoal);
 localStorage.setItem('bt_saved_recipes', JSON.stringify(savedRecipes));
 localStorage.setItem('bt_walk_favs', JSON.stringify(walkFavorites));
 localStorage.setItem('bt_bike_favs', JSON.stringify(bikeFavorites));
+localStorage.setItem('bt_saved_places', JSON.stringify(savedPlaces));
 }
 async function loadSettingsRemote() {
 try {
@@ -2579,6 +2607,7 @@ userSexe = data.sexe || 'H';
 try { const p = typeof data.recipes === 'string' ? JSON.parse(data.recipes) : (data.recipes || []); savedRecipes = Array.isArray(p) ? p : []; } catch { savedRecipes = []; }
 try { const wf = typeof data.walk_favorites === 'string' ? JSON.parse(data.walk_favorites) : (data.walk_favorites || []); walkFavorites = Array.isArray(wf) ? wf : []; } catch { walkFavorites = []; }
 try { const bf = typeof data.bike_favorites === 'string' ? JSON.parse(data.bike_favorites) : (data.bike_favorites || []); bikeFavorites = Array.isArray(bf) ? bf : []; } catch { bikeFavorites = []; }
+try { const sp = typeof data.saved_places === 'string' ? JSON.parse(data.saved_places) : (data.saved_places || []); savedPlaces = Array.isArray(sp) ? sp : []; } catch { savedPlaces = []; }
 saveSettingsLocal();
 } else { await pushSettingsRemote(); }
 } catch (e) { console.error('loadSettingsRemote:', e); }
@@ -2599,6 +2628,7 @@ sexe: userSexe,
 recipes: savedRecipes,
 walk_favorites: walkFavorites,
 bike_favorites: bikeFavorites,
+saved_places: savedPlaces,
 updated_at: ts
 }, { onConflict: 'user_id' });
 } catch (e) { console.error('pushSettingsRemote:', e); }
@@ -2925,7 +2955,7 @@ closeSettings();
 loadData();
 if (currentPage === 'bilan') loadBilan();
 }
-['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight', 'modal-recipes'].forEach(id => {
+['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight', 'modal-recipes', 'modal-places'].forEach(id => {
 const el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
 });
 document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
@@ -2939,6 +2969,95 @@ document.getElementById('tab-' + p).classList.toggle('active', p === page);
 const rp = document.getElementById('page-recipes');
 if (rp) rp.classList.remove('active');
 if (page === 'bilan') loadBilan();
+}
+
+let _editingPlaceIdx = -1;
+
+function openPlacesModal() {
+  renderPlacesList();
+  document.getElementById('modal-places').classList.add('open');
+}
+function closePlacesModal() { document.getElementById('modal-places').classList.remove('open'); }
+
+function renderPlacesList() {
+  const el = document.getElementById('places-list');
+  if (!savedPlaces.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Aucun lieu enregistré.</div>';
+    return;
+  }
+  el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item">
+<div class="food-item-main">
+<div class="food-item-name">📍 ${p.name}</div>
+<div class="food-item-meta">${p.address}</div>
+</div>
+<div class="food-item-actions">
+<button class="food-btn" onclick="openEditPlaceForm(${i})">✎</button>
+<button class="food-btn danger" onclick="deletePlace(${i})">✕</button>
+</div>
+</div>`).join('');
+}
+
+function openAddPlaceForm() {
+  _editingPlaceIdx = -1;
+  document.getElementById('place-form-name').value = '';
+  document.getElementById('place-form-addr').value = '';
+  document.getElementById('place-form').style.display = 'block';
+  setTimeout(() => document.getElementById('place-form-name').focus(), 100);
+}
+
+function openEditPlaceForm(i) {
+  _editingPlaceIdx = i;
+  document.getElementById('place-form-name').value = savedPlaces[i].name;
+  document.getElementById('place-form-addr').value = savedPlaces[i].address;
+  document.getElementById('place-form').style.display = 'block';
+  setTimeout(() => document.getElementById('place-form-name').focus(), 100);
+}
+
+function closePlaceForm() {
+  _editingPlaceIdx = -1;
+  document.getElementById('place-form').style.display = 'none';
+}
+
+function savePlace() {
+  const name = document.getElementById('place-form-name').value.trim();
+  const address = document.getElementById('place-form-addr').value.trim();
+  if (!name || !address) { alert('Remplis le nom et l'adresse.'); return; }
+  if (_editingPlaceIdx >= 0) {
+    savedPlaces[_editingPlaceIdx] = { name, address };
+  } else {
+    savedPlaces.push({ name, address });
+  }
+  saveSettingsLocal(); pushSettingsRemote();
+  closePlaceForm();
+  renderPlacesList();
+  updateKnownPlaces();
+}
+
+function deletePlace(i) {
+  if (!confirm('Supprimer ce lieu ?')) return;
+  savedPlaces.splice(i, 1);
+  saveSettingsLocal(); pushSettingsRemote();
+  renderPlacesList();
+  updateKnownPlaces();
+}
+
+function updateKnownPlaces() {
+  // Merge saved places into KNOWN_PLACES for geocoding
+  savedPlaces.forEach(p => {
+    KNOWN_PLACES[p.name.toLowerCase()] = p.address;
+  });
+}
+
+// Save a single place from AI result or route form
+function saveQuickPlace(name, address) {
+  const existing = savedPlaces.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing >= 0) {
+    savedPlaces[existing].address = address;
+  } else {
+    savedPlaces.push({ name, address });
+  }
+  saveSettingsLocal(); pushSettingsRemote();
+  updateKnownPlaces();
 }
 
 function openRecipesModal() {
@@ -3367,6 +3486,21 @@ document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · 
 recalc();
 }
 // Geocode a place name using ORS + Nominatim fallback, biased to Lyon
+function promptSaveStepPlace(btn) {
+  const row = btn.closest('.walk-addr-row');
+  const inp = row.querySelector('.walk-step-input');
+  const address = inp ? inp.value.trim() : '';
+  if (!address) { alert('Entre une adresse d'abord.'); return; }
+  const name = prompt('Nom court pour ce lieu :', '');
+  if (!name) return;
+  saveQuickPlace(name, address);
+  const toast = document.createElement('div');
+  toast.textContent = `📍 "${name}" sauvegardé`;
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
 function addWalkStep() {
   const container = document.getElementById('walk-steps-container');
   const steps = container.querySelectorAll('.walk-step-input');
@@ -3407,9 +3541,18 @@ function getWalkSteps() {
     .filter(Boolean);
 }
 
+const KNOWN_PLACES = {
+  "affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
+  "l'affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
+  "l affreux jojo": "61 Rue de la Part-Dieu, 69003 Lyon",
+};
+
 async function geocodePlace(name) {
   const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
-  const query = name.toLowerCase().includes('lyon') ? name : name + ' Lyon';
+  // Check known places first
+  const nameLower = name.toLowerCase().trim();
+  const knownAddr = KNOWN_PLACES[nameLower];
+  const query = knownAddr ? knownAddr : (name.toLowerCase().includes('lyon') ? name : name + ' Lyon');
   // Try ORS first
   try {
     const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
@@ -4910,6 +5053,7 @@ else {
 document.getElementById('auth-screen').classList.add('hidden');
 await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
     await importLocalFoodDBIfNeeded();
+updateKnownPlaces();
 journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
 updateJournalDateUI();
 await loadData();
@@ -5230,13 +5374,12 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
           const realKcalH = calcWalkKcalH(walkSpd);
           p.kcal_per_hour = realKcalH;
           document.getElementById('ai-loading').style.display = 'none';
-          // Show resolved addresses for verification (first 2 parts = street + city)
-          const resolvedLabels = routeResult.waypoints.map((w, i) => {
-            const parts = w.split(',').map(s => s.trim());
-            const addr = parts.slice(0, 2).join(', ');
-            return `${i+1}. ${p.walk_steps[i]} → ${addr}`;
-          }).join('\n');
-          addChatMessage('ai', `📍 ${routeResult.distanceKm} km · ${durMin} min\n${resolvedLabels}`);
+          // Show resolved addresses for verification
+          addChatMessage('ai', `📍 ${routeResult.distanceKm} km · ${durMin} min`);
+          routeResult.waypoints.forEach((w, i) => {
+            const addr = w.split(',').slice(0, 2).map(s => s.trim()).join(', ');
+            addChatMessage('ai', `${i+1}. ${p.walk_steps[i]} → ${addr}`);
+          });
           document.getElementById('ai-qty').value = durMin;
           document.getElementById('ai-kcal').value = realKcalH;
         } catch(geoErr) {
@@ -5267,6 +5410,9 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-add-btn').textContent = '✓ Ajouter l\'activité';
       document.getElementById('ai-save-fav-btn').style.display = 'block';
       document.getElementById('ai-save-fav-btn').textContent = p.is_walk ? '⭐ Sauvegarder trajet marche' : '⭐ Sauvegarder en favori';
+      // Show save-place button for walk routes
+      const spBtn = document.getElementById('ai-save-place-btn');
+      if (spBtn) spBtn.style.display = p.is_walk && p.walk_steps && p.walk_steps.length ? 'block' : 'none';
       recalcAI();
     } else {
       addChatMessage('ai', p.note || 'Voici :');
@@ -5875,6 +6021,26 @@ async function saveDoseFav() {
   await sb.from('custom_foods').update({ unit_label: unit, unit_g: unitG, default_qty: qty }).eq('id', _doseFavFoodId);
   await loadCustomFoods();
   closeDoseFavModal();
+}
+
+function openSavePlaceFromAI() {
+  const p = _aiLastSportData;
+  if (!p || !p.walk_steps || !p.walk_steps.length) return;
+  // Build options from walk_steps
+  const steps = p.walk_steps;
+  let options = steps.map((s, i) => `${i+1}. ${s}`).join('\n');
+  const choice = prompt(`Quel lieu sauvegarder ?\n${options}\n\nEntre le numéro :`);
+  const idx = parseInt(choice) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= steps.length) return;
+  const address = steps[idx];
+  const name = prompt(`Nom court pour "${address}" :`, '');
+  if (!name) return;
+  saveQuickPlace(name, address);
+  const toast = document.createElement('div');
+  toast.textContent = `📍 "${name}" sauvegardé`;
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
 }
 
 async function saveAIEntryToBase() {
