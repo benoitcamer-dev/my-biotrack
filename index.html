@@ -793,11 +793,13 @@ cursor: pointer;
 display: none;
 }
 .fav-link-btn {
-background: none;
-border: none;
-padding: 0;
-margin: -4px 0 10px 10px;
-font-size: 11px;
+background: var(--surface2);
+border: 1px solid var(--border);
+border-radius: 10px;
+padding: 7px 13px;
+margin: 0;
+font-size: 12px;
+font-weight: 600;
 color: var(--gold);
 cursor: pointer;
 display: none;
@@ -1652,7 +1654,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">📚 Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
-<button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;touch-action:manipulation;">🤖 IA</button>
+<button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
 </div>
 <div id="search-results"></div>
 <!-- SPORT FAVS (marche + vélo) -->
@@ -1958,7 +1960,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;" id="aliments-actions">
 <button class="btn-primary" style="flex:1;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
-<button class="btn-primary" style="flex:0 0 auto;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);" onclick="openAIFromBase()">🤖 IA</button>
+<button class="btn-primary" style="flex:0 0 auto;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);font-size:13px;padding:10px 16px;" onclick="openAIFromBase()">🤖 IA</button>
 <button class="btn-primary" style="flex:0 0 auto;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
 </div>
 <div id="aliments-list"></div>
