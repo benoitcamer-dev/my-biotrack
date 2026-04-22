@@ -1635,7 +1635,6 @@ margin-left: 4px;
 <div id="bilan-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
 <div id="bilan-net-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
 <div id="bilan-prot-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
-<div id="bilan-deficit-block" style="display:none;"></div>
 <div id="bilan-detail" class="daily-week-list"></div>
 </section>
 </main>
@@ -4607,8 +4606,6 @@ if ((bilanRange === 'week' || bilanRange === 'month') && userProtGoal > 0) {
   const pw = document.getElementById('bilan-prot-chart-wrap');
   if (pw) pw.style.display = 'none';
 }
-// Deficit/surplus block (all ranges)
-renderDeficitBlock(activeValues, bmr);
 if (bilanRange === 'week') {
   document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
   values.map(([date, v]) => {
@@ -6181,7 +6178,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
   }).join('');
 
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">⚖️ Bilan net / jour · cumul : <span style="color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</span></div>
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">⚖️ Bilan net / jour · cumul : <span style="color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</span> · <span style="color:${lineCol};font-size:11px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'perdu' : 'pris'}</span></div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       ${bars}
@@ -6193,22 +6190,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
     </div>`;
 }
 
-function renderDeficitBlock(activeValues, bmr) {
-  const el = document.getElementById('bilan-deficit-block');
-  if (!el) return;
-  if (!activeValues.length) { el.style.display = 'none'; return; }
-  const totalIn = activeValues.reduce((s,[,v]) => s + v.food, 0);
-  const totalOut = activeValues.reduce((s,[,v]) => s + v.out, 0);
-  const net = totalIn - totalOut;
-  const kg = Math.round(Math.abs(net) / 7700 * 100) / 100;
-  const isDeficit = net < 0;
-  el.style.display = 'block';
-  el.innerHTML = `<div style="background:var(--surface);border:1px solid ${isDeficit ? 'rgba(61,214,140,0.3)' : 'rgba(239,68,68,0.3)'};border-radius:14px;padding:14px 16px;margin-bottom:10px;">
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚖️ Bilan période (${activeValues.length} jour${activeValues.length>1?'s':''} pris en compte)</div>
-    <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:${isDeficit ? 'var(--green)' : 'var(--danger)'};">${isDeficit ? '' : '+'}${net} kcal</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px;">${isDeficit ? '📉 Déficit' : '📈 Excédent'} · ≈ ${kg} kg de graisse théorique ${isDeficit ? 'perdue' : 'prise'}</div>
-  </div>`;
-}
+
 
 function renderProtChart(values, protGoal, range) {
   const wrap = document.getElementById('bilan-prot-chart-wrap');
