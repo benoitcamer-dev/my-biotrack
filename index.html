@@ -4542,6 +4542,8 @@ rows.forEach(e => {
   }
 });
 
+// Calculate out (BMR + sport) for each day
+Object.keys(byDay).forEach(d => { byDay[d].out = bmr + byDay[d].sport; byDay[d].bal = byDay[d].food - byDay[d].out; });
 const values = Object.entries(byDay);
 const isFullDay = ([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
 const activeDays = values.filter(isFullDay).length || 1;
