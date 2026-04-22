@@ -1633,6 +1633,7 @@ margin-left: 4px;
 <div style="text-align:right;margin-bottom:10px;"><button class="btn-icon" onclick="exportCSV()" style="color:var(--green);border-color:rgba(61,214,140,0.3);">📥 Exporter CSV</button></div>
 <div id="bilan-summary" class="summary-cards"></div>
 <div id="bilan-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
+<div id="bilan-prot-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
 <div id="bilan-detail" class="daily-week-list"></div>
 </section>
 </main>
@@ -4515,7 +4516,7 @@ const totalDays = daysBetween(start, end);
 const byDay = {};
 for (let i = 0; i < totalDays; i++) {
   const d = new Date(start); d.setDate(start.getDate() + i);
-  byDay[dateToStr(d)] = { food: 0, sport: 0, bikeKcal: 0, bikeSessions: 0, prot: 0, gluc: 0, lip: 0 };
+  byDay[dateToStr(d)] = { food: 0, sport: 0, bikeKcal: 0, bikeSessions: 0, walkKcal: 0, prot: 0, gluc: 0, lip: 0 };
 }
 rows.forEach(e => {
   if (!byDay[e.date]) return;
@@ -4535,6 +4536,9 @@ rows.forEach(e => {
       byDay[e.date].bikeKcal += e.val;
       byDay[e.date].bikeSessions++;
     }
+    if (desc.includes('🚶') || desc.includes('marche') || desc.includes('trajet')) {
+      byDay[e.date].walkKcal += e.val;
+    }
   }
 });
 
@@ -4546,6 +4550,8 @@ const sumIn = activeValues.reduce((s,[,v]) => s+v.food, 0);
 const sumProt = activeValues.reduce((s,[,v]) => s+v.prot, 0);
 const totalBikeKcal = values.reduce((s,[,v]) => s+v.bikeKcal, 0);
 const totalBikeSessions = values.reduce((s,[,v]) => s+v.bikeSessions, 0);
+const totalWalkKcal = values.reduce((s,[,v]) => s+v.walkKcal, 0);
+const totalSportKcal = values.reduce((s,[,v]) => s+v.sport, 0);
 const avgIn = Math.round(sumIn / activeDays);
 const avgProt = Math.round(sumProt / activeDays);
 
@@ -4574,11 +4580,21 @@ document.getElementById('bilan-summary').innerHTML = `
     ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:6px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
   </div>
 
-  ${totalBikeSessions > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;">🚴 Vélo : <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${totalBikeKcal}</strong> kcal brûlées</div>` : ''}
+  ${totalSportKcal > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;">🚴 <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${totalBikeKcal}</strong> kcal</div>` : ''}
+    ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${totalWalkKcal}</strong> kcal</div>` : ''}
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total activités : <strong>${totalSportKcal}</strong> kcal</div>
+  </div>` : ''}
 </div>`;
 
 // Render chart + detail
 renderBilanChart(values, userGoal, bilanRange);
+if ((bilanRange === 'week' || bilanRange === 'month') && userProtGoal > 0) {
+  renderProtChart(values, userProtGoal, bilanRange);
+} else {
+  const pw = document.getElementById('bilan-prot-chart-wrap');
+  if (pw) pw.style.display = 'none';
+}
 if (bilanRange === 'week') {
   document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
   values.map(([date, v]) => {
@@ -5266,7 +5282,13 @@ document.getElementById('auth-screen').classList.add('hidden');
 await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
     await importLocalFoodDBIfNeeded();
 updateKnownPlaces();
-journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
+// Restore saved date or use today
+const savedDate = localStorage.getItem('bt_journal_date');
+if (savedDate) { try { journalDate = strToDate(savedDate); } catch(e) { journalDate = new Date(); journalDate.setHours(0,0,0,0); } }
+else { journalDate = new Date(); journalDate.setHours(0,0,0,0); }
+// Restore saved page
+const savedPage = localStorage.getItem('bt_current_page');
+if (savedPage && (savedPage === 'journal' || savedPage === 'bilan')) showPage(savedPage);
 updateJournalDateUI();
 await loadData();
 if (document.getElementById('modal-recipes').classList.contains('open')) renderRecipesPage();
@@ -6104,6 +6126,67 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.food) - 3}" text-anchor=
 }
 
 
+function renderProtChart(values, protGoal, range) {
+  const wrap = document.getElementById('bilan-prot-chart-wrap');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+  const W = 360, H = 160, PL = 38, PR = 12, PT = 16, PB = 28;
+
+  let chartData = [];
+  if (range === 'week') {
+    chartData = values.map(([date, v]) => {
+      const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+      return {
+        label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
+        prot: Math.round(v.prot), isEmpty: !full
+      };
+    });
+  } else {
+    chartData = values.map(([date, v]) => {
+      const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+      return {
+        label: new Date(date + 'T12:00:00').getDate().toString(),
+        prot: Math.round(v.prot), isEmpty: !full
+      };
+    });
+  }
+
+  const prots = chartData.map(d => d.prot);
+  const maxVal = Math.max(...prots, protGoal, 10);
+  const n = chartData.length;
+  const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
+  const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
+  const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
+  const goalY = ys(protGoal);
+
+  const bars = chartData.map((d, i) => {
+    const x = xs(i) - barW / 2;
+    const bh = Math.max(2, ys(0) - ys(d.prot));
+    const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#a78bfa';
+    return `<rect x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
+<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>
+${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.prot}</text>` : ''}`;
+  }).join('');
+
+  const yLabels = [0, Math.round(maxVal / 2), maxVal].map(v => {
+    const y = ys(v);
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v}</text>
+<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">💪 Protéines / jour</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+      ${yLabels}
+      <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="8" font-family="DM Sans" opacity="0.8">objectif ${protGoal}g</text>
+      ${bars}
+    </svg>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+      <span style="color:#3dd68c;">🟢 Objectif atteint</span>
+      <span style="color:#a78bfa;">🟣 Sous objectif</span>
+    </div>`;
+}
 
 async function changePassword() {
   const pwd1 = document.getElementById('s-pwd1').value;
