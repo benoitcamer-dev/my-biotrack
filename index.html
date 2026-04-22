@@ -2324,12 +2324,7 @@ let walkFavorites = [];
 let savedPlaces = []; // [{name, address}]
 let bikeFavorites = [];
 let searchDebounceTimer = null;
-let journalDate = (() => {
-  const saved = localStorage.getItem('bt_journal_date');
-  const d = saved ? strToDate(saved) : new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-})();
+let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
 let calViewDate = new Date(), calOpen = false;
 let routeBaseDistance = 0, routeBaseDuration = 0, currentWalkFavName = '';
 let currentSportTab = 'walk';
@@ -2543,6 +2538,11 @@ function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").r
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 function dateToStr(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d, 0, 0, 0, 0); }
+// Restore saved journal date from localStorage
+(function() {
+  const saved = localStorage.getItem('bt_journal_date');
+  if (saved) { try { journalDate = strToDate(saved); } catch(e) {} }
+})();
 function formatDateFR(ds, opts = { weekday: 'short', day: 'numeric', month: 'short' }) { return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR', opts); }
 function round1(n) { return Math.round(n * 10) / 10; }
 function parseDesc(desc) {
@@ -4160,7 +4160,7 @@ lip: round1((item.lip100 || 0) * f),
 date: journalDateStr()
 }]);
 }
-showPage('journal');
+showPage(localStorage.getItem('bt_current_page') || 'journal');
 await loadData();
 }
 function appendCategoryToRecipe(rid) {
@@ -4561,8 +4561,8 @@ document.getElementById('bilan-summary').innerHTML = `
 <div class="summary-card">
   <div class="summary-title">📅 ${periodLabel} · ${activeDays} jour${activeDays>1?'s':''} renseigné${activeDays>1?'s':''} / ${totalDays}</div>
   <div class="summary-kpi-row" style="flex-wrap:wrap;gap:8px;">
-    <div class="mini-kpi in"><div class="label">Moy. kcal/jour</div><div class="val">${avgIn} ${compKcal}</div></div>
-    <div class="mini-kpi p"><div class="label">Moy. protéines/j</div><div class="val">${avgProt}g ${compProt}</div></div>
+    <div class="mini-kpi in"><div class="label">Moy. kcal/jour</div><div class="val">${avgIn}</div></div>
+    <div class="mini-kpi p"><div class="label">Moy. protéines/j</div><div class="val">${avgProt}g</div></div>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;">
     <div style="background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.2);border-radius:8px;padding:6px 10px;">
