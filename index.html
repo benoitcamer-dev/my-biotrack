@@ -1668,27 +1668,33 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 </div>
 <div id="walk-simple-section"></div>
 <div id="walk-route-section" style="display:none;">
+<datalist id="saved-places-list"></datalist>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;">
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;">
 <button onclick="removeWalkStep(this)" class="step-remove-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 </div>
-<div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
+<div style="display:flex;gap:7px;margin-bottom:6px;align-items:center;">
 <button onclick="addWalkStep()" style="background:rgba(91,127,255,0.12);border:1px solid rgba(91,127,255,0.3);color:var(--accent);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Étape</button>
 <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto;">
 <input type="checkbox" id="walk-roundtrip" style="accent-color:var(--accent)"> Aller-retour
 </label>
-<button class="walk-calc-btn" onclick="calcRoute()">Calculer</button>
+</div>
+<div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
+<label style="font-size:11px;color:var(--muted);">Vitesse :</label>
+<input id="walk-route-speed" type="number" value="6" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
+<label style="font-size:11px;color:var(--muted);">km/h</label>
+<button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
 </div>
 <div id="walk-route-result" class="walk-result-box" style="display:none;"></div>
 <div id="walk-custom-dur-box" class="walk-custom-duration" style="display:none;">
-<label>Durée réelle (min) — modifie pour recalculer</label>
+<label style="font-size:10px;color:var(--muted);">Ajuste la durée réelle si besoin :</label>
 <div style="display:flex;align-items:center;gap:8px;">
 <input type="number" id="walk-custom-dur" min="1" oninput="onCustomDurationChange()">
 <span class="walk-recalc-info" id="walk-recalc-info"></span>
@@ -2193,6 +2199,36 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 </div>
 </div>
+<!-- MODAL COPIER REPAS -->
+<div id="modal-copy-meal" class="modal-overlay z90">
+<div class="settings-sheet">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">📋 Copier ce repas</div>
+<button class="modal-close" onclick="closeCopyMealModal()">×</button>
+</div>
+<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Vers quel repas / jour ?</div>
+<div class="setting-row">
+<label>Repas de destination</label>
+<select id="copy-meal-cat" class="text-input" style="font-size:13px;">
+<option>Petit-déjeuner</option>
+<option>Déjeuner</option>
+<option>Dîner</option>
+<option>Snack</option>
+<option>Boissons</option>
+</select>
+</div>
+<div class="setting-row">
+<label>Jour</label>
+<input id="copy-meal-date" type="date" class="text-input" style="font-size:13px;">
+</div>
+<div style="display:flex;gap:8px;margin-top:14px;">
+<button class="btn-cancel" style="flex:1;" onclick="closeCopyMealModal()">Annuler</button>
+<button class="btn-primary" style="flex:2;" onclick="confirmCopyMeal()">📋 Copier</button>
+</div>
+</div>
+</div>
+
 <!-- AUTH -->
 <!-- MODAL IA -->
 <div id="modal-ai" class="modal-overlay z90">
@@ -2955,7 +2991,7 @@ closeSettings();
 loadData();
 if (currentPage === 'bilan') loadBilan();
 }
-['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight', 'modal-recipes', 'modal-places'].forEach(id => {
+['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight', 'modal-recipes', 'modal-places', 'modal-copy-meal'].forEach(id => {
 const el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
 });
 document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
@@ -2985,17 +3021,35 @@ function renderPlacesList() {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Aucun lieu enregistré.</div>';
     return;
   }
-  el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item">
-<div class="food-item-main">
+  el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;">
+<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;flex-shrink:0;">⠿</span>
+<div class="food-item-main" style="flex:1;">
 <div class="food-item-name">📍 ${p.name}</div>
 <div class="food-item-meta">${p.address}</div>
 ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
-<div class="food-item-actions">
+<div class="food-item-actions" style="flex-shrink:0;">
 <button class="food-btn" onclick="openEditPlaceForm(${i})">✎</button>
 <button class="food-btn danger" onclick="deletePlace(${i})">✕</button>
 </div>
 </div>`).join('');
+  // Drag & drop
+  let dragIdx = null;
+  el.querySelectorAll('[data-idx]').forEach(item => {
+    item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+    item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
+    item.addEventListener('dragover', e => { e.preventDefault(); item.style.borderColor = 'var(--accent)'; });
+    item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
+    item.addEventListener('drop', e => {
+      e.preventDefault(); item.style.borderColor = '';
+      const dropIdx = parseInt(item.dataset.idx);
+      if (dragIdx === null || dragIdx === dropIdx) return;
+      const moved = savedPlaces.splice(dragIdx, 1)[0];
+      savedPlaces.splice(dropIdx, 0, moved);
+      saveSettingsLocal(); pushSettingsRemote();
+      renderPlacesList(); updateKnownPlaces();
+    });
+  });
 }
 
 function openAddPlaceForm() {
@@ -3073,10 +3127,12 @@ function deletePlace(i) {
 }
 
 function updateKnownPlaces() {
-  // Merge saved places into KNOWN_PLACES for geocoding
-  savedPlaces.forEach(p => {
-    KNOWN_PLACES[p.name.toLowerCase()] = p.address;
-  });
+  savedPlaces.forEach(p => { KNOWN_PLACES[p.name.toLowerCase()] = p.address; });
+  // Refresh datalist for walk step autocomplete
+  const dl = document.getElementById('saved-places-list');
+  if (dl) {
+    dl.innerHTML = savedPlaces.map(p => `<option value="${p.name}">${p.address}</option>`).join('');
+  }
 }
 
 // Save a single place from AI result or route form
@@ -3110,7 +3166,7 @@ document.getElementById('in-l').value = '0';
 document.getElementById('search-results').style.display = 'none';
 document.getElementById('search-results').innerHTML = '';
 document.getElementById('speed-row').style.display = 'none';
-document.getElementById('in-speed').value = '5';
+document.getElementById('in-speed').value = '6';
 document.getElementById('in-distance').value = '—';
 document.getElementById('walk-advanced').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
@@ -3438,7 +3494,7 @@ document.getElementById('in-desc').value = 'Marche';
 document.getElementById('label-qty').textContent = 'Durée (min)';
 document.getElementById('label-kcal').textContent = 'Kcal / heure';
 document.getElementById('in-qty').value = '30';
-document.getElementById('in-speed').value = '5';
+document.getElementById('in-speed').value = '6';
 document.getElementById('speed-row').style.display = 'grid';
 document.getElementById('search-results').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
@@ -3453,7 +3509,7 @@ document.getElementById('walk-tab-simple').classList.toggle('active', mode === '
 document.getElementById('walk-tab-route').classList.toggle('active', mode === 'route');
 document.getElementById('walk-simple-section').style.display = mode === 'simple' ? 'block' : 'none';
 document.getElementById('walk-route-section').style.display = mode === 'route' ? 'block' : 'none';
-document.getElementById('speed-row').style.display = mode === 'simple' ? 'grid' : 'none';
+document.getElementById('speed-row').style.display = 'grid'; // always visible
 }
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
@@ -3508,7 +3564,7 @@ const dur = parseFloat(document.getElementById('walk-custom-dur').value) || 0;
 if (routeBaseDistance > 0 && dur > 0) updateRouteCalc(routeBaseDistance, dur);
 }
 function updateRouteCalc(dist, durMin) {
-const speed = round1(dist / (durMin / 60));
+const speed = parseFloat(document.getElementById('walk-route-speed')?.value) || round1(dist / (durMin / 60));
 const kcal = calcWalkKcal(speed, durMin);
 document.getElementById('in-qty').value = durMin;
 document.getElementById('in-speed').value = speed;
@@ -3540,7 +3596,7 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" type="text" placeholder="Étape ${idx}…" data-step="${idx}">
+  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}">
     <button onclick="removeWalkStep(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>`;
   // Insert before last step
   const lastRow = steps[steps.length - 1].closest('.walk-addr-row');
@@ -3679,20 +3735,20 @@ box.innerHTML = '⏳ Calcul…';
 document.getElementById('walk-custom-dur-box').style.display = 'none';
 try {
 const rt = document.getElementById('walk-roundtrip').checked;
+const userSpd = parseFloat(document.getElementById('walk-route-speed')?.value) || 6;
 const routeResult = await calcMultiLegRoute(steps);
 const dist = round1(routeResult.distanceKm * (rt ? 2 : 1));
-const durMin = Math.round(routeResult.durationMin * (rt ? 2 : 1));
-const speed = round1(dist / (durMin / 60));
-const kcal = calcWalkKcal(speed, durMin);
+const durMin = Math.round(dist / userSpd * 60); // use user speed, not ORS speed
+const kcal = calcWalkKcal(userSpd, durMin);
 routeBaseDistance = dist;
 routeBaseDuration = durMin;
-currentRouteData = { distance: dist, from: steps[0], to: steps[steps.length-1], roundtrip: rt };
+currentRouteData = { distance: dist, from: steps[0], to: steps[steps.length-1], roundtrip: rt, steps: steps, waypoints: routeResult.waypoints };
 currentWalkFavName = '';
-const stepsLabel = steps.length > 2 ? ` · ${steps.length} étapes` : '';
-box.innerHTML = `<strong>${dist} km</strong>${stepsLabel} · ~${durMin} min · ~${speed} km/h · <strong>${kcal} kcal</strong>`;
+const stepsHTML = routeResult.waypoints.map((w,i) => `<div style="font-size:10px;color:var(--muted);">${i+1}. ${w}</div>`).join('');
+box.innerHTML = `<strong>${dist} km</strong> · ~${durMin} min · ~${userSpd} km/h · <strong>${kcal} kcal</strong>${stepsHTML}`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = durMin;
-document.getElementById('walk-recalc-info').textContent = `→ ${speed} km/h · ${kcal} kcal`;
+document.getElementById('walk-recalc-info').textContent = `→ ${userSpd} km/h · ${kcal} kcal`;
 document.getElementById('save-route-btn').style.display = 'inline-block';
 document.getElementById('save-route-btn').dataset.dist = dist;
 document.getElementById('save-route-btn').dataset.dur = durMin;
@@ -3795,7 +3851,7 @@ const effectiveMl = (isDrink && _currentDrinkUnit === 'cl') ? q * 10 : effective
 const total = isSport ? Math.round(k * (q / 60)) : Math.round(k * (effectiveMl / 100));
 document.getElementById('calc-res').textContent = total + ' kcal';
 if (isSport && desc === 'marche' && currentWalkMode === 'simple') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5, dist = round1(spd * (q / 60));
+const spd = parseFloat(document.getElementById('in-speed').value) || 6, dist = round1(spd * (q / 60));
 document.getElementById('in-distance').value = dist + ' km';
 document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${userWeight}kg)`;
 } else if (isSport && desc === 'vélo') {
@@ -3817,7 +3873,7 @@ if (_currentFoodUnit) {
 function getEffectiveKcal() {
 const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
 const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-if (currentCat === 'Sport' && desc === 'marche') { const spd = parseFloat(document.getElementById('in-speed').value) || 5; return calcWalkKcalH(spd); }
+if (currentCat === 'Sport' && desc === 'marche') { const spd = parseFloat(document.getElementById('in-speed').value) || 6; return calcWalkKcalH(spd); }
 if (currentCat === 'Sport' && desc === 'vélo') { return calcBikeKcalH(raw); }
 return raw;
 }
@@ -3907,9 +3963,19 @@ let descFinal;
 if (isSport) {
 const dl = descName.toLowerCase();
 if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5;
-const dist = round1(spd * (q / 60));
-const label = currentWalkFavName || `${currentRouteData.from} → ${currentRouteData.to}`;
+const spd = parseFloat(document.getElementById('in-speed').value) || 6;
+const dist = currentRouteData.distance || round1(spd * (q / 60));
+let label;
+if (currentWalkFavName) {
+  label = currentWalkFavName;
+} else if (currentRouteData.waypoints && currentRouteData.waypoints.length > 1) {
+  // Use resolved addresses from geocoding
+  label = currentRouteData.waypoints.join(' → ');
+} else if (currentRouteData.steps && currentRouteData.steps.length > 0) {
+  label = currentRouteData.steps.join(' → ');
+} else {
+  label = `${currentRouteData.from} → ${currentRouteData.to}`;
+}
 descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'marche') {
 const spd = parseFloat(document.getElementById('in-speed').value) || 5;
@@ -4722,6 +4788,7 @@ html += `<div class="entry-group">
 <div class="entry-group-actions">
 <button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
 ${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>` : ''}
+${!isSport && items.length ? `<button class="meal-save-btn" style="background:rgba(91,127,255,0.12);color:var(--accent);border-color:rgba(91,127,255,0.3);" onclick="openCopyMealModal('${cat}')">📋</button>` : ''}
 <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'font-size:11px;font-weight:600;opacity:0.4;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
@@ -4754,6 +4821,51 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
 document.getElementById('daily-list').innerHTML = html;
 } catch (e) { console.error('loadData:', e); }
 }
+let _copyMealSourceCat = null;
+function openCopyMealModal(cat) {
+  _copyMealSourceCat = cat;
+  // Default: same cat, today
+  document.getElementById('copy-meal-cat').value = cat;
+  document.getElementById('copy-meal-date').value = journalDateStr();
+  document.getElementById('modal-copy-meal').classList.add('open');
+}
+function closeCopyMealModal() { document.getElementById('modal-copy-meal').classList.remove('open'); }
+async function confirmCopyMeal() {
+  if (!_copyMealSourceCat) return;
+  const destCat = document.getElementById('copy-meal-cat').value;
+  const destDate = document.getElementById('copy-meal-date').value;
+  if (!destDate) { alert('Choisis une date.'); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const sourceEntries = currentEntries.filter(e => e.category === _copyMealSourceCat && e.type === 'food');
+  if (!sourceEntries.length) { closeCopyMealModal(); return; }
+  const btn = document.querySelector('#modal-copy-meal .btn-primary');
+  btn.textContent = '⏳'; btn.disabled = true;
+  for (const e of sourceEntries) {
+    await sb.from('entries').insert([{
+      user_id: user.id,
+      type: e.type,
+      category: destCat,
+      desc: e.desc,
+      val: e.val,
+      prot: e.prot,
+      gluc: e.gluc,
+      lip: e.lip,
+      date: destDate
+    }]);
+  }
+  btn.textContent = '📋 Copier'; btn.disabled = false;
+  closeCopyMealModal();
+  // If dest date is current date, reload
+  if (destDate === journalDateStr()) loadData();
+  // Show toast
+  const toast = document.createElement('div');
+  toast.textContent = `📋 ${sourceEntries.length} entrée(s) copiée(s) vers ${destCat}`;
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:999;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
 async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
 async function clearMealEntries(cat) {
 if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
