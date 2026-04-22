@@ -5230,7 +5230,13 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
           const realKcalH = calcWalkKcalH(walkSpd);
           p.kcal_per_hour = realKcalH;
           document.getElementById('ai-loading').style.display = 'none';
-          addChatMessage('ai', `📍 ${routeResult.distanceKm} km · ${durMin} min · ${p.walk_steps.length} étapes`);
+          // Show resolved addresses for verification (first 2 parts = street + city)
+          const resolvedLabels = routeResult.waypoints.map((w, i) => {
+            const parts = w.split(',').map(s => s.trim());
+            const addr = parts.slice(0, 2).join(', ');
+            return `${i+1}. ${p.walk_steps[i]} → ${addr}`;
+          }).join('\n');
+          addChatMessage('ai', `📍 ${routeResult.distanceKm} km · ${durMin} min\n${resolvedLabels}`);
           document.getElementById('ai-qty').value = durMin;
           document.getElementById('ai-kcal').value = realKcalH;
         } catch(geoErr) {
