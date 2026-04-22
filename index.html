@@ -1634,6 +1634,8 @@ margin-left: 4px;
 <div id="bilan-summary" class="summary-cards"></div>
 <div id="bilan-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
 <div id="bilan-prot-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
+<div id="bilan-net-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
+<div id="bilan-deficit-block" style="display:none;"></div>
 <div id="bilan-detail" class="daily-week-list"></div>
 </section>
 </main>
@@ -4591,12 +4593,22 @@ document.getElementById('bilan-summary').innerHTML = `
 
 // Render chart + detail
 renderBilanChart(values, userGoal, bilanRange);
+// Prot chart (week + month only, if objective set)
 if ((bilanRange === 'week' || bilanRange === 'month') && userProtGoal > 0) {
   renderProtChart(values, userProtGoal, bilanRange);
 } else {
   const pw = document.getElementById('bilan-prot-chart-wrap');
   if (pw) pw.style.display = 'none';
 }
+// Bilan net chart (week only)
+if (bilanRange === 'week') {
+  renderBilanNetChart(values, bmr);
+} else {
+  const nw = document.getElementById('bilan-net-chart-wrap');
+  if (nw) nw.style.display = 'none';
+}
+// Deficit/surplus block (all ranges)
+renderDeficitBlock(activeValues, bmr);
 if (bilanRange === 'week') {
   document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
   values.map(([date, v]) => {
@@ -6049,9 +6061,7 @@ function renderBilanChart(values, goal, range) {
   if (range === 'week') {
     chartData = values.map(([date, v]) => ({
       label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
-      food: v.food, out: v.out || 0,
-      bal: v.food - (v.out || 0),
-      isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
+      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
     }));
   } else if (range === 'month') {
     chartData = values.map(([date, v]) => ({
@@ -6088,44 +6098,23 @@ function renderBilanChart(values, goal, range) {
   }
 
   const foods = chartData.map(d => d.food);
-  const isBilanMode = range === 'week' && chartData.some(d => (d.out || 0) > 0);
-  const maxVal = isBilanMode
-    ? Math.max(...chartData.map(d => Math.abs(d.bal || 0)), 100)
-    : Math.max(...foods, goal, 100);
+  const maxVal = Math.max(...foods, goal, 100);
   const n = chartData.length;
   const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
   const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
-  // For bilan chart, 0 is in the middle; for normal chart, 0 is at bottom
-  const midY = PT + (H - PT - PB) / 2;
-  const ys = (v) => isBilanMode
-    ? midY - (v / maxVal) * ((H - PT - PB) / 2)
-    : PT + (1 - v / maxVal) * (H - PT - PB);
+  const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(goal);
 
   const trendLine = ''; // trend line removed
 
   // Bars
-  const isBilanChart = range === 'week' && chartData.some(d => (d.out || 0) > 0);
   const bars = chartData.map((d, i) => {
-    const cx = xs(i);
-    const showLabel = n <= 31;
-    if (isBilanChart) {
-      const bal = d.isEmpty ? 0 : (d.bal || 0);
-      const col = d.isEmpty ? 'var(--border2)' : bal >= 0 ? '#ef4444' : '#3dd68c';
-      const zeroY = ys(0);
-      const absH = Math.max(2, Math.abs(ys(Math.abs(bal)) - zeroY));
-      const barY = bal >= 0 ? zeroY - absH : zeroY;
-      const x = cx - barW/2;
-      return `<rect x="${x}" y="${barY}" width="${barW}" height="${absH}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="DM Sans">${d.label}</text>` : ''}
-${!d.isEmpty && bal !== 0 ? `<text x="${cx}" y="${bal >= 0 ? barY - 3 : barY + absH + 9}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${bal > 0 ? '+' : ''}${bal}</text>` : ''}`;
-    } else {
-      const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
-      const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
-      return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
+    const cx = xs(i), showLabel = n <= 31;
+    const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
+    const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
+    return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
 ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.food}</text>` : ''}`;
-    }
   }).join('');
 
   // Y axis
@@ -6136,47 +6125,98 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
   }).join('');
 
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
-  // Cumulative balance line for bilan chart
-  let cumulLine = '', cumulDots = '';
-  if (isBilanChart) {
-    let cumul = 0;
-    const cumulPts = [];
-    chartData.forEach((d, i) => {
-      if (!d.isEmpty) { cumul += d.bal || 0; }
-      const maxC = Math.max(...chartData.filter(x=>!x.isEmpty).reduce((acc, x, j) => { acc.push(acc.length ? acc[acc.length-1] + (x.bal||0) : (x.bal||0)); return acc; }, []).map(Math.abs), 1);
-      cumulPts.push({ x: xs(i), y: midY - (cumul / maxVal) * ((H - PT - PB) / 2), cumul, isEmpty: d.isEmpty });
-    });
-    const activePts = cumulPts.filter((_, i) => !chartData[i].isEmpty);
-    if (activePts.length >= 2) {
-      const polyPts = activePts.map(p => `${p.x},${p.y}`).join(' ');
-      const finalCumul = activePts[activePts.length-1].cumul;
-      const lineCol = finalCumul <= 0 ? '#3dd68c' : '#ef4444';
-      cumulLine = `<polyline points="${polyPts}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
-      cumulDots = activePts.map(p => {
-        const col = p.cumul <= 0 ? '#3dd68c' : '#ef4444';
-        return `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>`;
-      }).join('');
-    }
-  }
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">${isBilanChart ? "⚖️ Bilan net / jour (ingéré − dépensé)" : "📊 Calories / jour" + subtitle}</div>
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
-      ${isBilanChart ? `<line x1="${PL}" y1="${midY}" x2="${W-PR}" y2="${midY}" stroke="var(--muted)" stroke-width="1" opacity="0.5"/>
-      <text x="${PL+2}" y="${midY-3}" fill="var(--muted)" font-size="8" font-family="DM Sans">0</text>` :
-      `<line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="8" font-family="DM Sans" opacity="0.8">objectif</text>`}
+      <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="8" font-family="DM Sans" opacity="0.8">objectif</text>
       ${bars}
-      ${cumulLine}
-      ${cumulDots}
     </svg>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
-      ${isBilanChart
-        ? '<span style="color:#3dd68c;">🟢 Déficit jour</span><span style="color:#ef4444;">🔴 Excédent jour</span><span>— Cumul semaine</span>'
-        : '<span>🟢 Sous objectif</span><span>🔴 Au-dessus</span>'}
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+      <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span>
     </div>`;
 }
 
+
+function renderBilanNetChart(values, bmr) {
+  const wrap = document.getElementById('bilan-net-chart-wrap');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+  const W = 360, H = 170, PL = 42, PR = 12, PT = 20, PB = 28;
+  const fullDays = values.filter(([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'));
+  const chartData = values.map(([date, v]) => {
+    const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+    const bal = full ? v.food - v.out : 0;
+    return { label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }), bal, isEmpty: !full };
+  });
+  const n = chartData.length;
+  const maxAbs = Math.max(...chartData.map(d => Math.abs(d.bal)), 100);
+  const barW = Math.max(6, Math.floor((W - PL - PR) / n - 3));
+  const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
+  const midY = PT + (H - PT - PB) / 2;
+  const ys = (v) => midY - (v / maxAbs) * ((H - PT - PB) / 2);
+
+  // Bars
+  const bars = chartData.map((d, i) => {
+    const cx = xs(i), x = cx - barW/2;
+    const col = d.isEmpty ? 'var(--border2)' : d.bal >= 0 ? '#ef4444' : '#3dd68c';
+    const bh = d.isEmpty ? 2 : Math.max(2, Math.abs(ys(d.bal) - midY));
+    const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
+    return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
+<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="DM Sans">${d.label}</text>
+${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+  }).join('');
+
+  // Cumulative line
+  let cumul = 0, cumulPts = [];
+  chartData.forEach((d, i) => {
+    if (!d.isEmpty) cumul += d.bal;
+    if (!d.isEmpty) cumulPts.push(`${xs(i)},${ys(cumul)}`);
+  });
+  const finalCumul = cumul;
+  const lineCol = finalCumul <= 0 ? '#3dd68c' : '#ef4444';
+  const cumulLine = cumulPts.length >= 2
+    ? `<polyline points="${cumulPts.join(' ')}" fill="none" stroke="${lineCol}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`
+    : '';
+
+  // Y axis labels
+  const yLabels = [-maxAbs, 0, maxAbs].map(v => {
+    const y = ys(v);
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v > 0 ? '+' : ''}${Math.round(v)}</text>
+<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${v === 0 ? 'var(--muted)' : 'var(--border)'}" stroke-width="${v === 0 ? 1 : 0.5}" stroke-dasharray="${v === 0 ? '' : '3,3'}" opacity="${v === 0 ? 0.6 : 1}"/>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">⚖️ Bilan net / jour · cumul : <span style="color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</span></div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+      ${yLabels}
+      ${bars}
+      ${cumulLine}
+    </svg>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+      <span style="color:#3dd68c;">🟢 Déficit jour</span>
+      <span style="color:#ef4444;">🔴 Excédent jour</span>
+      <span>— Cumul semaine</span>
+    </div>`;
+}
+
+function renderDeficitBlock(activeValues, bmr) {
+  const el = document.getElementById('bilan-deficit-block');
+  if (!el) return;
+  if (!activeValues.length) { el.style.display = 'none'; return; }
+  const totalIn = activeValues.reduce((s,[,v]) => s + v.food, 0);
+  const totalOut = activeValues.reduce((s,[,v]) => s + v.out, 0);
+  const net = totalIn - totalOut;
+  const kg = Math.round(Math.abs(net) / 7700 * 100) / 100;
+  const isDeficit = net < 0;
+  el.style.display = 'block';
+  el.innerHTML = `<div style="background:var(--surface);border:1px solid ${isDeficit ? 'rgba(61,214,140,0.3)' : 'rgba(239,68,68,0.3)'};border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⚖️ Bilan période (${activeValues.length} jour${activeValues.length>1?'s':''} pris en compte)</div>
+    <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:${isDeficit ? 'var(--green)' : 'var(--danger)'};">${isDeficit ? '' : '+'}${net} kcal</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">${isDeficit ? '📉 Déficit' : '📈 Excédent'} · ≈ ${kg} kg de graisse théorique ${isDeficit ? 'perdue' : 'prise'}</div>
+  </div>`;
+}
 
 function renderProtChart(values, protGoal, range) {
   const wrap = document.getElementById('bilan-prot-chart-wrap');
@@ -6208,11 +6248,7 @@ function renderProtChart(values, protGoal, range) {
   const n = chartData.length;
   const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
   const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
-  // For bilan chart, 0 is in the middle; for normal chart, 0 is at bottom
-  const midY = PT + (H - PT - PB) / 2;
-  const ys = (v) => isBilanMode
-    ? midY - (v / maxVal) * ((H - PT - PB) / 2)
-    : PT + (1 - v / maxVal) * (H - PT - PB);
+  const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(protGoal);
 
   const bars = chartData.map((d, i) => {
