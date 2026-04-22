@@ -4489,91 +4489,135 @@ async function loadBilan() {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const now = new Date(bilanCursor);
-let start, end, label;
-if (bilanRange === 'week') { start = startOfWeek(now); end = endOfWeek(now); label = 'Semaine'; }
-else if (bilanRange === 'month') { start = startOfMonth(now); end = endOfMonth(now); label = 'Mois'; }
-else if (bilanRange === 'quarter') { start = startOfQuarter(now); end = endOfQuarter(now); label = 'Trimestre'; }
-else { start = startOfYear(now); end = endOfYear(now); label = 'Année'; }
+let start, end;
+if (bilanRange === 'week') { start = startOfWeek(now); end = endOfWeek(now); }
+else if (bilanRange === 'month') { start = startOfMonth(now); end = endOfMonth(now); }
+else if (bilanRange === 'quarter') { start = startOfQuarter(now); end = endOfQuarter(now); }
+else { start = startOfYear(now); end = endOfYear(now); }
 const startStr = dateToStr(start), endStr = dateToStr(end);
 renderBilanNav(startStr, endStr);
-const { data } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
-const rows = data || [];
+
+// Load current period
+const { data: currData } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
+const rows = currData || [];
+
+// Load previous period for comparison
+let prevStart, prevEnd;
+const periodDays = daysBetween(start, end);
+prevEnd = new Date(start); prevEnd.setDate(prevEnd.getDate() - 1);
+prevStart = new Date(prevEnd);
+if (bilanRange === 'week') { prevStart = startOfWeek(prevEnd); prevEnd = endOfWeek(prevEnd); }
+else if (bilanRange === 'month') { prevStart = startOfMonth(prevEnd); prevEnd = endOfMonth(prevEnd); }
+else if (bilanRange === 'quarter') { prevStart = startOfQuarter(prevEnd); prevEnd = endOfQuarter(prevEnd); }
+else { prevStart = startOfYear(prevEnd); prevEnd = endOfYear(prevEnd); }
+const { data: prevData } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', dateToStr(prevStart)).lte('date', dateToStr(prevEnd));
+const prevRows = prevData || [];
+
 const bmr = calcBMR(userWeight, userHeight, userAge, userSexe);
-const totalDays = bilanRange === 'week' ? 7 : daysBetween(start, end);
-const loopDays = bilanRange === 'week' ? 7 : totalDays;
+const totalDays = daysBetween(start, end);
+
+// Build byDay for current period
 const byDay = {};
-for (let i = 0; i < loopDays; i++) {
-const d = new Date(start);
-d.setDate(start.getDate() + i);
-byDay[dateToStr(d)] = { food: 0, sport: 0, out: bmr, prot: 0, gluc: 0, lip: 0 };
+for (let i = 0; i < totalDays; i++) {
+  const d = new Date(start); d.setDate(start.getDate() + i);
+  byDay[dateToStr(d)] = { food: 0, sport: 0, bikeKcal: 0, bikeSessions: 0, prot: 0, gluc: 0, lip: 0 };
 }
 rows.forEach(e => {
-if (!byDay[e.date]) return;
-if (e.type === 'food') { byDay[e.date].food += e.val; byDay[e.date].prot += (e.prot || 0); byDay[e.date].gluc += (e.gluc || 0); byDay[e.date].lip += (e.lip || 0); }
-if (e.type === 'burn') byDay[e.date].sport += e.val;
+  if (!byDay[e.date]) return;
+  if (e.type === 'food') { byDay[e.date].food += e.val; byDay[e.date].prot += (e.prot||0); byDay[e.date].gluc += (e.gluc||0); byDay[e.date].lip += (e.lip||0); }
+  if (e.type === 'burn') {
+    byDay[e.date].sport += e.val;
+    const desc = (e.desc||'').toLowerCase();
+    if (desc.includes('vélo') || desc.includes('velo') || desc.includes('🚴')) {
+      byDay[e.date].bikeKcal += e.val;
+      byDay[e.date].bikeSessions++;
+    }
+  }
 });
-Object.keys(byDay).forEach(d => { byDay[d].out = bmr + byDay[d].sport; });
+
 const values = Object.entries(byDay);
-const sumIn = values.reduce((s, [, v]) => s + v.food, 0);
-const sumOut = values.filter(([, v]) => v.food > 0).reduce((s, [, v]) => s + v.out, 0);
-const sumProt = values.reduce((s, [, v]) => s + v.prot, 0);
-const sumGluc = values.reduce((s, [, v]) => s + v.gluc, 0);
-const sumLip = values.reduce((s, [, v]) => s + v.lip, 0);
-const activeDays = values.filter(([, v]) => v.food > 0).length || 1;
+const activeDays = values.filter(([,v]) => v.food > 0).length || 1;
+const activeValues = values.filter(([,v]) => v.food > 0);
+const sumIn = activeValues.reduce((s,[,v]) => s+v.food, 0);
+const sumProt = activeValues.reduce((s,[,v]) => s+v.prot, 0);
+const totalBikeKcal = values.reduce((s,[,v]) => s+v.bikeKcal, 0);
+const totalBikeSessions = values.reduce((s,[,v]) => s+v.bikeSessions, 0);
 const avgIn = Math.round(sumIn / activeDays);
-const activeOutDays = values.filter(([, v]) => v.food > 0).length || 1;
-const sumOutActive = values.filter(([, v]) => v.food > 0).reduce((s, [, v]) => s + v.out, 0);
-const avgOut = Math.round(sumOutActive / activeOutDays);
 const avgProt = Math.round(sumProt / activeDays);
-const avgGluc = Math.round(sumGluc / activeDays);
-const avgLip = Math.round(sumLip / activeDays);
+
+// Objective tracking
+const daysUnder = activeValues.filter(([,v]) => v.food > 0 && v.food <= userGoal).length;
+const daysOver = activeValues.filter(([,v]) => v.food > userGoal).length;
+const daysProtOk = userProtGoal > 0 ? activeValues.filter(([,v]) => v.prot >= userProtGoal).length : null;
+
+// Previous period comparison
+const prevByDay = {};
+prevRows.forEach(e => {
+  if (!prevByDay[e.date]) prevByDay[e.date] = { food: 0, prot: 0 };
+  if (e.type === 'food') { prevByDay[e.date].food += e.val; prevByDay[e.date].prot += (e.prot||0); }
+});
+const prevActive = Object.values(prevByDay).filter(v => v.food > 0);
+const prevAvgIn = prevActive.length ? Math.round(prevActive.reduce((s,v) => s+v.food, 0) / prevActive.length) : null;
+const prevAvgProt = prevActive.length ? Math.round(prevActive.reduce((s,v) => s+v.prot, 0) / prevActive.length) : null;
+const diffKcal = prevAvgIn !== null ? avgIn - prevAvgIn : null;
+const diffProt = prevAvgProt !== null ? avgProt - prevAvgProt : null;
+
+// Trend (linear regression on active days)
+let trendStr = '';
+if (activeValues.length >= 3) {
+  const xArr = activeValues.map((_,i) => i);
+  const yArr = activeValues.map(([,v]) => v.food);
+  const xM = xArr.reduce((a,b)=>a+b,0)/xArr.length, yM = yArr.reduce((a,b)=>a+b,0)/yArr.length;
+  const num = xArr.reduce((s,x,i)=>s+(x-xM)*(yArr[i]-yM),0);
+  const den = xArr.reduce((s,x)=>s+(x-xM)**2,0);
+  const slope = den !== 0 ? num/den : 0;
+  if (Math.abs(slope) > 5) trendStr = slope > 0 ? '📈 Tendance à la hausse' : '📉 Tendance à la baisse';
+}
+
+// Period label
+const periodLabel = { week: 'Semaine', month: 'Mois', quarter: 'Trimestre', year: 'Année' }[bilanRange];
+const prevLabel = { week: 'semaine préc.', month: 'mois préc.', quarter: 'trimestre préc.', year: 'année préc.' }[bilanRange];
+
+// Render summary
+const compKcal = diffKcal !== null ? `<span style="color:${diffKcal > 0 ? 'var(--danger)' : 'var(--green)'};">${diffKcal > 0 ? '+' : ''}${diffKcal} vs ${prevLabel}</span>` : '';
+const compProt = diffProt !== null ? `<span style="color:${diffProt > 0 ? 'var(--green)' : 'var(--muted)'};">${diffProt > 0 ? '+' : ''}${diffProt}g vs ${prevLabel}</span>` : '';
+
 document.getElementById('bilan-summary').innerHTML = `
 <div class="summary-card">
-<div class="summary-title">${label}</div>
-<div class="summary-sub">${formatDateFR(startStr, { day: 'numeric', month: 'short', year: 'numeric' })} → ${formatDateFR(endStr, { day: 'numeric', month: 'short', year: 'numeric' })} · ${totalDays} jours</div>
-<div class="summary-kpi-row">
-<div class="mini-kpi in"><div class="label">Moy. ingérée / jour</div><div class="val">${avgIn}</div></div>
-<div class="mini-kpi out"><div class="label">Moy. dépensée / jour</div><div class="val">${avgOut}</div></div>
-</div>
-<div class="macro-kpi-row">
-<div class="macro-kpi p"><div class="label">Prot. moy/j</div><div class="val">${avgProt}&nbsp;<span class="unit-g">g</span></div></div>
-<div class="macro-kpi g"><div class="label">Gluc. moy/j</div><div class="val">${avgGluc}&nbsp;<span class="unit-g">g</span></div></div>
-<div class="macro-kpi l"><div class="label">Lip. moy/j</div><div class="val">${avgLip}&nbsp;<span class="unit-g">g</span></div></div>
-</div>
-</div>
-<div class="summary-card">
-<div class="summary-title">Totaux période</div>
-<div class="summary-sub">${activeDays} jour${activeDays > 1 ? 's' : ''} renseigné${activeDays > 1 ? 's' : ''} sur ${totalDays}</div>
-<div class="summary-kpi-row">
-<div class="mini-kpi in"><div class="label">Total ingéré</div><div class="val">${sumIn}</div></div>
-<div class="mini-kpi out"><div class="label">Total dépensé</div><div class="val">${sumOut}</div></div>
-</div>
-<div class="macro-kpi-row">
-<div class="macro-kpi p"><div class="label">Protéines</div><div class="val">${Math.round(sumProt)}&nbsp;<span class="unit-g">g</span></div></div>
-<div class="macro-kpi g"><div class="label">Glucides</div><div class="val">${Math.round(sumGluc)}&nbsp;<span class="unit-g">g</span></div></div>
-<div class="macro-kpi l"><div class="label">Lipides</div><div class="val">${Math.round(sumLip)}&nbsp;<span class="unit-g">g</span></div></div>
-</div>
-<div class="summary-card">
-<div class="summary-title">${sumIn > sumOut ? "📈 Excédent" : "📉 Déficit"} total</div>
-<div class="summary-sub">Ingéré − Dépensé sur la période</div>
-<div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-top:8px;color:${sumIn > sumOut ? 'var(--danger)' : 'var(--green)'};">${sumIn > sumOut ? '+' : ''}${sumIn - sumOut} kcal</div>
-<div style="font-size:11px;color:var(--muted);margin-top:4px;">≈ ${Math.abs(Math.round((sumIn - sumOut) / 7700 * 10) / 10)} kg de graisse théorique</div>
-</div>
+  <div class="summary-title">📅 ${periodLabel} · ${activeDays} jour${activeDays>1?'s':''} renseigné${activeDays>1?'s':''} / ${totalDays}</div>
+  <div class="summary-kpi-row" style="flex-wrap:wrap;gap:8px;">
+    <div class="mini-kpi in"><div class="label">Moy. kcal/jour</div><div class="val">${avgIn} ${compKcal}</div></div>
+    <div class="mini-kpi p"><div class="label">Moy. protéines/j</div><div class="val">${avgProt}g ${compProt}</div></div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;">
+    <div style="background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.2);border-radius:8px;padding:6px 10px;">
+      🟢 ${daysUnder} jour${daysUnder>1?'s':''} sous objectif
+    </div>
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:6px 10px;">
+      🔴 ${daysOver} jour${daysOver>1?'s':''} au-dessus
+    </div>
+    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:6px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
+  </div>
+  ${trendStr ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">${trendStr}</div>` : ''}
+  ${totalBikeSessions > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;">🚴 Vélo : <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${totalBikeKcal}</strong> kcal brûlées</div>` : ''}
 </div>`;
+
+// Render chart + detail
+renderBilanChart(values, userGoal, bilanRange);
 if (bilanRange === 'week') {
-document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
-values.map(([date, v]) => {
-const bal = v.food - v.out;
-const balClass = bal >= 0 ? 'neg' : 'pos';
-const isEmpty = v.food === 0 && v.sport === 0;
-return `<div class="day-line" style="${isEmpty ? 'opacity:0.35;filter:grayscale(0.5);' : ''}">
+  document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Détail par jour</div></div>` +
+  values.map(([date, v]) => {
+    const bal = v.food - (bmr + v.sport);
+    const balClass = bal >= 0 ? 'neg' : 'pos';
+    const isEmpty = v.food === 0 && v.sport === 0;
+    return `<div class="day-line" style="${isEmpty ? 'opacity:0.35;filter:grayscale(0.5);' : ''}">
 <div class="day-line-header">
 <div class="day-line-name">${formatDateFR(date, { weekday: 'long', day: 'numeric', month: 'short' })}</div>
 <div class="day-line-bal ${balClass}">${bal >= 0 ? '+' : ''}${bal} kcal</div>
 </div>
 <div class="day-line-details">
 <div class="day-line-item">🍽️ Ingéré : <span>${v.food} kcal</span></div>
-<div class="day-line-item">🔥 Dépensé : <span>${v.out} kcal</span></div>
+<div class="day-line-item">🔥 Dépensé : <span>${bmr + v.sport} kcal</span></div>
 </div>
 <div class="day-line-macros">
 <div class="day-line-macro p">P : <span>${Math.round(v.prot)}&nbsp;g</span></div>
@@ -4581,13 +4625,13 @@ return `<div class="day-line" style="${isEmpty ? 'opacity:0.35;filter:grayscale(
 <div class="day-line-macro l">L : <span>${Math.round(v.lip)}&nbsp;g</span></div>
 </div>
 </div>`;
-}).join('');
-renderBilanChart(values, userGoal);
+  }).join('');
 } else {
-document.getElementById('bilan-chart-wrap').style.display = 'none';
-document.getElementById('bilan-detail').innerHTML = `<div class="summary-card"><div class="summary-title">Vue synthétique</div><div class="summary-sub">Moyennes et totaux affichés ci-dessus.</div></div>`;
+  document.getElementById('bilan-detail').innerHTML = '';
 }
 }
+
+
 async function loadWeightEntries() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('weight_entries').select('*').eq('user_id', user.id).order('date', { ascending: true }); weightEntries = data || []; } catch (e) { console.error(e); }
 }
@@ -5996,63 +6040,106 @@ function addSwipeToClose(id, fn) {
  ['modal-edit-weight', closeEditWeightModal], ['modal-ai', closeAIModal]
 ].forEach(([id, fn]) => addSwipeToClose(id, fn));
 
-function renderBilanChart(values, goal) {
+function renderBilanChart(values, goal, range) {
   const wrap = document.getElementById('bilan-chart-wrap');
   wrap.style.display = 'block';
-  const W = 360, H = 160, PL = 38, PR = 12, PT = 16, PB = 28;
-  const foods = values.map(([, v]) => v.food);
+  const W = 360, H = 170, PL = 42, PR = 12, PT = 16, PB = 32;
+
+  // For month/quarter/year: group by appropriate unit
+  let chartData = []; // [{label, food, isEmpty}]
+  if (range === 'week') {
+    chartData = values.map(([date, v]) => ({
+      label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
+      food: v.food, isEmpty: v.food === 0
+    }));
+  } else if (range === 'month') {
+    chartData = values.map(([date, v]) => ({
+      label: new Date(date + 'T12:00:00').getDate().toString(),
+      food: v.food, isEmpty: v.food === 0
+    }));
+  } else if (range === 'quarter') {
+    // Group by week
+    const weeks = {};
+    values.forEach(([date, v]) => {
+      const d = new Date(date + 'T12:00:00');
+      const wk = Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7);
+      const key = `${d.getFullYear()}-${d.getMonth()}-W${wk}`;
+      if (!weeks[key]) weeks[key] = { food: 0, days: 0, label: 'S' + Object.keys(weeks).length };
+      if (v.food > 0) { weeks[key].food += v.food; weeks[key].days++; }
+    });
+    chartData = Object.values(weeks).map((w, i) => ({
+      label: 'S' + (i + 1), food: w.days > 0 ? Math.round(w.food / w.days) : 0, isEmpty: w.days === 0
+    }));
+  } else {
+    // Year: group by month
+    const months = {};
+    values.forEach(([date, v]) => {
+      const d = new Date(date + 'T12:00:00');
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!months[key]) months[key] = { food: 0, days: 0, label: d.toLocaleDateString('fr-FR', { month: 'short' }) };
+      if (v.food > 0) { months[key].food += v.food; months[key].days++; }
+    });
+    chartData = Object.values(months).map(m => ({
+      label: m.label, food: m.days > 0 ? Math.round(m.food / m.days) : 0, isEmpty: m.days === 0
+    }));
+  }
+
+  const foods = chartData.map(d => d.food);
   const maxVal = Math.max(...foods, goal, 100);
-  const minVal = 0;
-  const xs = (i) => PL + (i / (values.length - 1)) * (W - PL - PR);
-  const ys = (v) => PT + (1 - (v - minVal) / (maxVal - minVal)) * (H - PT - PB);
+  const n = chartData.length;
+  const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
+  const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
+  const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(goal);
 
-  // Build SVG
-  let pts = values.map(([, v], i) => xs(i) + ',' + ys(v.food)).join(' ');
-  let dots = values.map(([date, v], i) => {
-    const cx = xs(i), cy = ys(v.food);
-    const isEmpty = v.food === 0;
-    const over = v.food > goal;
-    const col = isEmpty ? 'var(--border2)' : over ? '#ef4444' : 'var(--green)';
-    const dayLabel = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' });
-    return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="var(--surface)" stroke-width="2"/>
-<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="DM Sans">${dayLabel}</text>
-<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${isEmpty ? '' : v.food}</text>`;
+  // Trend line on active data
+  const active = chartData.map((d,i) => d.isEmpty ? null : {x: i, y: d.food}).filter(Boolean);
+  let trendLine = '';
+  if (active.length >= 3) {
+    const xM = active.reduce((s,p)=>s+p.x,0)/active.length;
+    const yM = active.reduce((s,p)=>s+p.y,0)/active.length;
+    const num = active.reduce((s,p)=>s+(p.x-xM)*(p.y-yM),0);
+    const den = active.reduce((s,p)=>s+(p.x-xM)**2,0);
+    const slope = den !== 0 ? num/den : 0;
+    const intercept = yM - slope * xM;
+    const tx0 = xs(active[0].x), ty0 = Math.max(PT, Math.min(H-PB, ys(slope*active[0].x+intercept)));
+    const tx1 = xs(active[active.length-1].x), ty1 = Math.max(PT, Math.min(H-PB, ys(slope*active[active.length-1].x+intercept)));
+    const col = slope > 20 ? '#ef4444' : slope < -20 ? '#3dd68c' : 'var(--muted)';
+    trendLine = `<line x1="${tx0}" y1="${ty0}" x2="${tx1}" y2="${ty1}" stroke="${col}" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`;
+  }
+
+  // Bars
+  const bars = chartData.map((d, i) => {
+    const x = xs(i) - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
+    const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
+    const showLabel = n <= 31; // show day labels only if not too many bars
+    return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
+${showLabel ? `<text x="${xs(i)}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>` : ''}
+${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.food}</text>` : ''}`;
   }).join('');
 
-  // Y axis labels
-  const yLabels = [0, Math.round(maxVal / 2), maxVal].map(v => {
+  // Y axis
+  const yLabels = [0, Math.round(maxVal/2), maxVal].map(v => {
     const y = ys(v);
-    return `<text x="${PL - 4}" y="${y + 3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v}</text>
-<line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v}</text>
+<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
+  const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories / jour</div>
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories / jour${subtitle}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
-      <defs>
-        <linearGradient id="bilanGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
       ${yLabels}
-      <!-- Objective line -->
-      <line x1="${PL}" y1="${goalY}" x2="${W - PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
-      <text x="${W - PR - 2}" y="${goalY - 4}" text-anchor="end" fill="#ef4444" font-size="8" font-family="DM Sans" opacity="0.8">objectif</text>
-      <!-- Area fill -->
-      <polygon points="${PL},${ys(0)} ${pts} ${W - PR},${ys(0)}" fill="url(#bilanGrad)"/>
-      <!-- Line -->
-      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      <!-- Dots + labels -->
-      ${dots}
+      <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="8" font-family="DM Sans" opacity="0.8">objectif</text>
+      ${bars}
+      ${trendLine}
     </svg>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
-      <span>🟢 Sous objectif</span>
-      <span>🔴 Au-dessus</span>
-      <span style="color:var(--danger);">— Objectif (${goal} kcal)</span>
+      <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span>
     </div>`;
 }
+
 
 
 async function changePassword() {
