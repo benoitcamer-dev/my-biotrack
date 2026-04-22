@@ -3138,12 +3138,16 @@ function updateKnownPlaces() {
 }
 
 // Save a single place from AI result or route form
-function saveQuickPlace(name, address) {
+async function saveQuickPlace(name, address) {
+  // Geocode address to get coords
+  const query = address.toLowerCase().includes('lyon') ? address : address + ' Lyon';
+  const result = await geocodeAddress(query).catch(() => null);
+  const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
   const existing = savedPlaces.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing >= 0) {
-    savedPlaces[existing].address = address;
+    savedPlaces[existing] = { ...savedPlaces[existing], ...place };
   } else {
-    savedPlaces.push({ name, address });
+    savedPlaces.push(place);
   }
   saveSettingsLocal(); pushSettingsRemote();
   updateKnownPlaces();
