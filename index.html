@@ -3025,9 +3025,21 @@ async function savePlace() {
   if (!name || !address) { alert("Remplis le nom et l'adresse."); return; }
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Géocodage…'; btn.disabled = true; }
-  // Geocode address to store coords
+  // Geocode address to store coords (with timeout)
   const query = address.toLowerCase().includes('lyon') ? address : address + ' Lyon';
-  const result = await geocodeAddress(query);
+  let result = null;
+  try {
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), 8000));
+    result = await Promise.race([geocodeAddress(query), timeout]);
+  } catch(e) {
+    if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
+    if (confirm('Géocodage échoué. Enregistrer sans coordonnées GPS ?')) {
+      const place = { name, address, coords: null, resolvedLabel: null };
+      if (_editingPlaceIdx >= 0) { savedPlaces[_editingPlaceIdx] = place; } else { savedPlaces.push(place); }
+      saveSettingsLocal(); pushSettingsRemote(); closePlaceForm(); renderPlacesList(); updateKnownPlaces();
+    }
+    return;
+  }
   const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
   // Show resolved address for confirmation
   if (result) {
@@ -5296,18 +5308,8 @@ async function askAI() {
   const query = document.getElementById('ai-input').value.trim();
   if (!query) return;
   document.getElementById('ai-input').value = '';
-  // Replace shortcuts BEFORE displaying or sending
-  const HOME_ADDRESS = '74 rue Pierre Corneille Lyon 69003';
-  const WORK_ADDRESS = '18 rue Juiverie Lyon 69005';
-  const processedQuery = query
-    .replace(/chez moi/gi, HOME_ADDRESS)
-    .replace(/mon domicile/gi, HOME_ADDRESS)
-    .replace(/au travail/gi, WORK_ADDRESS)
-    .replace(/le travail/gi, WORK_ADDRESS)
-    .replace(/\btravail\b/gi, WORK_ADDRESS)
-    .replace(/au bureau/gi, WORK_ADDRESS)
-    .replace(/le bureau/gi, WORK_ADDRESS)
-    .replace(/\bbureau\b/gi, WORK_ADDRESS);
+  // Address resolution handled by savedPlaces in geocodePlace()
+  const processedQuery = query;
   addChatMessage('user', query);
   const isSport = aiCurrentCat === 'Sport';
   document.getElementById('ai-loading').style.display = 'block';
@@ -6086,7 +6088,8 @@ function openSavePlaceFromAI() {
 }
 
 async function saveAIEntryToBase() {
-  if (aiCurrentCat === 'Sport' || aiCurrentCat === '__recipe__') return;
+  if (aiCurrentCat === '__recipe__') return;
+  if (aiCurrentCat === 'Sport') { saveAIEntryAsFavorite(); return; }
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const name = document.getElementById('ai-calc-sub').textContent.trim();
