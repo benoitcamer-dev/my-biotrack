@@ -6243,7 +6243,7 @@ function renderProtChart(values, protGoal, range) {
   const bars = chartData.map((d, i) => {
     const x = xs(i) - barW / 2;
     const bh = Math.max(2, ys(0) - ys(d.prot));
-    const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#a78bfa';
+    const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#ef4444';
     return `<rect x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
 <text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>
 ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.prot}</text>` : ''}`;
@@ -6265,7 +6265,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="m
     </svg>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
       <span style="color:#3dd68c;">🟢 Objectif atteint</span>
-      <span style="color:#a78bfa;">🟣 Sous objectif</span>
+      <span style="color:#ef4444;">🔴 Sous objectif</span>
     </div>`;
 }
 
