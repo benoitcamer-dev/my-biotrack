@@ -4524,7 +4524,15 @@ for (let i = 0; i < totalDays; i++) {
 }
 rows.forEach(e => {
   if (!byDay[e.date]) return;
-  if (e.type === 'food') { byDay[e.date].food += e.val; byDay[e.date].prot += (e.prot||0); byDay[e.date].gluc += (e.gluc||0); byDay[e.date].lip += (e.lip||0); }
+  if (e.type === 'food') {
+    byDay[e.date].food += e.val;
+    byDay[e.date].prot += (e.prot||0);
+    byDay[e.date].gluc += (e.gluc||0);
+    byDay[e.date].lip += (e.lip||0);
+    // Track which meal categories have entries
+    if (!byDay[e.date].cats) byDay[e.date].cats = new Set();
+    byDay[e.date].cats.add(e.category);
+  }
   if (e.type === 'burn') {
     byDay[e.date].sport += e.val;
     const desc = (e.desc||'').toLowerCase();
@@ -4536,8 +4544,9 @@ rows.forEach(e => {
 });
 
 const values = Object.entries(byDay);
-const activeDays = values.filter(([,v]) => v.food > 0).length || 1;
-const activeValues = values.filter(([,v]) => v.food > 0);
+const isFullDay = ([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+const activeDays = values.filter(isFullDay).length || 1;
+const activeValues = values.filter(isFullDay);
 const sumIn = activeValues.reduce((s,[,v]) => s+v.food, 0);
 const sumProt = activeValues.reduce((s,[,v]) => s+v.prot, 0);
 const totalBikeKcal = values.reduce((s,[,v]) => s+v.bikeKcal, 0);
@@ -4609,7 +4618,7 @@ if (bilanRange === 'week') {
   values.map(([date, v]) => {
     const bal = v.food - (bmr + v.sport);
     const balClass = bal >= 0 ? 'neg' : 'pos';
-    const isEmpty = v.food === 0 && v.sport === 0;
+    const isEmpty = !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'));
     return `<div class="day-line" style="${isEmpty ? 'opacity:0.35;filter:grayscale(0.5);' : ''}">
 <div class="day-line-header">
 <div class="day-line-name">${formatDateFR(date, { weekday: 'long', day: 'numeric', month: 'short' })}</div>
@@ -6050,12 +6059,12 @@ function renderBilanChart(values, goal, range) {
   if (range === 'week') {
     chartData = values.map(([date, v]) => ({
       label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
-      food: v.food, isEmpty: v.food === 0
+      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
     }));
   } else if (range === 'month') {
     chartData = values.map(([date, v]) => ({
       label: new Date(date + 'T12:00:00').getDate().toString(),
-      food: v.food, isEmpty: v.food === 0
+      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
     }));
   } else if (range === 'quarter') {
     // Group by week
@@ -6065,7 +6074,8 @@ function renderBilanChart(values, goal, range) {
       const wk = Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7);
       const key = `${d.getFullYear()}-${d.getMonth()}-W${wk}`;
       if (!weeks[key]) weeks[key] = { food: 0, days: 0, label: 'S' + Object.keys(weeks).length };
-      if (v.food > 0) { weeks[key].food += v.food; weeks[key].days++; }
+      const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+      if (full) { weeks[key].food += v.food; weeks[key].days++; }
     });
     chartData = Object.values(weeks).map((w, i) => ({
       label: 'S' + (i + 1), food: w.days > 0 ? Math.round(w.food / w.days) : 0, isEmpty: w.days === 0
@@ -6077,7 +6087,8 @@ function renderBilanChart(values, goal, range) {
       const d = new Date(date + 'T12:00:00');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       if (!months[key]) months[key] = { food: 0, days: 0, label: d.toLocaleDateString('fr-FR', { month: 'short' }) };
-      if (v.food > 0) { months[key].food += v.food; months[key].days++; }
+      const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
+      if (full) { months[key].food += v.food; months[key].days++; }
     });
     chartData = Object.values(months).map(m => ({
       label: m.label, food: m.days > 0 ? Math.round(m.food / m.days) : 0, isEmpty: m.days === 0
