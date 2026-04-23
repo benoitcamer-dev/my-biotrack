@@ -3470,16 +3470,34 @@ const unit = f.unit_label || 'g';
 const unitG = f.unit_g || 1;
 const defQty = f.default_qty || 100;
 const isMl = unit === 'ml' || unit === 'cl';
-if (unit !== 'g') {
-  // Store unit info for submitEntry to use
-  _currentFoodUnit = { unit, unitG, label: unitLabelFull(unit) };
-  document.getElementById('label-qty').textContent = `Quantité (${unitLabelFull(unit)})`;
+const isDrinkCat = currentCat === 'Boissons';
+// Hide macros for drinks
+document.getElementById('macro-fields').style.display = isDrinkCat ? 'none' : 'grid';
+// Show portions row for drinks with ml/cl unit or drink category
+const portionsRow = document.getElementById('drink-portions-row');
+if (isDrinkCat) {
+  const isClUnit = unit === 'cl';
+  _currentDrinkUnit = isClUnit ? 'cl' : 'ml';
+  _drinkPortionQty = defQty;
+  document.getElementById('label-qty').textContent = isClUnit ? 'Total (cl)' : 'Total (ml)';
   document.getElementById('in-qty').value = defQty;
-  document.getElementById('calc-sub').textContent = `pour ${defQty} ${unitLabelFull(unit)}`;
-} else {
+  document.getElementById('in-portions').value = 1;
+  document.getElementById('in-portion-unit').value = defQty;
+  document.getElementById('label-portion-unit').textContent = isClUnit ? 'Dose (cl)' : 'Dose (ml)';
+  if (portionsRow) portionsRow.style.display = 'grid';
   _currentFoodUnit = null;
-  document.getElementById('label-qty').textContent = isMl ? 'Quantité (ml)' : 'Quantité (g)';
-  document.getElementById('in-qty').value = defQty;
+} else {
+  if (portionsRow) portionsRow.style.display = 'none';
+  if (unit !== 'g') {
+    _currentFoodUnit = { unit, unitG, label: unitLabelFull(unit) };
+    document.getElementById('label-qty').textContent = `Quantité (${unitLabelFull(unit)})`;
+    document.getElementById('in-qty').value = defQty;
+    document.getElementById('calc-sub').textContent = `pour ${defQty} ${unitLabelFull(unit)}`;
+  } else {
+    _currentFoodUnit = null;
+    document.getElementById('label-qty').textContent = 'Quantité (g)';
+    document.getElementById('in-qty').value = defQty;
+  }
 }
 recalc();
 }
