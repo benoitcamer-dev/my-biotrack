@@ -2264,6 +2264,7 @@ Oui si nécessaire
 <div style="display:flex;gap:7px;margin-bottom:10px;">
 <input id="ai-input" class="search-input" type="text" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askAI();}">
 <button class="search-btn" onclick="askAI()">→</button>
+<button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;">🎤</button>
 <label title="Envoyer une photo" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;">
 📷<input type="file" id="ai-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="askAIWithPhoto(this)">
 </label>
@@ -2582,27 +2583,27 @@ function calcWalkKcalH(spd) { return Math.round(getMETWalk(spd) * userWeight); }
 function calcBikeKcalH(spd) { return Math.round(getMETBike(spd) * userWeight); }
 const ACCEPTABLE_PROCESSED = ['chipolata', 'saucisse de toulouse', 'saucisse', 'jambon blanc', 'jambon cru', 'jambon de bayonne', 'jambon sec', 'lardons', 'bacon', 'chorizo', 'merguez', 'andouillette', 'boudin noir', 'boudin blanc', 'rillettes', 'pâté', 'terrine', 'confit de canard', 'magret', 'foie gras', 'mousse de canard', 'fromage', 'beurre', 'crème fraîche', 'yaourt', 'yogourt', 'kéfir', 'skyr', 'fromage blanc', 'mozzarella', 'parmesan', 'gruyère', 'emmental', 'comté', 'roquefort', 'camembert', 'brie', 'feta', 'reblochon', 'cantal', 'beaufort', 'ossau', 'raclette', 'chèvre', 'pain de mie', 'pain complet', 'baguette', 'pain', 'farine', 'pâte brisée', 'pâte feuilletée', 'tofu', 'tempeh', 'seitan', 'edamame', 'sardine', 'thon', 'saumon fumé', 'maquereau', 'hareng', 'anchois', 'huile', 'vinaigre', 'miel', 'confiture', 'nutella', 'beurre de cacahuète'];
 const DRINK_DB = [
-{ name: "Aperol spritz", k: 120, pr: 0, gl: 11, lp: 0, defaultQty: 150, kind: 'cocktail' },
-{ name: "Moscow mule", k: 105, pr: 0, gl: 10, lp: 0, defaultQty: 200, kind: 'cocktail' },
-{ name: "London Mule", k: 110, pr: 0, gl: 10, lp: 0, defaultQty: 200, kind: 'cocktail' },
-{ name: "Ti Punch", k: 233, pr: 0, gl: 8, lp: 0, defaultQty: 60, kind: 'cocktail' },
-{ name: "Cuba Libre", k: 85, pr: 0, gl: 9, lp: 0, defaultQty: 200, kind: 'cocktail' },
-{ name: "Espresso Martini", k: 200, pr: 0.5, gl: 12, lp: 0, defaultQty: 90, kind: 'cocktail' },
-{ name: "Daiquiri", k: 200, pr: 0, gl: 10, lp: 0, defaultQty: 90, kind: 'cocktail' },
-{ name: "Pina Colada", k: 165, pr: 0.5, gl: 14, lp: 5, defaultQty: 170, kind: 'cocktail' },
-{ name: "Margarita", k: 220, pr: 0, gl: 11, lp: 0, defaultQty: 100, kind: 'cocktail' },
-{ name: "Mojito", k: 109, pr: 0, gl: 10, lp: 0, defaultQty: 165, kind: 'cocktail' },
-{ name: "Caipirinha", k: 250, pr: 0, gl: 12, lp: 0, defaultQty: 80, kind: 'cocktail' },
-{ name: "Gin tonic", k: 85, pr: 0, gl: 6, lp: 0, defaultQty: 200, kind: 'cocktail' },
-{ name: "Amaretto Sour", k: 240, pr: 1, gl: 14, lp: 0, defaultQty: 75, kind: 'cocktail' },
-{ name: "Bière 4°", k: 34, pr: 0.4, gl: 3.0, lp: 0, defaultQty: 50, kind: 'beer' },
-{ name: "Bière 5°", k: 40, pr: 0.4, gl: 3.2, lp: 0, defaultQty: 50, kind: 'beer' },
-{ name: "Bière 6°", k: 47, pr: 0.5, gl: 3.5, lp: 0, defaultQty: 50, kind: 'beer' },
-{ name: "Bière 7°", k: 55, pr: 0.5, gl: 4.0, lp: 0, defaultQty: 50, kind: 'beer' },
-{ name: "Bière 8°", k: 62, pr: 0.5, gl: 4.5, lp: 0, defaultQty: 50, kind: 'beer' },
-{ name: "Vin rouge", k: 85, pr: 0.1, gl: 2.6, lp: 0, defaultQty: 120, kind: 'wine' },
-{ name: "Vin rosé", k: 83, pr: 0.1, gl: 2.1, lp: 0, defaultQty: 120, kind: 'wine' },
-{ name: "Vin blanc", k: 82, pr: 0.1, gl: 1.6, lp: 0, defaultQty: 120, kind: 'wine' }
+{ name: "Aperol spritz", k: 120, pr: 0, gl: 11, lp: 0, defaultQty: 150, kind: 'cocktail', degres: 11 },
+{ name: "Moscow mule", k: 105, pr: 0, gl: 10, lp: 0, defaultQty: 200, kind: 'cocktail', degres: 8 },
+{ name: "London Mule", k: 110, pr: 0, gl: 10, lp: 0, defaultQty: 200, kind: 'cocktail', degres: 8 },
+{ name: "Ti Punch", k: 233, pr: 0, gl: 8, lp: 0, defaultQty: 60, kind: 'cocktail', degres: 30 },
+{ name: "Cuba Libre", k: 85, pr: 0, gl: 9, lp: 0, defaultQty: 200, kind: 'cocktail', degres: 7 },
+{ name: "Espresso Martini", k: 200, pr: 0.5, gl: 12, lp: 0, defaultQty: 90, kind: 'cocktail', degres: 18 },
+{ name: "Daiquiri", k: 200, pr: 0, gl: 10, lp: 0, defaultQty: 90, kind: 'cocktail', degres: 20 },
+{ name: "Pina Colada", k: 165, pr: 0.5, gl: 14, lp: 5, defaultQty: 170, kind: 'cocktail', degres: 10 },
+{ name: "Margarita", k: 220, pr: 0, gl: 11, lp: 0, defaultQty: 100, kind: 'cocktail', degres: 20 },
+{ name: "Mojito", k: 109, pr: 0, gl: 10, lp: 0, defaultQty: 165, kind: 'cocktail', degres: 8 },
+{ name: "Caipirinha", k: 250, pr: 0, gl: 12, lp: 0, defaultQty: 80, kind: 'cocktail', degres: 25 },
+{ name: "Gin tonic", k: 85, pr: 0, gl: 6, lp: 0, defaultQty: 200, kind: 'cocktail', degres: 7 },
+{ name: "Amaretto Sour", k: 240, pr: 1, gl: 14, lp: 0, defaultQty: 75, kind: 'cocktail', degres: 15 },
+{ name: "Bière 4°", k: 34, pr: 0.4, gl: 3.0, lp: 0, defaultQty: 50, kind: 'beer', degres: 4 },
+{ name: "Bière 5°", k: 40, pr: 0.4, gl: 3.2, lp: 0, defaultQty: 50, kind: 'beer', degres: 5 },
+{ name: "Bière 6°", k: 47, pr: 0.5, gl: 3.5, lp: 0, defaultQty: 50, kind: 'beer', degres: 6 },
+{ name: "Bière 7°", k: 55, pr: 0.5, gl: 4.0, lp: 0, defaultQty: 50, kind: 'beer', degres: 7 },
+{ name: "Bière 8°", k: 62, pr: 0.5, gl: 4.5, lp: 0, defaultQty: 50, kind: 'beer', degres: 8 },
+{ name: "Vin rouge", k: 85, pr: 0.1, gl: 2.6, lp: 0, defaultQty: 120, kind: 'wine', degres: 13 },
+{ name: "Vin rosé", k: 83, pr: 0.1, gl: 2.1, lp: 0, defaultQty: 120, kind: 'wine', degres: 12 },
+{ name: "Vin blanc", k: 82, pr: 0.1, gl: 1.6, lp: 0, defaultQty: 120, kind: 'wine', degres: 12 }
 ];
 function scoreProduct(p) {
 let s = 0;
@@ -4695,6 +4696,7 @@ document.getElementById('bilan-summary').innerHTML = `
     ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${totalWalkKcal}</strong> kcal</div>` : ''}
     <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total activités : <strong>${totalSportKcal}</strong> kcal</div>
   </div>` : ''}
+
   ${(() => {
     const netTotal = activeValues.reduce((s,[,v]) => s + v.food - v.out, 0);
     if (!activeValues.length || !netTotal) return '';
@@ -5661,6 +5663,7 @@ Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"de
 Toujours mettre les etapes dans "walk_steps" (tableau). Ne pas mettre walk_from/walk_to.
 Format sport non-marche : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
 Si question indispensable : {"type":"question","message":"question courte"}
+Si l utilisateur corrige juste la quantite ("c etait 200g", "plutot 150") : {"type":"correction","qty_g":200,"note":"Quantite corrigee"}
 ${qLine}`
     : `Tu es un assistant nutritionnel expert. ${userProfile}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
@@ -5820,6 +5823,44 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
   } catch(e) { document.getElementById('ai-loading').style.display = 'none'; showAIError('Erreur : ' + e.message); }
 }
 
+let _voiceRecognition = null;
+let _voiceActive = false;
+
+function toggleVoiceInput() {
+  const btn = document.getElementById('ai-voice-btn');
+  const inp = document.getElementById('ai-input');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Reconnaissance vocale non supportée sur ce navigateur.'); return; }
+  if (_voiceActive && _voiceRecognition) {
+    _voiceRecognition.stop();
+    return;
+  }
+  _voiceRecognition = new SR();
+  _voiceRecognition.lang = 'fr-FR';
+  _voiceRecognition.continuous = false;
+  _voiceRecognition.interimResults = true;
+  _voiceActive = true;
+  btn.textContent = '🔴';
+  btn.style.borderColor = 'var(--danger)';
+  _voiceRecognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    inp.value = transcript;
+  };
+  _voiceRecognition.onend = () => {
+    _voiceActive = false;
+    btn.textContent = '🎤';
+    btn.style.borderColor = '';
+    // Auto-send if we have text
+    if (inp.value.trim()) askAI();
+  };
+  _voiceRecognition.onerror = () => {
+    _voiceActive = false;
+    btn.textContent = '🎤';
+    btn.style.borderColor = '';
+  };
+  _voiceRecognition.start();
+}
+
 async function askAIWithPhoto(input) {
   GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
   if (!GEMINI_KEY) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
@@ -5880,6 +5921,14 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
     aiChatHistory.push({ role: 'user', content: '[Photo]' }, { role: 'model', content: text });
     if (p.type === 'question') {
       addChatMessage('ai', p.message);
+    } else if (p.type === 'correction') {
+      // Quick correction — just update qty field
+      const newQty = p.qty_g || p.duration_min;
+      if (newQty) {
+        document.getElementById('ai-qty').value = newQty;
+        recalcAI();
+        addChatMessage('ai', p.note || `Mis à jour : ${newQty}${isSport ? 'min' : 'g'}`);
+      }
     } else {
       addChatMessage('ai', p.note || 'Estimation depuis la photo :');
       const aiQtyG = p.qty_g || 100;
