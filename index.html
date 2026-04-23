@@ -4061,6 +4061,33 @@ const dist = round1(spd * (q / 60));
 const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
 descFinal = `🚴 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else { descFinal = `${descName} (${q}min)`; }
+} else if (isDrink && _drinkPortionQty) {
+// Drink with portions — build smart description
+const portions = parseFloat(document.getElementById('in-portions').value) || 1;
+const doseQty = _drinkPortionQty;
+const unit = _currentDrinkUnit === 'cl' ? 'cl' : 'ml';
+// Determine portion name from dose
+function drinkPortionName(doseVal, unitName) {
+  if (unitName === 'cl') {
+    if (doseVal <= 4) return 'shot';
+    if (doseVal <= 15) return 'verre';
+    if (doseVal <= 20) return 'demi-verre';
+    if (doseVal <= 27) return 'demi';
+    if (doseVal <= 35) return 'canette';
+    if (doseVal <= 55) return 'pinte';
+    return 'verre';
+  } else {
+    if (doseVal <= 40) return 'shot';
+    if (doseVal <= 120) return 'verre';
+    if (doseVal <= 200) return 'grand verre';
+    return 'verre';
+  }
+}
+const portionName = drinkPortionName(doseQty, unit);
+const portionsStr = portions === 1
+  ? `1 ${portionName}`
+  : `${portions} ${portionName}${portions > 1 ? 's' : ''}`;
+descFinal = `${descName} · ${portionsStr} (${q}${unit})`;
 } else {
 // Include qty in description for display
 const unitLbl = _currentFoodUnit ? `${q} ${_currentFoodUnit.label === 'cac' ? 'c.café' : _currentFoodUnit.label === 'cas' ? 'c.soupe' : _currentFoodUnit.label}` : `${q}${unitDisplay}`;
