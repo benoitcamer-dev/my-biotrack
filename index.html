@@ -1719,6 +1719,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <div class="input-box"><label>Vitesse (km/h)</label><input id="in-speed" type="number" value="5" step="0.1" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="input-box"><label>Distance estimée</label><input id="in-distance" type="text" value="—" readonly style="opacity:.8;"></div>
 </div>
+<div class="inputs-grid" id="drink-portions-row" style="display:none;">
+<div class="input-box"><label>Nb de verres/portions</label><input id="in-portions" type="number" value="1" min="0.5" step="0.5" oninput="onPortionsChange()"></div>
+<div class="input-box"><label id="label-portion-unit">Dose (cl)</label><input id="in-portion-unit" type="number" value="50" min="1" step="1" oninput="onPortionUnitChange()"></div>
+</div>
 <div class="macros-row" id="macro-fields">
 <div class="macro-input prot"><label>Prot.</label><input id="in-p" type="number" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="macro-input gluc"><label>Gluc.</label><input id="in-g" type="number" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
@@ -3195,13 +3199,15 @@ document.getElementById('save-route-btn').style.display = 'none';
 function openModal(cat) {
 currentCat = cat;
 const isSport = cat === 'Sport', isDrink = cat === 'Boissons';
+const pr2 = document.getElementById('drink-portions-row'); if (pr2 && !isDrink) pr2.style.display = 'none';
+document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
 resetModalForm();
 document.getElementById('modal-title').textContent = isSport ? '🔥 Activité physique' : '+ ' + cat;
 _currentDrinkUnit = 'ml';
 document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
 document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
 document.getElementById('in-qty').value = isSport ? '30' : '100';
-document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
 document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('fav-link-btn').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('scanner-btn').style.display = isSport ? 'none' : 'inline-block';
@@ -3215,7 +3221,7 @@ recalc();
 document.getElementById('modal-add').classList.add('open');
 setTimeout(() => document.getElementById('in-desc').focus(), 180);
 }
-function closeModal() { document.getElementById('modal-add').classList.remove('open'); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; }
+function closeModal() { document.getElementById('modal-add').classList.remove('open'); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
 function cancelEdit() { editingId = null; document.getElementById('cancel-edit-btn').style.display = 'none'; document.getElementById('submit-btn').textContent = 'Valider'; closeModal(); }
 function onSearchInput() {
 clearTimeout(searchDebounceTimer);
@@ -3488,19 +3494,48 @@ document.getElementById('in-p').value = pr;
 document.getElementById('in-g').value = gl;
 document.getElementById('in-l').value = lp;
 document.getElementById('search-results').style.display = 'none';
+const portionsRow = document.getElementById('drink-portions-row');
 if (kind === 'beer') {
-  // qty is in cl for beers
   _currentDrinkUnit = 'cl';
-  document.getElementById('label-qty').textContent = 'Quantité (cl)';
-  document.getElementById('in-qty').value = qty; // qty is already in cl (50)
-  document.getElementById('calc-sub').textContent = `pour ${qty}cl`;
+  _drinkPortionQty = qty; // qty is in cl (e.g. 50)
+  document.getElementById('label-qty').textContent = 'Total (cl)';
+  document.getElementById('in-qty').value = qty;
+  document.getElementById('in-portions').value = 1;
+  document.getElementById('in-portion-unit').value = qty;
+  document.getElementById('label-portion-unit').textContent = 'Dose (cl)';
+  if (portionsRow) portionsRow.style.display = 'grid';
+} else if (kind === 'cocktail' || kind === 'soft' || kind === 'wine' || kind === 'spirit') {
+  _currentDrinkUnit = 'ml';
+  _drinkPortionQty = qty;
+  document.getElementById('label-qty').textContent = 'Total (ml)';
+  document.getElementById('in-qty').value = qty;
+  document.getElementById('in-portions').value = 1;
+  document.getElementById('in-portion-unit').value = qty;
+  document.getElementById('label-portion-unit').textContent = 'Dose (ml)';
+  if (portionsRow) portionsRow.style.display = 'grid';
 } else {
   _currentDrinkUnit = 'ml';
-  document.getElementById('label-qty').textContent = kind === 'cocktail' ? 'Quantité (ml)' : 'Quantité (ml)';
+  _drinkPortionQty = null;
+  document.getElementById('label-qty').textContent = 'Quantité (ml)';
   document.getElementById('in-qty').value = qty;
-  document.getElementById('calc-sub').textContent = kind === 'cocktail' ? `dose bar (${qty}ml)` : `pour ${qty}ml`;
+  if (portionsRow) portionsRow.style.display = 'none';
 }
 recalc();
+}
+
+function onPortionsChange() {
+  const portions = parseFloat(document.getElementById('in-portions').value) || 1;
+  const dose = parseFloat(document.getElementById('in-portion-unit').value) || (_drinkPortionQty || 50);
+  document.getElementById('in-qty').value = Math.round(portions * dose);
+  recalc();
+}
+
+function onPortionUnitChange() {
+  const portions = parseFloat(document.getElementById('in-portions').value) || 1;
+  const dose = parseFloat(document.getElementById('in-portion-unit').value) || 50;
+  _drinkPortionQty = dose;
+  document.getElementById('in-qty').value = Math.round(portions * dose);
+  recalc();
 }
 function selectWalkMode() {
 document.getElementById('in-desc').value = 'Marche';
@@ -3913,7 +3948,7 @@ document.getElementById('modal-title').textContent = isSport ? 'Modifier activit
 _currentDrinkUnit = 'ml';
 document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
 document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
-document.getElementById('macro-fields').style.display = isSport ? 'none' : 'grid';
+document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
 document.getElementById('saved-meal-link').style.display = 'none';
 document.getElementById('fav-link-btn').style.display = 'none';
 document.getElementById('scanner-btn').style.display = 'none';
@@ -4207,7 +4242,12 @@ resetRecipeDraft();
 renderRecipeBuilder();
 document.getElementById('modal-recipe-editor').classList.add('open');
 }
-function closeRecipeEditor() { document.getElementById('modal-recipe-editor').classList.remove('open'); }
+function closeRecipeEditor() {
+  document.getElementById('modal-recipe-editor').classList.remove('open');
+  _editingBuilderItemId = null;
+  const btn = document.querySelector('[onclick="addIngredientToRecipeBuilder()"]');
+  if (btn) { btn.textContent = 'Ajouter cet ingrédient'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+}
 function resetRecipeDraft() {
 ['re-desc', 're-kcal'].forEach(id => document.getElementById(id).value = '');
 ['re-p', 're-g', 're-l'].forEach(id => document.getElementById(id).value = '0');
@@ -4240,11 +4280,18 @@ g = parseFloat(document.getElementById('re-g').value) || 0,
 l = parseFloat(document.getElementById('re-l').value) || 0;
 if (!desc || qty <= 0) return;
 const f = qty / 100;
-recipeBuilder.push({
-id: Date.now() + Math.random(),
-desc, qty, kcal100: k, prot100: p, gluc100: g, lip100: l,
-val: Math.round(k * f), prot: round1(p * f), gluc: round1(g * f), lip: round1(l * f)
-});
+if (_editingBuilderItemId !== null) {
+  // Update existing item
+  const idx = recipeBuilder.findIndex(i => i.id === _editingBuilderItemId);
+  if (idx >= 0) {
+    recipeBuilder[idx] = { id: _editingBuilderItemId, desc, qty, kcal100: k, prot100: p, gluc100: g, lip100: l, val: Math.round(k*f), prot: round1(p*f), gluc: round1(g*f), lip: round1(l*f) };
+  }
+  _editingBuilderItemId = null;
+  const btn = document.querySelector('[onclick="addIngredientToRecipeBuilder()"]');
+  if (btn) { btn.textContent = 'Ajouter cet ingrédient'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+} else {
+  recipeBuilder.push({ id: Date.now() + Math.random(), desc, qty, kcal100: k, prot100: p, gluc100: g, lip100: l, val: Math.round(k*f), prot: round1(p*f), gluc: round1(g*f), lip: round1(l*f) });
+}
 resetRecipeDraft();
 renderRecipeBuilder();
 }
@@ -4268,17 +4315,24 @@ el.innerHTML = `${recipeBuilder.map(i => `<div class="builder-item">
 <div class="recipe-items">${Math.round(t.kcal)} kcal · ${round1(t.prot)}&nbsp;g P · ${round1(t.gluc)}&nbsp;g G · ${round1(t.lip)}&nbsp;g L</div>
 </div>`;
 }
+let _editingBuilderItemId = null;
 function editRecipeIngredient(id) {
 const item = recipeBuilder.find(i => i.id === id);
 if (!item) return;
+_editingBuilderItemId = id;
 document.getElementById('re-desc').value = item.desc;
 document.getElementById('re-qty').value = item.qty;
 document.getElementById('re-kcal').value = item.kcal100;
 document.getElementById('re-p').value = item.prot100;
 document.getElementById('re-g').value = item.gluc100;
 document.getElementById('re-l').value = item.lip100;
-removeBuilderItem(id);
+// Update button to show "Modifier"
+const btn = document.querySelector('[onclick="addIngredientToRecipeBuilder()"]');
+if (btn) { btn.textContent = '✓ Modifier l\'ingrédient'; btn.style.background = 'rgba(245,200,66,0.2)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; }
 recalcRecipeDraft();
+// Scroll to form
+document.getElementById('re-desc').scrollIntoView({ behavior: 'smooth', block: 'center' });
+document.getElementById('re-qty').focus();
 }
 function recomputeRecipe(r) {
 const t = recipeTotals(r.items);
@@ -5566,7 +5620,7 @@ ${qLine}`
     : `Tu es un assistant nutritionnel expert. ${userProfile}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"detail kcal par element"}
+REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"liste chaque element : NomXXg=YYYkcal (ZZZkcal/100g), ex: Raclette200g=570kcal(285/100g), Bleu100g=350kcal(350/100g)"}
 Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
