@@ -4970,7 +4970,21 @@ const res = await sb.auth.signInWithPassword({ email, password: pass });
 error = res.error;
 }
 if (error) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = error.message; }
-else { await init(); }
+else { await init();
+
+// Fix mobile cursor bug: blur+refocus input when returning to app
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const aiModal = document.getElementById('modal-ai');
+    if (aiModal && aiModal.classList.contains('open')) {
+      const inp = document.getElementById('ai-input');
+      if (inp) {
+        inp.blur();
+        setTimeout(() => inp.focus(), 150);
+      }
+    }
+  }
+}); }
 } catch (e) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = 'Erreur de connexion.'; }
 }
 function logout() { sb.auth.signOut().then(() => location.reload()); }
