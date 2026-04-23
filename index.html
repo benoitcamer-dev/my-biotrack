@@ -3898,9 +3898,17 @@ currentCat = entry.category;
 const isSport = entry.type === 'burn', isDrink = entry.category === 'Boissons';
 const rawD = entry.desc || '';
 const qtyMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*(min|g|ml)/i);
-// If no qty in desc (new format), estimate from val/kcal_100 — default 100g
-let qty = qtyMatch ? parseFloat(qtyMatch[1]) : (isSport ? 30 : 100);
 const cleanLabel = rawD.replace(/\s*\(.*$/, '').trim();
+let qty;
+if (qtyMatch) {
+  qty = parseFloat(qtyMatch[1]);
+} else if (isSport) {
+  qty = 30;
+} else {
+  // Try to find default_qty from custom foods by name
+  const matchedFood = customFoods.find(f => f.name.toLowerCase() === cleanLabel.toLowerCase());
+  qty = matchedFood?.default_qty || 100;
+}
 document.getElementById('modal-title').textContent = isSport ? 'Modifier activité' : 'Modifier entrée';
 _currentDrinkUnit = 'ml';
 document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
