@@ -2998,6 +2998,12 @@ function renderAlimentsTabBtns() { /* tabs removed */ }
 function normalize(str) {
   return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
+// Recherche multi-mots : chaque mot de la query doit être présent dans le nom
+function matchWords(name, query) {
+  const n = normalize(name);
+  const words = normalize(query).split(/\s+/).filter(Boolean);
+  return words.every(w => n.includes(w));
+}
 function renderAlimentsList() {
 const el = document.getElementById('aliments-list');
 const dropEl = document.getElementById('aliments-search-results');
@@ -3006,7 +3012,7 @@ const clearBtn = document.getElementById('aliments-search-clear');
 const q = normalize(searchInp ? searchInp.value.trim() : '');
 if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
 let foods = [...customFoods];
-if (q) foods = foods.filter(f => normalize(f.name).includes(q));
+if (q) foods = foods.filter(f => matchWords(f.name, q));
 // Favoris en premier, puis alphabétique
 foods.sort((a, b) => {
   const aF = favoriteIds.includes(a.id) ? 0 : 1;
@@ -3532,13 +3538,13 @@ div.style.display = 'block';
 const token = ++_searchToken; // unique token for this search
 const lv = normalize(v);
 // ── Résultats locaux immédiats ───────────────────────────────────────────────
-const cH = customFoods.filter(f => normalize(f.name).includes(lv)).map(f => buildCustomItem(f, isR)).join('');
-const lH = DRINK_DB.filter(a => normalize(a.name).includes(lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
+const cH = customFoods.filter(f => matchWords(f.name, lv)).map(f => buildCustomItem(f, isR)).join('');
+const lH = DRINK_DB.filter(a => matchWords(a.name, lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
-const localMatches = LOCAL_FOOD_DB.filter(a => normalize(a.name).includes(lv));
+const localMatches = LOCAL_FOOD_DB.filter(a => matchWords(a.name, lv));
 window._localDB = localMatches;
 const localH = localMatches.map((a, idx) => {
 const clickFn = isR ? `_pickLocalFood(${idx},true)` : `_pickLocalFood(${idx},false)`;
@@ -4402,7 +4408,7 @@ el.innerHTML = `<div class="recipe-card">
 return;
 }
 const sorted = [...savedRecipes].sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
-const filtered = q ? sorted.filter(r => normalize(r.name).includes(q)) : sorted;
+const filtered = q ? sorted.filter(r => matchWords(r.name, q)) : sorted;
 if (!filtered.length) {
   el.innerHTML = `<div class="recipe-card" style="text-align:center;padding:20px;">
 <div style="font-size:24px;margin-bottom:8px;">🔍</div>
@@ -4659,7 +4665,7 @@ return;
 }
 const sorted = [...savedRecipes].sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
 // Filtre uniquement sur le nom, insensible aux accents et à la casse
-const filtered = q ? sorted.filter(r => normalize(r.name).includes(q)) : sorted;
+const filtered = q ? sorted.filter(r => matchWords(r.name, q)) : sorted;
 if (countEl) {
   if (q) {
     countEl.style.display = 'block';
@@ -7098,6 +7104,83 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
     }
   });
 })();
+
+// ── Swipe to dismiss — bottom sheets ────────────────────────────────────────
+(function() {
+  const CLOSE_THRESHOLD = 0.35; // 35% de la hauteur du sheet
+  const VELOCITY_THRESHOLD = 0.5; // px/ms
+
+  // Map modal-id → fonction de fermeture
+  const CLOSE_FNS = {
+    'modal-add': () => closeModal(),
+    'modal-recipe-editor': () => closeRecipeEditor(),
+    'modal-aliments': () => closeAlimentsModal(),
+    'modal-custom-food': () => closeCustomFoodModal(),
+    'modal-settings': () => closeSettings(),
+  };
+
+  function initSwipe(sheet, closeFn) {
+    let startY = 0, currentY = 0, startTime = 0, dragging = false;
+
+    sheet.addEventListener('touchstart', e => {
+      // Seulement si le touch commence sur le handle ou le titre (pas sur un input/select/scroll)
+      const tag = e.target.tagName.toLowerCase();
+      if (['input','select','textarea','button'].includes(tag)) return;
+
+      // Autoriser seulement si on est en haut du scroll interne
+      const scrollable = sheet.querySelector('.modal-scroll, .settings-body') || sheet;
+      if (scrollable.scrollTop > 4) return;
+
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+      dragging = true;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    sheet.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      currentY = e.touches[0].clientY;
+      const dy = Math.max(0, currentY - startY); // seulement vers le bas
+      sheet.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+
+    sheet.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      const dy = Math.max(0, currentY - startY);
+      const elapsed = Date.now() - startTime;
+      const velocity = dy / elapsed; // px/ms
+      const sheetH = sheet.offsetHeight;
+
+      sheet.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+
+      if (dy > sheetH * CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
+        // Fermer — animer vers le bas puis appeler closeFn
+        sheet.style.transform = `translateY(${sheetH + 60}px)`;
+        setTimeout(() => {
+          sheet.style.transform = '';
+          sheet.style.transition = '';
+          closeFn();
+        }, 260);
+      } else {
+        // Revenir en place
+        sheet.style.transform = '';
+        setTimeout(() => { sheet.style.transition = ''; }, 300);
+      }
+    });
+  }
+
+  // Initialiser après chargement du DOM
+  window.addEventListener('DOMContentLoaded', () => {
+    Object.entries(CLOSE_FNS).forEach(([modalId, closeFn]) => {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      const sheet = modal.querySelector('.modal-sheet');
+      if (sheet) initSwipe(sheet, closeFn);
+    });
+  });
+})();
+
 
 </script>
 <!-- MODAL DOSE FAVORI -->
