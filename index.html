@@ -345,12 +345,12 @@ padding: 0 2px;
 .entry-group-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .entry-group-title {
 font-family: 'Syne', sans-serif;
-font-size: 12px;
+font-size: 15px;
 font-weight: 700;
 color: var(--text);
 cursor: pointer;
 }
-.entry-group-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.entry-group-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; }
 .entry-group-total {
 font-family: 'Syne', sans-serif;
 font-size: 15px;
@@ -1614,7 +1614,7 @@ margin-left: 4px;
 </div>
 </div>
 <div style="position:relative;margin-bottom:10px;">
-<input id="recipe-search" class="search-input" type="text" placeholder="🔍 Rechercher par nom ou ingrédient…" oninput="renderRecipesPage()" autocomplete="off" style="padding-right:36px;">
+<input id="recipe-search" class="search-input" type="text" placeholder="🔍 Rechercher par nom ou ingrédient…" oninput="renderRecipesPage()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
 <button onclick="clearRecipeSearch()" id="recipe-search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
 <div id="recipe-search-count" style="font-size:11px;color:var(--muted);margin-bottom:8px;display:none;"></div>
@@ -1649,7 +1649,7 @@ margin-left: 4px;
 <div class="search-row">
 <input id="in-desc" class="search-input" type="text" placeholder="Rechercher..."
 autocomplete="off" oninput="onSearchInput()"
-onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
+onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blur();}">
 <button class="search-btn" onclick="startSearch()">↵</button>
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
@@ -1698,7 +1698,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 </div>
 <div id="walk-route-result" class="walk-result-box" style="display:none;"></div>
 <div id="walk-custom-dur-box" class="walk-custom-duration" style="display:none;">
-<label style="font-size:10px;color:var(--muted);">Ajuste la durée réelle si besoin :</label>
+<label style="font-size:12px;color:var(--muted);">Ajuste la durée réelle si besoin :</label>
 <div style="display:flex;align-items:center;gap:8px;">
 <input type="number" id="walk-custom-dur" min="1" oninput="onCustomDurationChange()">
 <span class="walk-recalc-info" id="walk-recalc-info"></span>
@@ -1759,7 +1759,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <input id="s-goal" type="number" placeholder="2300" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
-<label>💪 Objectif protéines (g/jour) <span style="font-size:10px;color:var(--muted);">— laisser 0 pour ne pas afficher</span></label>
+<label>💪 Objectif protéines (g/jour) <span style="font-size:12px;color:var(--muted);">— laisser 0 pour ne pas afficher</span></label>
 <input id="s-prot-goal" type="number" placeholder="0" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
@@ -1829,7 +1829,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();}">
 <div style="margin-bottom:8px;"><button class="btn-cancel" style="font-size:11px;color:var(--accent);padding:4px 0;" onclick="openBaseOnRecipePicker()">📋 Baser sur une recette existante</button></div>
 <div class="search-row">
 <input id="re-desc" class="search-input" type="text" placeholder="Rechercher un ingrédient..."
-autocomplete="off" onkeydown="if(event.key==='Enter') searchRecipeFood()">
+autocomplete="off" onkeydown="if(event.key==='Enter'){searchRecipeFood();this.blur();}">
 <button class="search-btn" onclick="searchRecipeFood()">↵</button>
 <button class="search-btn" onclick="openBarcodeScanner('recipe')" style="background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;">📷</button>
 <button class="search-btn" onclick="openRecipeAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;margin-left:4px;">🤖</button>
@@ -1884,7 +1884,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <button class="modal-close" onclick="closeRecipePicker()">×</button>
 </div>
 <div style="position:relative;margin-bottom:10px;">
-<input id="recipe-picker-search" class="search-input" type="text" placeholder="🔍 Rechercher une recette…" oninput="renderRecipePicker(_recipePickerFromAdd)" autocomplete="off" style="padding-right:36px;">
+<input id="recipe-picker-search" class="search-input" type="text" placeholder="🔍 Rechercher une recette…" oninput="renderRecipePicker(_recipePickerFromAdd)" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
 <button onclick="clearRecipePickerSearch()" id="recipe-picker-search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
 <div id="recipe-picker-list"></div>
@@ -1961,7 +1961,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="aliments-tab" id="atab-base" onclick="switchAlimentsTab('base')">🥦 Base</div>
 </div>
 <div style="position:relative;margin-bottom:8px;">
-<input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="renderAlimentsList()" autocomplete="off" style="padding-right:32px;">
+<input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="renderAlimentsList()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:32px;">
 <button onclick="document.getElementById('aliments-search').value='';renderAlimentsList();" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;" id="aliments-search-clear">✕</button>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;" id="aliments-actions">
@@ -3811,7 +3811,7 @@ routeBaseDistance = dist;
 routeBaseDuration = durMin;
 currentRouteData = { distance: dist, from: steps[0], to: steps[steps.length-1], roundtrip: rt, steps: steps, waypoints: routeResult.waypoints };
 currentWalkFavName = '';
-const stepsHTML = routeResult.waypoints.map((w,i) => `<div style="font-size:10px;color:var(--muted);">${i+1}. ${w}</div>`).join('');
+const stepsHTML = routeResult.waypoints.map((w,i) => `<div style="font-size:12px;color:var(--muted);">${i+1}. ${w}</div>`).join('');
 box.innerHTML = `<strong>${dist} km</strong> · ~${durMin} min · ~${userSpd} km/h · <strong>${kcal} kcal</strong>${stepsHTML}`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = durMin;
@@ -4842,7 +4842,7 @@ const gridLines = [];
 for (let w = minW; w <= maxW; w += 5) {
   const y = ys(w);
   gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
-  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="8" font-family="DM Sans">' + w + '</text>');
+  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="11" font-family="DM Sans">' + w + '</text>');
 }
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
@@ -4962,9 +4962,9 @@ html += `<div class="entry-group">
 <button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
 ${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>` : ''}
 ${!isSport && items.length ? `<button class="meal-save-btn" style="background:rgba(91,127,255,0.12);color:var(--accent);border-color:rgba(91,127,255,0.3);" onclick="openCopyMealModal('${cat}')">📋</button>` : ''}
-<span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'font-size:11px;font-weight:600;opacity:0.4;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
+${sub !== 0 ? `<div style="text-align:right;padding:0 2px 4px;"><span class="entry-group-total ${isSport ? 'sport' : ''}">${isSport ? '−' : '+'}${sub} kcal</span></div>` : ''}
 ${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
 <div class="entry-group-items">${items.length ? items.map(e => {
 const raw = e.desc || '';
@@ -6291,14 +6291,14 @@ function renderBilanChart(values, goal, range) {
     const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
     return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.food}</text>` : ''}`;
+${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 10 : 12}" font-family="DM Sans">${d.label}</text>` : ''}
+${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="11" font-family="DM Sans" font-weight="700">${d.food}</text>` : ''}`;
   }).join('');
 
   // Y axis
   const yLabels = [0, Math.round(maxVal/2), maxVal].map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="DM Sans">${v}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
@@ -6308,10 +6308,10 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="8" font-family="DM Sans" opacity="0.8">objectif</text>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="11" font-family="DM Sans" opacity="0.8">objectif</text>
       ${bars}
     </svg>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
       <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span>
     </div>`;
 }
@@ -6343,7 +6343,7 @@ function renderBilanNetChart(values, bmr) {
     const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
 <text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="DM Sans">${d.label}</text>
-${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" text-anchor="middle" fill="${col}" font-size="11" font-family="DM Sans" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
   }).join('');
 
   // Compute total net for title
@@ -6354,7 +6354,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
   // Y axis labels
   const yLabels = [-maxAbs, 0, maxAbs].map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v > 0 ? '+' : ''}${Math.round(v)}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="DM Sans">${v > 0 ? '+' : ''}${Math.round(v)}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${v === 0 ? 'var(--muted)' : 'var(--border)'}" stroke-width="${v === 0 ? 1 : 0.5}" stroke-dasharray="${v === 0 ? '' : '3,3'}" opacity="${v === 0 ? 0.6 : 1}"/>`;
   }).join('');
 
@@ -6369,7 +6369,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
       ${bars}
       ${cumulLine}
     </svg>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
       <span style="color:#3dd68c;">🟢 Déficit jour</span>
       <span style="color:#ef4444;">🔴 Excédent jour</span>
     </div>`;
@@ -6415,13 +6415,13 @@ function renderProtChart(values, protGoal, range) {
     const bh = Math.max(2, ys(0) - ys(d.prot));
     const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#ef4444';
     return `<rect x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 7 : 9}" font-family="DM Sans">${d.label}</text>
-${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="8" font-family="DM Sans" font-weight="700">${d.prot}</text>` : ''}`;
+<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 10 : 12}" font-family="DM Sans">${d.label}</text>
+${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="11" font-family="DM Sans" font-weight="700">${d.prot}</text>` : ''}`;
   }).join('');
 
   const yLabels = [0, Math.round(maxVal / 2), maxVal].map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="8" font-family="DM Sans">${v}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="DM Sans">${v}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
@@ -6430,10 +6430,10 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="m
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="8" font-family="DM Sans" opacity="0.8">objectif ${protGoal}g</text>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="11" font-family="DM Sans" opacity="0.8">objectif ${protGoal}g</text>
       ${bars}
     </svg>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
       <span style="color:#3dd68c;">🟢 Objectif atteint</span>
       <span style="color:#ef4444;">🔴 Sous objectif</span>
     </div>`;
