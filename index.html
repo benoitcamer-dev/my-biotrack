@@ -1148,6 +1148,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   }
   #fab-menu { gap: 10px !important; }
 }
+/* Scroll lock quand un modal est ouvert */
+body.modal-open { overflow: hidden; position: fixed; width: 100%; }
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -2985,7 +2987,7 @@ onCFUnitChange();
 }
 document.getElementById('modal-custom-food').classList.add('open');
 }
-function closeCustomFoodModal() { document.getElementById('modal-custom-food').classList.remove('open'); editingCustomFoodId = null; }
+function closeCustomFoodModal() { document.getElementById('modal-custom-food').classList.remove('open'); document.body.classList.remove('modal-open'); editingCustomFoodId = null; }
 async function saveCustomFood() {
 const { data: { user } } = await sb.auth.getUser(); if (!user) return;
 const name = document.getElementById('cf-name').value.trim(),
@@ -3018,7 +3020,7 @@ function openAlimentsModal(tab = 'all') {
   renderAlimentsList();
   document.getElementById('modal-aliments').classList.add('open');
 }
-function closeAlimentsModal() { document.getElementById('modal-aliments').classList.remove('open'); }
+function closeAlimentsModal() { document.getElementById('modal-aliments').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function switchAlimentsTab(t) {
   currentAlimentsTab = t;
   const inp = document.getElementById('aliments-search');
@@ -3191,7 +3193,7 @@ document.getElementById('theme-toggle-btn').textContent = localStorage.getItem('
 updateBMRLive();
 document.getElementById('modal-settings').classList.add('open');
 }
-function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); }
+function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function onSettingChange() { updateBMRLive(); }
 function updateBMRLive() {
 const w = parseFloat(document.getElementById('s-weight').value) || userWeight,
@@ -3438,9 +3440,10 @@ recalc();
 document.getElementById('in-entry-date').value = journalDateStr();
 document.getElementById('in-entry-date').style.color = 'var(--muted)';
 document.getElementById('modal-add').classList.add('open');
+document.body.classList.add('modal-open');
 setTimeout(() => document.getElementById('in-desc').focus(), 180);
 }
-function closeModal() { document.getElementById('modal-add').classList.remove('open'); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
+function closeModal() { document.getElementById('modal-add').classList.remove('open'); document.body.classList.remove('modal-open'); document.body.classList.remove('modal-open'); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
 function cancelEdit() { editingId = null; document.getElementById('cancel-edit-btn').style.display = 'none'; document.getElementById('submit-btn').textContent = 'Valider'; closeModal(); }
 function onSearchInput() {
 clearTimeout(searchDebounceTimer);
@@ -4516,6 +4519,7 @@ document.getElementById('recipe-editor-title').textContent = 'Nouvelle recette';
 resetRecipeDraft();
 renderRecipeBuilder();
 document.getElementById('modal-recipe-editor').classList.add('open');
+document.body.classList.add('modal-open');
 }
 function openRecipeEditorEdit(rid) {
 const r = savedRecipes.find(r => r.id === rid);
@@ -4527,6 +4531,7 @@ document.getElementById('recipe-editor-title').textContent = 'Modifier la recett
 resetRecipeDraft();
 renderRecipeBuilder();
 document.getElementById('modal-recipe-editor').classList.add('open');
+document.body.classList.add('modal-open');
 }
 function closeRecipeEditor() {
   document.getElementById('modal-recipe-editor').classList.remove('open');
@@ -5955,6 +5960,7 @@ function openAIModal() {
   const catEl = document.getElementById('ai-target-cat');
   if (catEl) catEl.value = aiCurrentCat || '';
   document.getElementById('modal-ai').classList.add('open');
+  document.body.classList.add('modal-open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
 }
 
@@ -5999,6 +6005,7 @@ function speakIfEnabled(text) {
 
 function closeAIModal() {
   document.getElementById('modal-ai').classList.remove('open');
+  document.body.classList.remove('modal-open');
   // Remettre le FAB si on est sur la page journal
   const fab = document.getElementById('fab-btn');
   if (fab && currentPage === 'journal') fab.style.display = 'flex';
@@ -6013,7 +6020,8 @@ async function askAI() {
   // Address resolution handled by savedPlaces in geocodePlace()
   const processedQuery = query;
   addChatMessage('user', query);
-  const isSport = aiCurrentCat === 'Sport';
+  // En mode global (catégorie auto), Gemini peut répondre sport OU nourriture
+  const isSport = aiCurrentCat === 'Sport' || document.getElementById('ai-target-cat')?.value === 'Sport';
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
@@ -6036,7 +6044,8 @@ async function askAI() {
   const qLine = questionsAlways
     ? "- Pose une question de clarification si la demande n est pas claire."
     : "- Pose une question seulement si une info vraiment CRITIQUE manque et que tu ne peux absolument pas estimer.";
-  const sysP = isSport
+  const isGlobal = !aiCurrentCat && document.getElementById('ai-target-cat')?.value === '';
+  const sysP = (!isGlobal && isSport)
     ? `Tu es un assistant sport et nutrition. ${userProfile} ${catHint}
 Utilise ce profil pour calculer des calories selon poids/taille/sexe.
 Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
@@ -6065,10 +6074,15 @@ TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 Si question indispensable : {"type":"question","message":"question courte"}
 Si l utilisateur corrige juste la quantite ("c etait 200g", "plutot 150") : {"type":"correction","qty_g":200,"note":"Quantite corrigee"}
 ${qLine}`
-    : `Tu es un assistant nutritionnel expert. ${userProfile} ${catHint}
+    : `Tu es un assistant nutritionnel et sportif expert. ${userProfile} ${catHint}
 ${recipesCtx ? recipesCtx + '.' : ''}
 ${customCtx ? customCtx + '.' : ''}
 Si l utilisateur mentionne une recette enregistree, reponds avec : {"type":"recipe","recipe_name":"nom exact","qty_g":POIDS_TOTAL,"note":"detail"}
+Si l utilisateur parle d une activite physique ou sportive (velo, marche, course, natation, musculation...) :
+Calcul kcal/heure selon poids ${userWeight}kg : velo leger=poids*4, velo modere=poids*6, velo soutenu=poids*8, velo intense=poids*10, course lente=poids*7, course rapide=poids*10, natation=poids*7, muscu=poids*4, autre=poids*5.
+Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kcal_per_hour":KCAL_H_CALCULE,"total_kcal":TOTAL,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
+Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":6,"note":"detail"}
+TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
 REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"liste chaque element : NomXXg=YYYkcal (ZZZkcal/100g), ex: Raclette200g=570kcal(285/100g), Bleu100g=350kcal(350/100g)"}
@@ -6161,11 +6175,12 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
         recalcAI();
       }
     } else if (p.type === 'sport') {
+      // Basculer en mode sport quelle que soit la catégorie initiale
+      aiCurrentCat = 'Sport';
       document.getElementById('ai-label-qty').textContent = 'Durée (min)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / heure';
       document.getElementById('ai-macro-fields').style.display = 'none';
       _aiLastSportData = p;
-      // Forcer la catégorie sur Sport dans le sélecteur
       const catSel = document.getElementById('ai-target-cat');
       if (catSel) catSel.value = 'Sport';
       if (p.is_walk && p.walk_steps && p.walk_steps.length >= 2) {
@@ -7344,6 +7359,8 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
     });
     const fabMenu = document.getElementById('fab-menu');
     if (fabMenu) initFabSwipe(fabMenu);
+    const aiModal = document.getElementById('modal-ai');
+    if (aiModal) { const aiSheet = aiModal.querySelector('.modal-sheet'); if (aiSheet) initSwipe(aiSheet, () => closeAIModal()); }
   });
 })();
 
