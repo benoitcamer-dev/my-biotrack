@@ -2698,7 +2698,7 @@ function fmtNum(n) {
   const abs = Math.abs(Math.round(n));
   const sign = n < 0 ? '-' : '';
   if (abs < 1000) return sign + String(abs);
-  return sign + abs.toLocaleString('fr-FR').replace(/[    ]/g, ' ');
+  return sign + abs.toLocaleString('fr-FR').replace(/[    ]/g, ' ');
 }
 function parseDesc(desc) {
 const m = String(desc).match(/^(.*?)\s*$(\d+(?:[.,]\d+)?)\s*(g|min|ml)\b[^)]*$$/i);
@@ -6633,19 +6633,24 @@ ${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" f
   const lineCol = finalCumul <= 0 ? '#3dd68c' : '#ef4444';
   const cumulLine = '';
 
-  // Y axis labels — graduation fine avec ~5 niveaux
-  const netTickStep = niceScale(maxAbs, 2)[1] || Math.round(maxAbs / 2 / 100) * 100 || 100;
+  // Y axis — step calculé pour avoir ~5-6 graduations de -maxAbs à +maxAbs
+  const _rawStep = maxAbs / 3; // 3 niveaux de chaque côté
+  const _mag = Math.pow(10, Math.floor(Math.log10(_rawStep)));
+  const _norm = _rawStep / _mag;
+  const _nice = _norm <= 1 ? 1 : _norm <= 2 ? 2 : _norm <= 2.5 ? 2.5 : _norm <= 5 ? 5 : 10;
+  const netTickStep = Math.max(50, _nice * _mag);
   const netTickValues = [];
-  for (let v = -maxAbs; v <= maxAbs + 1; v += netTickStep) {
-    netTickValues.push(Math.round(v / netTickStep) * netTickStep);
+  for (let v = -Math.ceil(maxAbs / netTickStep) * netTickStep;
+           v <= Math.ceil(maxAbs / netTickStep) * netTickStep + 1;
+           v += netTickStep) {
+    netTickValues.push(Math.round(v));
   }
-  // Toujours inclure 0
   if (!netTickValues.includes(0)) netTickValues.push(0);
   netTickValues.sort((a,b) => a - b);
   const yLabels = netTickValues.map(v => {
     const y = ys(v);
     const isZero = v === 0;
-    const lbl = v === 0 ? '0' : (v > 0 ? '+' : '') + Math.round(v);
+    const lbl = v === 0 ? '0' : (v > 0 ? '+' : '') + fmtNum(Math.abs(v));
     return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="${isZero ? 'var(--text)' : 'var(--muted)'}" font-size="11" font-family="Inter" font-weight="${isZero ? 700 : 400}">${lbl}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isZero ? 'rgba(255,255,255,0.25)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}" opacity="1"/>`;
   }).join('');
