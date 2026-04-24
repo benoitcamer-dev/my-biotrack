@@ -5227,8 +5227,7 @@ document.addEventListener('visibilitychange', () => {
       }
     }
   }
-}); }
-} catch (e) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = 'Erreur de connexion.'; }
+});
 }
 function logout() { sb.auth.signOut().then(() => location.reload()); }
 function openSportFavsModal() {
