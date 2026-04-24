@@ -827,7 +827,7 @@ flex-shrink: 0;
 background: var(--surface);
 border: 1px solid var(--border2);
 border-radius: 16px;
-max-height: 260px;
+max-height: min(260px, 35vh);
 overflow-y: auto;
 margin-bottom: 0;
 display: none;
@@ -6921,6 +6921,39 @@ function openRecipeAIModal() {
   document.getElementById('modal-ai').classList.add('open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
 }
+
+// ── Clavier mobile : remonte le modal-add au-dessus du clavier ──
+(function() {
+  if (!window.visualViewport) return;
+  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food'];
+
+  function getActiveSheet() {
+    for (const id of SHEETS_TO_LIFT) {
+      const el = document.getElementById(id);
+      if (el && el.classList.contains('open')) return el.querySelector('.modal-sheet');
+    }
+    return null;
+  }
+
+  window.visualViewport.addEventListener('resize', () => {
+    const sheet = getActiveSheet();
+    if (!sheet) return;
+    const keyboardHeight = window.innerHeight - window.visualViewport.height;
+    if (keyboardHeight > 80) {
+      sheet.style.transform = `translateY(-${keyboardHeight}px)`;
+      sheet.style.transition = 'transform 0.15s ease';
+    } else {
+      sheet.style.transform = '';
+    }
+  });
+
+  // Remet à zéro quand le modal se ferme
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-close')) {
+      document.querySelectorAll('.modal-sheet').forEach(s => s.style.transform = '');
+    }
+  });
+})();
 
 </script>
 <!-- MODAL DOSE FAVORI -->
