@@ -4865,40 +4865,47 @@ const daysProtOk = userProtGoal > 0 ? activeValues.filter(([,v]) => v.prot >= us
 // Period label
 const periodLabel = { week: 'Semaine', month: 'Mois', quarter: 'Trimestre', year: 'Année' }[bilanRange];
 
+const _netTotal = activeValues.reduce((s,[,v]) => s + v.food - v.out, 0);
+const _netKg = Math.abs(Math.round(_netTotal/7700*100)/100);
+const _isD = _netTotal < 0;
+const _netCol = _isD ? 'var(--green)' : 'var(--danger)';
+const _netBg  = _isD ? 'rgba(61,214,140,0.08)' : 'rgba(239,68,68,0.08)';
+const _netBorder = _isD ? 'rgba(61,214,140,0.2)' : 'rgba(239,68,68,0.2)';
+
 document.getElementById('bilan-summary').innerHTML = `
 <div class="summary-card">
   <div class="summary-title">📅 ${periodLabel} · ${activeDays} jour${activeDays>1?'s':''} renseigné${activeDays>1?'s':''} / ${totalDays}</div>
-  <div class="summary-kpi-row" style="flex-wrap:wrap;gap:8px;">
-    <div class="mini-kpi in"><div class="label">Moy. kcal/jour</div><div class="val">${avgIn}</div></div>
-    <div class="mini-kpi p"><div class="label">Moy. protéines/j</div><div class="val">${avgProt}g</div></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px;">
+    <div class="mini-kpi in">
+      <div class="label">Moy. kcal/j</div>
+      <div class="val">${fmtNum(avgIn)}</div>
+    </div>
+    <div class="mini-kpi p">
+      <div class="label">Moy. prot/j</div>
+      <div class="val">${avgProt}g</div>
+    </div>
+    <div class="mini-kpi" style="background:${_netBg};border-color:${_netBorder};">
+      <div class="label" style="color:${_netCol};">Bilan net</div>
+      <div class="val" style="color:${_netCol};font-size:14px;line-height:1.2;">${_isD ? '' : '+'}${fmtNum(_netTotal)}<br><span style="font-size:10px;font-weight:600;opacity:0.85;">≈ ${_netKg} kg ${_isD ? '▼' : '▲'}</span></div>
+    </div>
   </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;">
-    <div style="background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.2);border-radius:8px;padding:6px 10px;">
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11px;">
+    <div style="background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.2);border-radius:8px;padding:5px 10px;">
       🟢 ${daysUnder} jour${daysUnder>1?'s':''} sous objectif
     </div>
-    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:6px 10px;">
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">
       🔴 ${daysOver} jour${daysOver>1?'s':''} au-dessus
     </div>
-    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:6px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
+    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:5px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
   </div>
 
   ${totalSportKcal > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
-    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;">🚴 <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${totalBikeKcal}</strong> kcal</div>` : ''}
-    ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${totalWalkKcal}</strong> kcal</div>` : ''}
-    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total activités : <strong>${totalSportKcal}</strong> kcal</div>
+    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;">🚴 <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${fmtNum(totalBikeKcal)}</strong> kcal</div>` : ''}
+    ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${fmtNum(totalWalkKcal)}</strong> kcal</div>` : ''}
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total : <strong>${fmtNum(totalSportKcal)}</strong> kcal</div>
   </div>` : ''}
-
-  ${(() => {
-    const netTotal = activeValues.reduce((s,[,v]) => s + v.food - v.out, 0);
-    if (!activeValues.length || !netTotal) return '';
-    const kg = Math.abs(Math.round(netTotal/7700*100)/100);
-    const isD = netTotal < 0;
-    return `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net période</div>
-      <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${fmtNum(netTotal)} kcal</div>
-      <div style="font-size:12px;color:${isD ? 'var(--green)' : 'var(--danger)'};">≈ ${kg} kg ${isD ? 'perdu' : 'pris'}</div>
-    </div>`;
-  })()}
 </div>`;
 
 // Render chart + detail
@@ -6656,10 +6663,8 @@ ${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" f
   }).join('');
 
   wrap.innerHTML = `
-    <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net / jour</div>
-      <div style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${fmtNum(Math.abs(finalCumul))} kcal</div>
-      <div style="font-size:13px;font-weight:700;color:${lineCol};margin-top:2px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'de graisse perdue' : 'de graisse prise'}</div>
+    <div style="margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">⚖️ Bilan net / jour</div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible;">
       ${yLabels}
