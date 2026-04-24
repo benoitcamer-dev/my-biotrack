@@ -823,13 +823,15 @@ flex-shrink: 0;
 .modal-close:hover { color: var(--text); border-color: var(--border2); }
 .search-row { display: flex; gap: 7px; margin-bottom: 10px; }
 #search-results,#re-search-results {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: 11px;
-max-height: 220px;
+background: var(--surface);
+border: 1px solid var(--border2);
+border-radius: 16px;
+max-height: 260px;
 overflow-y: auto;
-margin-bottom: 14px;
+margin-bottom: 0;
 display: none;
+box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+margin-top: 4px;
 }
 .result-item {
 padding: 11px 14px;
@@ -1754,6 +1756,7 @@ margin-left: 4px;
 <div class="modal-title" id="modal-title">Ajouter</div>
 <button class="modal-close" onclick="closeModal()">×</button>
 </div>
+<div style="position:relative;">
 <div class="search-row">
 <input id="in-desc" class="search-input" type="text" placeholder="Rechercher..."
 autocomplete="off" oninput="onSearchInput()"
@@ -1766,7 +1769,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
 <button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
 </div>
-<div id="search-results"></div>
+<div id="search-results" style="position:absolute;top:100%;left:0;right:0;z-index:50;"></div>
+</div>
 <!-- SPORT FAVS (marche + vélo) -->
 <div id="sport-favs-section" style="display:none;">
 <div id="walk-favs-quick-list"></div>
@@ -5017,11 +5021,11 @@ if (remaining < 0) {
   document.getElementById('kcal-left').textContent = remaining;
   if (kcalLabel) kcalLabel.textContent = 'kcal disponibles';
 }
-document.getElementById('stat-in').textContent = tIn;
-document.getElementById('stat-out').textContent = totalOut;
-document.getElementById('stat-bmr').textContent = bmr;
-document.getElementById('stat-sport').textContent = tSport;
-document.getElementById('stat-bilan').textContent = bilan >= 0 ? `+${bilan}` : bilan;
+document.getElementById('stat-in').textContent = fmtNum(tIn);
+document.getElementById('stat-out').textContent = fmtNum(totalOut);
+document.getElementById('stat-bmr').textContent = fmtNum(bmr);
+document.getElementById('stat-sport').textContent = fmtNum(tSport);
+document.getElementById('stat-bilan').textContent = bilan >= 0 ? `+${fmtNum(bilan)}` : fmtNum(bilan);
 document.getElementById('total-p').innerHTML = Math.round(tP) + ' <span class="unit-g">g</span>';
 const protWrap = document.getElementById('prot-goal-bar-wrap');
 const protPill = document.getElementById('prot-macro-pill');
@@ -6898,15 +6902,15 @@ function openRecipeAIModal() {
 </div>
 </div>
 <!-- FAB -->
-<div id="fab-menu" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;">
-<button class="fab-item" onclick="openModal('Petit-déjeuner');closeFab()"><span class="fab-item-icon">🥐</span><span class="fab-item-label">Petit-déjeuner</span></button>
-<button class="fab-item" onclick="openModal('Déjeuner');closeFab()"><span class="fab-item-icon">🍽️</span><span class="fab-item-label">Déjeuner</span></button>
-<button class="fab-item" onclick="openModal('Dîner');closeFab()"><span class="fab-item-icon">🌙</span><span class="fab-item-label">Dîner</span></button>
-<button class="fab-item" onclick="openModal('Snack');closeFab()"><span class="fab-item-icon">🍎</span><span class="fab-item-label">Snack</span></button>
-<button class="fab-item" onclick="openModal('Boissons');closeFab()"><span class="fab-item-icon">🥤</span><span class="fab-item-label">Boissons</span></button>
-<button class="fab-item" onclick="openModal('Sport');closeFab()"><span class="fab-item-icon">🏃</span><span class="fab-item-label">Sport</span></button>
+<div id="fab-menu" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;">
+<button class="fab-item" style="--fc:rgba(255,209,102,0.18);--fb:rgba(255,209,102,0.35);--ft:#FFD166;" onclick="openModal('Petit-déjeuner');closeFab()"><span class="fab-item-icon">🥐</span><span class="fab-item-label">Petit-déjeuner</span></button>
+<button class="fab-item" style="--fc:rgba(0,200,150,0.15);--fb:rgba(0,200,150,0.35);--ft:#00C896;" onclick="openModal('Déjeuner');closeFab()"><span class="fab-item-icon">🍽️</span><span class="fab-item-label">Déjeuner</span></button>
+<button class="fab-item" style="--fc:rgba(155,92,255,0.15);--fb:rgba(155,92,255,0.35);--ft:#B07FFF;" onclick="openModal('Dîner');closeFab()"><span class="fab-item-icon">🌙</span><span class="fab-item-label">Dîner</span></button>
+<button class="fab-item" style="--fc:rgba(255,140,66,0.15);--fb:rgba(255,140,66,0.35);--ft:#FF8C42;" onclick="openModal('Snack');closeFab()"><span class="fab-item-icon">🍎</span><span class="fab-item-label">Snack</span></button>
+<button class="fab-item" style="--fc:rgba(46,196,182,0.15);--fb:rgba(46,196,182,0.35);--ft:#2EC4B6;" onclick="openModal('Boissons');closeFab()"><span class="fab-item-icon">🥤</span><span class="fab-item-label">Boissons</span></button>
+<button class="fab-item" style="--fc:rgba(255,77,106,0.15);--fb:rgba(255,77,106,0.35);--ft:#FF4D6A;" onclick="openModal('Sport');closeFab()"><span class="fab-item-icon">🏃</span><span class="fab-item-label">Sport</span></button>
 </div>
+<div id="fab-overlay" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;"></div>
 <button id="fab-btn" onclick="toggleFab()" style="position:fixed;bottom:84px;right:20px;z-index:201;width:58px;height:58px;border-radius:50%;background:var(--gradient-main);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 6px 24px rgba(0,200,150,0.45);display:flex;align-items:center;justify-content:center;transition:all 0.25s;line-height:1;font-weight:300;">＋</button>
-<div id="fab-overlay" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);"></div>
 </body>
 </html>
