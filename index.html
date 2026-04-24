@@ -6304,6 +6304,18 @@ function addSwipeToClose(id, fn) {
  ['modal-edit-weight', closeEditWeightModal], ['modal-ai', closeAIModal]
 ].forEach(([id, fn]) => addSwipeToClose(id, fn));
 
+
+function niceScale(maxVal, steps = 4) {
+  // Returns array of nice round tick values from 0 to above maxVal
+  const raw = maxVal / steps;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
+  const step = nice * mag;
+  const ticks = [];
+  for (let v = 0; v <= maxVal * 1.05; v += step) ticks.push(Math.round(v));
+  return ticks;
+}
 function renderBilanChart(values, goal, range) {
   const wrap = document.getElementById('bilan-chart-wrap');
   wrap.style.display = 'block';
@@ -6370,10 +6382,11 @@ ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--mut
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="11" font-family="Plus Jakarta Sans" font-weight="700">${d.food}</text>` : ''}`;
   }).join('');
 
-  // Y axis
-  const yLabels = [0, Math.round(maxVal/2), maxVal].map(v => {
+  // Y axis — nice round ticks
+  const yTicks = niceScale(maxVal, 4);
+  const yLabels = yTicks.map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="Plus Jakarta Sans">${v}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="Plus Jakarta Sans">${v >= 1000 ? (v/1000).toFixed(v%1000===0?0:1)+'k' : v}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
@@ -6404,7 +6417,9 @@ function renderBilanNetChart(values, bmr) {
     return { label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }), bal, isEmpty: !full };
   });
   const n = chartData.length;
-  const maxAbs = Math.max(...chartData.map(d => Math.abs(d.bal)), 100);
+  const rawMaxAbs = Math.max(...chartData.map(d => Math.abs(d.bal)), 100);
+  const netTicks = niceScale(rawMaxAbs, 2);
+  const maxAbs = netTicks[netTicks.length - 1];
   const barW = Math.max(6, Math.floor((W - PL - PR) / n - 3));
   const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
   const midY = PT + (H - PT - PB) / 2;
