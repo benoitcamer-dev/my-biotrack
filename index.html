@@ -2695,8 +2695,10 @@ function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m -
 function formatDateFR(ds, opts = { weekday: 'short', day: 'numeric', month: 'short' }) { return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR', opts); }
 function round1(n) { return Math.round(n * 10) / 10; }
 function fmtNum(n) {
-  if (Math.abs(n) < 1000) return String(n);
-  return n.toLocaleString('fr-FR').replace(/ /g, ' ');
+  const abs = Math.abs(Math.round(n));
+  const sign = n < 0 ? '-' : '';
+  if (abs < 1000) return sign + String(abs);
+  return sign + abs.toLocaleString('fr-FR').replace(/[    ]/g, ' ');
 }
 function parseDesc(desc) {
 const m = String(desc).match(/^(.*?)\s*$(\d+(?:[.,]\d+)?)\s*(g|min|ml)\b[^)]*$$/i);
@@ -4469,6 +4471,12 @@ document.getElementById('modal-recipe-editor').classList.add('open');
 function closeRecipeEditor() {
   document.getElementById('modal-recipe-editor').classList.remove('open');
   _editingBuilderItemId = null;
+  editingRecipeId = null;
+  recipeBuilder = [];
+  document.getElementById('re-name').value = '';
+  document.getElementById('re-desc').value = '';
+  document.getElementById('re-search-results').style.display = 'none';
+  document.getElementById('re-search-results').innerHTML = '';
   const btn = document.querySelector('[onclick="addIngredientToRecipeBuilder()"]');
   if (btn) { btn.textContent = 'Ajouter cet ingrédient'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
 }
@@ -6595,8 +6603,9 @@ function renderBilanNetChart(values, bmr) {
   });
   const n = chartData.length;
   const rawMaxAbs = Math.max(...chartData.map(d => Math.abs(d.bal)), 100);
-  const netTicks = niceScale(rawMaxAbs, 2);
-  const maxAbs = netTicks[netTicks.length - 1];
+  const netTicks = niceScale(rawMaxAbs, 4);
+  // maxAbs doit toujours couvrir la valeur réelle, sinon les barres dépassent
+  const maxAbs = Math.max(netTicks[netTicks.length - 1], rawMaxAbs);
   const barW = Math.max(6, Math.floor((W - PL - PR) / n - 3));
   const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
   const midY = chartTop + chartH / 2;
