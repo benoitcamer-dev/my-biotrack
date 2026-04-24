@@ -4934,7 +4934,7 @@ document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((i
 }
 function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
-if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="12" font-family="Plus Jakarta Sans">Ajoute au moins 2 entrées.</text>'; return; }
+if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="13" font-family="Inter">Ajoute au moins 2 entrées.</text>'; return; }
 const allW = weightEntries.map(e => e.weight);
 const minW = 70, maxW = 100;
 const W = 400, H = 160, P = 32;
@@ -4949,7 +4949,7 @@ const gridLines = [];
 for (let w = minW; w <= maxW; w += 5) {
   const y = ys(w);
   gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
-  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="11" font-family="Plus Jakarta Sans">' + w + '</text>');
+  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="13" font-family="Inter">' + w + '</text>');
 }
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
@@ -4958,7 +4958,7 @@ const dots = weightEntries.map(function(e, i) {
   const anchor = cx > W - 80 ? 'end' : 'start';
   return '<g style="cursor:pointer">'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/>'
-    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 8) + '" text-anchor="' + anchor + '" fill="#f0f2f8" font-size="9" font-family="Plus Jakarta Sans" opacity="0" pointer-events="none">' + label + '</text>'
+    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 8) + '" text-anchor="' + anchor + '" fill="#f0f2f8" font-size="12" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent"'
     + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
     + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
@@ -4983,8 +4983,8 @@ svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop
   + '<polyline points="' + pts + '" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
   + '<line x1="' + tx0 + '" y1="' + ty0 + '" x2="' + tx1 + '" y2="' + ty1 + '" stroke="' + (slope < 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>'
   + dots
-  + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="9" font-family="Plus Jakarta Sans">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
-  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="#7a8098" font-size="9" font-family="Plus Jakarta Sans">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
+  + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
+  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
 }
 function renderWeightHistory() {
 const el = document.getElementById('weight-history-list');
@@ -6445,15 +6445,15 @@ function renderBilanChart(values, goal, range) {
     const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
     return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 10 : 12}" font-family="Plus Jakarta Sans">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="11" font-family="Plus Jakarta Sans" font-weight="700">${d.food}</text>` : ''}`;
+${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 12 : 14}" font-family="Plus Jakarta Sans">${d.label}</text>` : ''}
+${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.food}</text>` : ''}`;
   }).join('');
 
   // Y axis — nice round ticks
   const yTicks = niceScale(maxVal, 4);
   const yLabels = yTicks.map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="Plus Jakarta Sans">${v >= 1000 ? (v/1000).toFixed(v%1000===0?0:1)+'k' : v}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">${v >= 1000 ? (v/1000).toFixed(v%1000===0?0:1)+'k' : v}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
@@ -6463,7 +6463,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="11" font-family="Plus Jakarta Sans" opacity="0.8">objectif</text>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="13" font-family="Inter" opacity="0.8">objectif</text>
       ${bars}
     </svg>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
@@ -6476,7 +6476,7 @@ function renderBilanNetChart(values, bmr) {
   const wrap = document.getElementById('bilan-net-chart-wrap');
   if (!wrap) return;
   wrap.style.display = 'block';
-  const W = 360, H = 170, PL = 42, PR = 12, PT = 20, PB = 28;
+  const W = 360, H = 210, PL = 48, PR = 12, PT = 28, PB = 32;
   const fullDays = values.filter(([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'));
   const chartData = values.map(([date, v]) => {
     const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
@@ -6499,8 +6499,8 @@ function renderBilanNetChart(values, bmr) {
     const bh = d.isEmpty ? 2 : Math.max(2, Math.abs(ys(d.bal) - midY));
     const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
-<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="Plus Jakarta Sans">${d.label}</text>
-${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" text-anchor="middle" fill="${col}" font-size="11" font-family="Plus Jakarta Sans" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
+${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 4 : Math.min(barY + bh + 13, H - PB - 2)}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
   }).join('');
 
   // Compute total net for title
@@ -6511,7 +6511,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
   // Y axis labels
   const yLabels = [-maxAbs, 0, maxAbs].map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="Plus Jakarta Sans">${v > 0 ? '+' : ''}${Math.round(v)}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">${v > 0 ? '+' : ''}${Math.round(v)}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${v === 0 ? 'var(--muted)' : 'var(--border)'}" stroke-width="${v === 0 ? 1 : 0.5}" stroke-dasharray="${v === 0 ? '' : '3,3'}" opacity="${v === 0 ? 0.6 : 1}"/>`;
   }).join('');
 
@@ -6572,13 +6572,13 @@ function renderProtChart(values, protGoal, range) {
     const bh = Math.max(2, ys(0) - ys(d.prot));
     const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#ef4444';
     return `<rect x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 10 : 12}" font-family="Plus Jakarta Sans">${d.label}</text>
-${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="11" font-family="Plus Jakarta Sans" font-weight="700">${d.prot}</text>` : ''}`;
+<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 12 : 14}" font-family="Plus Jakarta Sans">${d.label}</text>
+${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.prot}</text>` : ''}`;
   }).join('');
 
   const yLabels = [0, Math.round(maxVal / 2), maxVal].map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="Plus Jakarta Sans">${v}</text>
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">${v}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
   }).join('');
 
@@ -6587,7 +6587,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="m
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="11" font-family="Plus Jakarta Sans" opacity="0.8">objectif ${protGoal}g</text>
+      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="13" font-family="Inter" opacity="0.8">objectif ${protGoal}g</text>
       ${bars}
     </svg>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
