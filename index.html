@@ -4340,7 +4340,7 @@ if (!filtered.length) {
 el.innerHTML = filtered.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
 <div class="recipe-name">${hl(r.name, raw)}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
-<div class="recipe-items">${[...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr')).slice(0, 4).map(i => `• ${i.desc} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
+<div class="recipe-items">${[...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr')).slice(0, 4).map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
 <div class="recipe-actions">
 <button class="recipe-btn primary" onclick="event.stopPropagation();${fromAdd ? `addRecipeToCurrentMeal('${r.id}')` : `appendCategoryToRecipe('${r.id}')`}">Choisir</button>
 <button class="recipe-btn danger" onclick="event.stopPropagation();deleteRecipe('${r.id}')">Supprimer</button>
@@ -4476,16 +4476,20 @@ function renderRecipeBuilder() {
 const el = document.getElementById('recipe-builder-list');
 if (!recipeBuilder.length) { el.innerHTML = `<div class="recipe-card"><div class="recipe-meta">Aucun ingrédient.</div></div>`; return; }
 const t = recipeTotals(recipeBuilder);
-el.innerHTML = `${recipeBuilder.map(i => `<div class="builder-item">
+el.innerHTML = `${recipeBuilder.map(i => {
+  // Strip qty from desc to avoid double display e.g. "Ail (15g)"
+  const cleanDesc = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl|min)\)/gi, '').trim();
+  return `<div class="builder-item">
 <div class="builder-main">
-<div class="builder-title">${i.desc}</div>
-<div class="builder-sub">${i.qty}&nbsp;g/ml · ${i.val} kcal · ${round1(i.prot)}&nbsp;g P · ${round1(i.gluc)}&nbsp;g G · ${round1(i.lip)}&nbsp;g L</div>
+<div class="builder-title">${cleanDesc} <span style="color:var(--muted);font-size:12px;font-weight:500;">${i.qty}&nbsp;g</span></div>
+<div class="builder-sub">${i.val} kcal · ${round1(i.prot)}&nbsp;g P · ${round1(i.gluc)}&nbsp;g G · ${round1(i.lip)}&nbsp;g L</div>
 </div>
 <div class="food-item-actions">
 <button class="food-btn" onclick="editRecipeIngredient(${i.id})">✎</button>
 <button class="food-btn danger" onclick="removeBuilderItem(${i.id})">✕</button>
 </div>
-</div>`).join('')}
+</div>`;
+}).join('')}
 <div class="recipe-card">
 <div class="recipe-name">Total</div>
 <div class="recipe-items">${Math.round(t.kcal)} kcal · ${round1(t.prot)}&nbsp;g P · ${round1(t.gluc)}&nbsp;g G · ${round1(t.lip)}&nbsp;g L</div>
@@ -4599,7 +4603,7 @@ const moreCount = r.items.length - displayItems.length;
 return `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
 <div class="recipe-name">${hl(r.name, raw)}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
-<div class="recipe-items">${displayItems.map(i => `• ${i.desc} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`).join('<br>')}${moreCount > 0 ? `<br>• …+${moreCount}` : ''}</div>
+<div class="recipe-items">${displayItems.map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${moreCount > 0 ? `<br>• …+${moreCount}` : ''}</div>
 <div class="recipe-actions">
 <button class="recipe-btn primary" onclick="event.stopPropagation();openRecipeDateMealModal('${r.id}')">Ajouter</button>
 <button class="recipe-btn danger" onclick="event.stopPropagation();deleteRecipe('${r.id}')">Supprimer</button>
