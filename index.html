@@ -4887,7 +4887,7 @@ document.getElementById('bilan-summary').innerHTML = `
     const isD = netTotal < 0;
     return `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net période</div>
-      <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${netTotal} kcal</div>
+      <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${fmtNum(netTotal)} kcal</div>
       <div style="font-size:12px;color:${isD ? 'var(--green)' : 'var(--danger)'};">≈ ${kg} kg ${isD ? 'perdu' : 'pris'}</div>
     </div>`;
   })()}
@@ -6550,7 +6550,7 @@ function renderBilanChart(values, goal, range) {
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
     return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
 ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 12 : 14}" font-family="Plus Jakarta Sans">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.food}</text>` : ''}`;
+${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${fmtNum(d.food)}</text>` : ''}`;
   }).join('');
 
   // Y axis — nice round ticks
@@ -6616,7 +6616,7 @@ function renderBilanNetChart(values, bmr) {
     const dayY = H - PB - 4;
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
 <text x="${cx}" y="${dayY}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
-${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" font-size="11" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" font-size="11" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${fmtNum(d.bal)}</text>` : ''}`;
   }).join('');
 
   // Compute total net for title
@@ -6644,7 +6644,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" f
   wrap.innerHTML = `
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net / jour</div>
-      <div style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</div>
+      <div style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${fmtNum(Math.abs(finalCumul))} kcal</div>
       <div style="font-size:13px;font-weight:700;color:${lineCol};margin-top:2px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'de graisse perdue' : 'de graisse prise'}</div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible;">
