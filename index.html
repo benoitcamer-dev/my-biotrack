@@ -6034,6 +6034,13 @@ async function askAI() {
   const customCtx = customFoods.length > 0
     ? 'Aliments perso : ' + customFoods.map(f => `"${f.name}" (${f.kcal_100}kcal/100g)`).join(' | ')
     : '';
+  const walkFavCtx = walkFavorites.length > 0
+    ? 'Favoris marche : ' + walkFavorites.map(f => `"${f.name}" (${f.distance}km, ${f.duration}min, ${f.kcal}kcal)`).join(' | ')
+    : '';
+  const bikeFavCtx = bikeFavorites.length > 0
+    ? 'Favoris velo : ' + bikeFavorites.map(f => `"${f.name}" (${f.speed}km/h, ${f.duration}min, ${f.kcal}kcal)`).join(' | ')
+    : '';
+  const sportFavCtx = [walkFavCtx, bikeFavCtx].filter(Boolean).join(' | ');
   const targetCat = document.getElementById('ai-target-cat')?.value || aiCurrentCat || '';
   const targetDate = document.getElementById('ai-target-date')?.value || journalDateStr();
   const catHint = targetCat ? `Categorie cible : ${targetCat}.` : 'Deduis la categorie parmi : Petit-dejeuner, Dejeuner, Diner, Snack, Boissons, Sport.';
@@ -6047,6 +6054,7 @@ async function askAI() {
   const isGlobal = !aiCurrentCat && document.getElementById('ai-target-cat')?.value === '';
   const sysP = (!isGlobal && isSport)
     ? `Tu es un assistant sport et nutrition. ${userProfile} ${catHint}
+${sportFavCtx ? 'Activites favorites enregistrees de l utilisateur : ' + sportFavCtx + '. Si l utilisateur dit utiliser un favori ou mentionne le nom d un favori, utilise exactement ses valeurs (duree, kcal).' : ''}
 Utilise ce profil pour calculer des calories selon poids/taille/sexe.
 Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
 Tu connais la geographie de Lyon. Sauf mention contraire, tous les lieux sont a Lyon. Tu peux estimer les distances entre lieux lyonnais connus (quartiers, monuments, restaurants connus).
@@ -6078,6 +6086,7 @@ ${qLine}`
 ${recipesCtx ? recipesCtx + '.' : ''}
 ${customCtx ? customCtx + '.' : ''}
 Si l utilisateur mentionne une recette enregistree, reponds avec : {"type":"recipe","recipe_name":"nom exact","qty_g":POIDS_TOTAL,"note":"detail"}
+${sportFavCtx ? 'Activites favorites enregistrees : ' + sportFavCtx + '. Si l utilisateur mentionne un favori ou son nom, utilise exactement ses valeurs.' : ''}
 Si l utilisateur parle d une activite physique ou sportive (velo, marche, course, natation, musculation...) :
 Calcul kcal/heure selon poids ${userWeight}kg : velo leger=poids*4, velo modere=poids*6, velo soutenu=poids*8, velo intense=poids*10, course lente=poids*7, course rapide=poids*10, natation=poids*7, muscu=poids*4, autre=poids*5.
 Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kcal_per_hour":KCAL_H_CALCULE,"total_kcal":TOTAL,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
