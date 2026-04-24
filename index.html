@@ -1125,6 +1125,13 @@ justify-content: center;
 padding: 32px;
 }
 #auth-screen.hidden { display: none !important; pointer-events: none !important; }
+/* Date picker natif — thème sombre */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+  opacity: 0.6;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -1787,6 +1794,13 @@ margin-left: 4px;
 <div class="modal-title-row">
 <div class="modal-title" id="modal-title">Ajouter</div>
 <button class="modal-close" onclick="closeModal()">×</button>
+</div>
+<div style="margin-bottom:10px;">
+  <input type="date" id="in-entry-date"
+    style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--muted);font-family:'Inter',sans-serif;cursor:pointer;touch-action:manipulation;outline:none;width:auto;"
+    oninput="this.style.color='var(--text)'"
+    onfocus="this.style.borderColor='rgba(124,111,255,0.4)'"
+    onblur="this.style.borderColor='var(--border)'">
 </div>
 <div style="position:relative;margin-bottom:6px;">
 <div class="search-row" style="margin-bottom:0;">
@@ -3377,6 +3391,8 @@ if (isSport) showAllSports();
 else if (isDrink) showDrinkSuggestions();
 else showCustomFoodsSuggestions();
 recalc();
+document.getElementById('in-entry-date').value = journalDateStr();
+document.getElementById('in-entry-date').style.color = 'var(--muted)';
 document.getElementById('modal-add').classList.add('open');
 setTimeout(() => document.getElementById('in-desc').focus(), 180);
 }
@@ -4282,7 +4298,7 @@ gluc: Math.round(g * factor * 10) / 10,
 lip: Math.round(l * factor * 10) / 10,
 qty: isSport ? null : q,
 kcal_100: isSport ? null : parseFloat(document.getElementById('in-kcal').value) || null,
-date: journalDateStr()
+date: document.getElementById('in-entry-date').value || journalDateStr()
 };
 let error = null;
 if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
