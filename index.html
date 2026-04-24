@@ -1613,7 +1613,7 @@ margin-left: 4px;
 <div class="header-date" id="header-date"></div>
 </div>
 <div class="header-btns">
-<button class="btn-icon" onclick="location.reload(true);" id="refresh-btn" style="font-size:15px;padding:8px 10px;" title="Actualiser">🔄</button>
+<button onclick="location.reload(true);" style="background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.25);color:var(--accent);border-radius:12px;padding:9px 12px;font-size:16px;cursor:pointer;" title="Actualiser">🔄</button>
 <button class="btn-icon" onclick="toggleTheme()" id="theme-btn" style="font-size:16px;padding:8px 10px;">🌙</button>
 <button class="btn-icon" onclick="logout()" style="font-size:13px;">↪</button>
 </div>
@@ -4080,12 +4080,14 @@ const rawD = entry.desc || '';
 const qtyMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*(min|g|ml)/i);
 const cleanLabel = rawD.replace(/\s*\(.*$/, '').trim();
 let qty;
-if (qtyMatch) {
+// Priority: stored qty column > parsed from desc > default_qty from base > fallback
+if (entry.qty != null) {
+  qty = entry.qty;
+} else if (qtyMatch) {
   qty = parseFloat(qtyMatch[1]);
 } else if (isSport) {
   qty = 30;
 } else {
-  // Try to find default_qty from custom foods by name
   const matchedFood = customFoods.find(f => f.name.toLowerCase() === cleanLabel.toLowerCase());
   qty = matchedFood?.default_qty || 100;
 }
@@ -4229,6 +4231,8 @@ val: Math.round(val),
 prot: Math.round(p * factor * 10) / 10,
 gluc: Math.round(g * factor * 10) / 10,
 lip: Math.round(l * factor * 10) / 10,
+qty: isSport ? null : q,
+kcal_100: isSport ? null : parseFloat(document.getElementById('in-kcal').value) || null,
 date: journalDateStr()
 };
 let error = null;
@@ -5575,6 +5579,29 @@ date: dateToStr(selectedDate)
 loadData();
 }
 }
+async function migrateEntryQty() {
+  const flag = 'bt_qty_migrated_v1';
+  if (localStorage.getItem(flag)) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  // Fetch entries without qty
+  const { data: rows } = await sb.from('entries').select('id,desc,val,kcal_100,qty').eq('user_id', user.id).is('qty', null).limit(500);
+  if (!rows || !rows.length) { localStorage.setItem(flag, '1'); return; }
+  let updated = 0;
+  for (const row of rows) {
+    const m = (row.desc || '').match(/(\d+(?:[.,]\d+)?)\s*(min|g|ml|cl)/i);
+    if (m) {
+      const qty = parseFloat(m[1].replace(',', '.'));
+      const unit = m[2].toLowerCase();
+      const kcal_100 = (unit !== 'min' && qty > 0) ? Math.round(row.val / (qty / 100) * 10) / 10 : null;
+      await sb.from('entries').update({ qty, kcal_100 }).eq('id', row.id);
+      updated++;
+    }
+  }
+  console.log(`Migrated ${updated} entries with qty`);
+  localStorage.setItem(flag, '1');
+}
+
 async function init() {
 document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 loadSettingsLocal();
@@ -5586,6 +5613,7 @@ document.getElementById('auth-screen').classList.add('hidden');
 await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loadWeightEntries()]);
     await importLocalFoodDBIfNeeded();
 updateKnownPlaces();
+migrateEntryQty().catch(e => console.warn('Migration:', e));
 // Restore saved date or use today
 const savedDate = localStorage.getItem('bt_journal_date');
 if (savedDate) { try { journalDate = strToDate(savedDate); } catch(e) { journalDate = new Date(); journalDate.setHours(0,0,0,0); } }
