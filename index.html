@@ -3507,15 +3507,15 @@ async function searchFood(v, target = 'main') {
 const isR = target === 'recipe', div = isR ? document.getElementById('re-search-results') : document.getElementById('search-results');
 div.style.display = 'block';
 const token = ++_searchToken; // unique token for this search
-const lv = v.toLowerCase();
+const lv = normalize(v);
 // ── Résultats locaux immédiats ───────────────────────────────────────────────
-const cH = customFoods.filter(f => f.name.toLowerCase().includes(lv)).map(f => buildCustomItem(f, isR)).join('');
-const lH = DRINK_DB.filter(a => a.name.toLowerCase().includes(lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
+const cH = customFoods.filter(f => normalize(f.name).includes(lv)).map(f => buildCustomItem(f, isR)).join('');
+const lH = DRINK_DB.filter(a => normalize(a.name).includes(lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
-const localMatches = LOCAL_FOOD_DB.filter(a => a.name.toLowerCase().includes(lv));
+const localMatches = LOCAL_FOOD_DB.filter(a => normalize(a.name).includes(lv));
 window._localDB = localMatches;
 const localH = localMatches.map((a, idx) => {
 const clickFn = isR ? `_pickLocalFood(${idx},true)` : `_pickLocalFood(${idx},false)`;
