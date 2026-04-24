@@ -332,19 +332,20 @@ margin-bottom: 3px;
 }
 .macro-pill .val {
 font-family: 'Syne', sans-serif;
-font-size: 14px;
-font-weight: 700;
+font-size: 18px;
+font-weight: 800;
+letter-spacing: -0.5px;
 }
 .macro-pill.prot .label { color: var(--accent); }
 .macro-pill.gluc .label { color: var(--orange); }
 .macro-pill.lip .label { color: var(--pink); }
 .section-label {
-font-size: 10px;
+font-size: 11px;
 font-weight: 700;
 color: var(--muted);
 text-transform: uppercase;
-letter-spacing: 2px;
-margin-bottom: 10px;
+letter-spacing: 2.5px;
+margin-bottom: 12px;
 padding-left: 2px;
 }
 .helper-line {
@@ -354,39 +355,58 @@ margin: -4px 0 10px 2px;
 }
 .daily-section { margin-bottom: 8px; }
 #daily-list { display: flex; flex-direction: column; gap: 12px; }
-.entry-group { margin-bottom: 2px; }
+.entry-group[data-cat="Petit-déjeuner"] .entry-group-title { color: var(--gold); }
+.entry-group[data-cat="Déjeuner"] .entry-group-title { color: #7C6FFF; }
+.entry-group[data-cat="Dîner"] .entry-group-title { color: #9B5CFF; }
+.entry-group[data-cat="Snack"] .entry-group-title { color: var(--orange); }
+.entry-group[data-cat="Boissons"] .entry-group-title { color: #2EC4B6; }
+.entry-group[data-cat="Sport"] .entry-group-title { color: var(--green); }
+.entry-group { margin-bottom: 4px; }
 .entry-group-header {
 display: flex;
 justify-content: space-between;
 align-items: center;
 gap: 6px;
-margin-bottom: 7px;
+margin-bottom: 4px;
 padding: 0 2px;
+flex-wrap: nowrap;
 }
-.entry-group-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.entry-group-left { 
+display: flex; align-items: center; gap: 6px; 
+min-width: 0; flex: 1; overflow: hidden;
+}
 .entry-group-title {
 font-family: 'Syne', sans-serif;
 font-size: 15px;
 font-weight: 700;
 color: var(--text);
 cursor: pointer;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
-.entry-group-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; }
-.entry-group-kcal-row { text-align: right; padding: 2px 2px 6px; }
-.meal-save-btn.icon-only { padding: 7px 10px; min-width: 36px; }
+.entry-group-actions { 
+display: flex; align-items: center; gap: 5px; 
+flex-wrap: nowrap; justify-content: flex-end;
+flex-shrink: 0;
+}
+.entry-group-kcal-row { text-align: right; padding: 1px 2px 5px; }
+.meal-save-btn.icon-only { padding: 6px 9px; min-width: 34px; font-size: 12px; }
 .entry-group-total {
 font-family: 'Syne', sans-serif;
 font-size: 15px;
 font-weight: 800;
 color: var(--accent);
+white-space: nowrap;
 }
 .entry-group-total.sport { color: var(--orange); }
 .entry-add-btn {
 border: 1px solid var(--border);
-background: var(--surface2);
+background: rgba(124,111,255,0.1);
 color: var(--text);
+border-color: rgba(124,111,255,0.2);
 border-radius: 999px;
-padding: 8px 14px;
+padding: 7px 12px;
 font-size: 12px;
 font-weight: 700;
 cursor: pointer;
@@ -4984,7 +5004,7 @@ const mP = items.filter(e => e.type==='food').reduce((s,e) => s+(e.prot||0), 0);
 const mG = items.filter(e => e.type==='food').reduce((s,e) => s+(e.gluc||0), 0);
 const mL = items.filter(e => e.type==='food').reduce((s,e) => s+(e.lip||0), 0);
 const hasMacros = !isSport && items.filter(e=>e.type==='food').length > 0;
-html += `<div class="entry-group">
+html += `<div class="entry-group" data-cat="${cat}">
 <div class="entry-group-header">
 <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span>${!isSport && items.length ? `<button onclick="clearMealEntries('${cat}')" title="Tout supprimer" style="background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 6px 0 2px;">🗑️</button>` : ''}</div>
 <div class="entry-group-actions">
