@@ -3405,12 +3405,15 @@ function _pickCustomFood(el) {
 function buildCustomItem(f, isRecipe) {
 const isFav = favoriteIds.includes(f.id);
 let fn;
+const unitBadge = (f.unit_label && f.unit_label !== 'g') ? ` · ${f.default_qty} ${unitLabelFull(f.unit_label)}` : '';
 if (isRecipe) {
-  fn = `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100},${f.default_qty||100})`;
+  return `<div class="result-item" onclick="event.stopPropagation();fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100},${f.default_qty||100})">
+<div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
+<div class="result-name">${f.name}</div>
+<div class="result-kcal">${f.kcal_100} kcal/100g${unitBadge}</div>
+</div>`;
 } else {
-  // Stocker les données en data-attributes pour éviter les problèmes de guillemets dans onclick
   const dataAttrs = `data-name="${f.name.replace(/"/g,'&quot;')}" data-k="${f.kcal_100}" data-pr="${f.prot_100}" data-gl="${f.gluc_100}" data-lp="${f.lip_100}" data-unit="${f.unit_label||'g'}" data-unitg="${f.unit_g||1}" data-dq="${f.default_qty||100}"`;
-  const unitBadge = (f.unit_label && f.unit_label !== 'g') ? ` · ${f.default_qty} ${unitLabelFull(f.unit_label)}` : '';
   return `<div class="result-item" ${dataAttrs} onclick="event.stopPropagation();_pickCustomFood(this)">
 <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
 <div class="result-name">${f.name}</div>
@@ -6564,11 +6567,10 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
-      <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#ef4444" font-size="13" font-family="Inter" opacity="0.8">objectif</text>
       ${bars}
     </svg>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
-      <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;">
+      <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span><span style="color:#ef4444;margin-left:auto;">— objectif : ${goal} kcal</span>
     </div>`;
 }
 
@@ -6577,7 +6579,7 @@ function renderBilanNetChart(values, bmr) {
   const wrap = document.getElementById('bilan-net-chart-wrap');
   if (!wrap) return;
   wrap.style.display = 'block';
-  const W = 360, H = 210, PL = 48, PR = 12, PT = 28, PB = 32;
+  const W = 360, H = 240, PL = 52, PR = 12, PT = 32, PB = 36;
   const fullDays = values.filter(([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'));
   const chartData = values.map(([date, v]) => {
     const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
@@ -6601,7 +6603,7 @@ function renderBilanNetChart(values, bmr) {
     const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
 <text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
-${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 4 : Math.min(barY + bh + 13, H - PB - 2)}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 6 : barY + bh + 14}" text-anchor="middle" fill="${col}" font-size="12" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
   }).join('');
 
   // Compute total net for title
@@ -6609,11 +6611,21 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 4 : Math.min(barY + bh 
   const lineCol = finalCumul <= 0 ? '#3dd68c' : '#ef4444';
   const cumulLine = '';
 
-  // Y axis labels
-  const yLabels = [-maxAbs, 0, maxAbs].map(v => {
+  // Y axis labels — graduation fine avec ~5 niveaux
+  const netTickStep = niceScale(maxAbs, 2)[1] || Math.round(maxAbs / 2 / 100) * 100 || 100;
+  const netTickValues = [];
+  for (let v = -maxAbs; v <= maxAbs + 1; v += netTickStep) {
+    netTickValues.push(Math.round(v / netTickStep) * netTickStep);
+  }
+  // Toujours inclure 0
+  if (!netTickValues.includes(0)) netTickValues.push(0);
+  netTickValues.sort((a,b) => a - b);
+  const yLabels = netTickValues.map(v => {
     const y = ys(v);
-    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">${v > 0 ? '+' : ''}${Math.round(v)}</text>
-<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${v === 0 ? 'var(--muted)' : 'var(--border)'}" stroke-width="${v === 0 ? 1 : 0.5}" stroke-dasharray="${v === 0 ? '' : '3,3'}" opacity="${v === 0 ? 0.6 : 1}"/>`;
+    const isZero = v === 0;
+    const lbl = v === 0 ? '0' : (v > 0 ? '+' : '') + Math.round(v);
+    return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="${isZero ? 'var(--text)' : 'var(--muted)'}" font-size="11" font-family="Inter" font-weight="${isZero ? 700 : 400}">${lbl}</text>
+<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isZero ? 'rgba(255,255,255,0.25)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}" opacity="1"/>`;
   }).join('');
 
   wrap.innerHTML = `
@@ -6622,7 +6634,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 4 : Math.min(barY + bh 
       <div style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</div>
       <div style="font-size:13px;font-weight:700;color:${lineCol};margin-top:2px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'de graisse perdue' : 'de graisse prise'}</div>
     </div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible;">
       ${yLabels}
       ${bars}
       ${cumulLine}
