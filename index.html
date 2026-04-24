@@ -5578,7 +5578,10 @@ updateJournalDateUI();
 await loadData();
 if (document.getElementById('modal-recipes').classList.contains('open')) renderRecipesPage();
 document.getElementById('loading-screen').classList.add('hidden');
-// ── Realtime sync cross-appareils ──────────────────────────────────
+}
+} catch (e) { console.error('Init:', e); document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
+// ── Realtime sync cross-appareils (outside try/catch) ──────────────
+try {
 const { data: { user } } = await sb.auth.getUser();
 if (user) {
 sb.channel('realtime-sync')
@@ -5601,8 +5604,7 @@ sb.channel('realtime-sync')
   })
   .subscribe();
 }
-}
-} catch (e) { console.error('Init:', e); document.getElementById('loading-screen').classList.add('hidden'); document.getElementById('auth-screen').classList.remove('hidden'); }
+} catch(e) { console.warn('Realtime:', e); }
 }
 let _lastPushTs = null;
 document.getElementById('in-desc').addEventListener('keydown', function (e) {
