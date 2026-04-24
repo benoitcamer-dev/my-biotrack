@@ -1613,6 +1613,7 @@ margin-left: 4px;
 <div class="header-date" id="header-date"></div>
 </div>
 <div class="header-btns">
+<button class="btn-icon" onclick="location.reload(true);" id="refresh-btn" style="font-size:15px;padding:8px 10px;" title="Actualiser">🔄</button>
 <button class="btn-icon" onclick="toggleTheme()" id="theme-btn" style="font-size:16px;padding:8px 10px;">🌙</button>
 <button class="btn-icon" onclick="logout()" style="font-size:13px;">↪</button>
 </div>
@@ -2073,6 +2074,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div style="position:relative;margin-bottom:8px;">
 <input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="renderAlimentsList()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:32px;">
 <button onclick="document.getElementById('aliments-search').value='';renderAlimentsList();" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;" id="aliments-search-clear">✕</button>
+<div id="aliments-search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;display:none;background:var(--surface);border:1px solid var(--border2);border-radius:16px;max-height:260px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.5);"></div>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;" id="aliments-actions">
 <button class="btn-primary" style="flex:1;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
@@ -2945,6 +2947,7 @@ function normalize(str) {
 }
 function renderAlimentsList() {
 const el = document.getElementById('aliments-list');
+const dropEl = document.getElementById('aliments-search-results');
 const searchInp = document.getElementById('aliments-search');
 const clearBtn = document.getElementById('aliments-search-clear');
 const q = normalize(searchInp ? searchInp.value.trim() : '');
@@ -2973,7 +2976,14 @@ if (favFoods.length && otherFoods.length && !q) {
 } else {
   html = foods.map(f => renderAlimentItem(f, favoriteIds.includes(f.id))).join('');
 }
-el.innerHTML = html;
+if (q && dropEl) {
+  dropEl.style.display = 'block';
+  dropEl.innerHTML = html;
+  el.innerHTML = '';
+} else {
+  if (dropEl) dropEl.style.display = 'none';
+  el.innerHTML = html;
+}
 }
 
 function renderAlimentItem(f, isFav) {
