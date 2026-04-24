@@ -345,8 +345,9 @@ margin-bottom: 3px;
 }
 .stat-box .s-val {
 font-family: 'Inter', sans-serif;
-font-size: 19px;
-font-weight: 700;
+font-size: 22px;
+font-weight: 800;
+letter-spacing: -0.5px;
 }
 .stat-box.ingere .s-val { color: var(--text); }
 .stat-box.depense .s-val { color: var(--green); }
@@ -532,8 +533,8 @@ gap: 8px;
 margin-bottom: 12px;
 }
 .search-input,.text-input,.setting-row input,.setting-row select {
-background: rgba(255,255,255,0.04);
-border: 1px solid rgba(255,255,255,0.08);
+background: rgba(255,255,255,0.06);
+border: 1px solid rgba(255,255,255,0.1);
 border-radius: 14px;
 padding: 13px 16px;
 font-size: 15px;
@@ -565,8 +566,8 @@ transition: all 0.2s;
 .search-btn:active { transform: scale(0.96); }
 .recipes-list,.summary-cards,.daily-week-list { display: flex; flex-direction: column; gap: 10px; }
 .recipe-card,.day-line,.recipe-form,.recipe-link-card,.builder-item,.nav-card {
-background: rgba(255,255,255,0.02);
-border: 1px solid rgba(255,255,255,0.05);
+background: rgba(255,255,255,0.03);
+border: 1px solid rgba(255,255,255,0.07);
 border-radius: 18px;
 padding: 13px;
 transition: border-color 0.2s;
@@ -904,8 +905,8 @@ gap: 9px;
 margin-bottom: 10px;
 }
 .input-box {
-background: rgba(255,255,255,0.03);
-border: 1px solid rgba(255,255,255,0.07);
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
 border-radius: 16px;
 padding: 12px 14px;
 transition: border-color 0.2s, box-shadow 0.2s;
@@ -943,8 +944,8 @@ gap: 7px;
 margin-bottom: 14px;
 }
 .macro-input {
-background: rgba(255,255,255,0.03);
-border: 1px solid rgba(255,255,255,0.07);
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
 border-radius: 16px;
 padding: 10px 10px;
 text-align: center;
@@ -2917,11 +2918,10 @@ await loadCustomFoods(); closeCustomFoodModal();
 if (document.getElementById('modal-aliments').classList.contains('open')) renderAlimentsList();
 else if (sid && !editingCustomFoodId) { const f = customFoods.find(f => f.id === sid); if (f) fillFoodWithUnit(f); }
 }
-function openAlimentsModal(tab = 'favs') {
+function openAlimentsModal(tab = 'all') {
   currentAlimentsTab = tab;
   const inp = document.getElementById('aliments-search');
   if (inp) inp.value = '';
-  renderAlimentsTabBtns();
   renderAlimentsList();
   document.getElementById('modal-aliments').classList.add('open');
 }
@@ -2930,14 +2930,9 @@ function switchAlimentsTab(t) {
   currentAlimentsTab = t;
   const inp = document.getElementById('aliments-search');
   if (inp) inp.value = '';
-  renderAlimentsTabBtns();
   renderAlimentsList();
 }
-function renderAlimentsTabBtns() {
-  document.getElementById('atab-favs').classList.toggle('active', currentAlimentsTab === 'favs');
-  const baseTab = document.getElementById('atab-base');
-  if (baseTab) baseTab.classList.toggle('active', currentAlimentsTab === 'base');
-}
+function renderAlimentsTabBtns() { /* tabs removed */ }
 function normalize(str) {
   return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
