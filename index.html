@@ -6579,7 +6579,14 @@ function renderBilanNetChart(values, bmr) {
   const wrap = document.getElementById('bilan-net-chart-wrap');
   if (!wrap) return;
   wrap.style.display = 'block';
-  const W = 360, H = 240, PL = 52, PR = 12, PT = 32, PB = 36;
+  // PT/PB larges pour que les étiquettes ne débordent jamais
+  const W = 360, H = 260, PL = 52, PR = 12, PT = 22, PB = 22;
+  const LABEL_H = 16; // hauteur réservée pour l'étiquette de valeur
+  const DAY_H  = 18; // hauteur réservée pour le label du jour en bas
+  const chartTop = PT + LABEL_H;
+  const chartBot = H - PB - DAY_H - LABEL_H;
+  const chartH = chartBot - chartTop;
+
   const fullDays = values.filter(([,v]) => v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'));
   const chartData = values.map(([date, v]) => {
     const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
@@ -6592,8 +6599,8 @@ function renderBilanNetChart(values, bmr) {
   const maxAbs = netTicks[netTicks.length - 1];
   const barW = Math.max(6, Math.floor((W - PL - PR) / n - 3));
   const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
-  const midY = PT + (H - PT - PB) / 2;
-  const ys = (v) => midY - (v / maxAbs) * ((H - PT - PB) / 2);
+  const midY = chartTop + chartH / 2;
+  const ys = (v) => midY - (v / maxAbs) * (chartH / 2);
 
   // Bars
   const bars = chartData.map((d, i) => {
@@ -6601,9 +6608,15 @@ function renderBilanNetChart(values, bmr) {
     const col = d.isEmpty ? 'var(--border2)' : d.bal >= 0 ? '#ef4444' : '#3dd68c';
     const bh = d.isEmpty ? 2 : Math.max(2, Math.abs(ys(d.bal) - midY));
     const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
+    // Étiquette valeur : au-dessus pour surplus, en-dessous pour déficit, clampée dans le SVG
+    const lblY = d.bal >= 0
+      ? Math.max(chartTop + 12, barY - 4)
+      : Math.min(chartBot + LABEL_H - 2, barY + bh + 13);
+    // Label jour : juste au-dessus du bas du SVG
+    const dayY = H - PB - 4;
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
-<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
-${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 6 : barY + bh + 14}" text-anchor="middle" fill="${col}" font-size="12" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
+<text x="${cx}" y="${dayY}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
+${!d.isEmpty ? `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" font-size="11" font-family="Inter" font-weight="700">${d.bal > 0 ? '+' : ''}${d.bal}</text>` : ''}`;
   }).join('');
 
   // Compute total net for title
