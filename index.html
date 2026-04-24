@@ -2423,7 +2423,22 @@ Oui si nécessaire
 </label>
 </div>
 </div>
-<div id="ai-chat-log" style="max-height:200px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
+  <div style="display:flex;gap:6px;flex:1;min-width:0;">
+    <select id="ai-target-cat" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 8px;font-size:11px;color:var(--text);font-family:'Inter',sans-serif;outline:none;flex:1;min-width:0;">
+      <option value="">🍽️ Auto</option>
+      <option value="Petit-déjeuner">🥐 Petit-déj.</option>
+      <option value="Déjeuner">🍽️ Déjeuner</option>
+      <option value="Dîner">🌙 Dîner</option>
+      <option value="Snack">🍎 Snack</option>
+      <option value="Boissons">🥤 Boissons</option>
+      <option value="Sport">🏃 Sport</option>
+    </select>
+    <input type="date" id="ai-target-date" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 8px;font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;outline:none;flex:1;min-width:0;" oninput="this.style.color='var(--text)'">
+  </div>
+  <button id="ai-voice-response-btn" onclick="toggleAIVoiceResponse()" title="Réponse vocale" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:15px;cursor:pointer;color:var(--muted);transition:all 0.2s;flex-shrink:0;touch-action:manipulation;">🔇</button>
+</div>
+<div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
 <div style="display:flex;gap:7px;margin-bottom:10px;">
 <input id="ai-input" class="search-input" type="text" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askAI();}">
 <button class="search-btn" onclick="askAI()">→</button>
@@ -2449,7 +2464,7 @@ Oui si nécessaire
 <div class="sub" id="ai-calc-sub">estimé par l'IA</div>
 </div>
 </div>
-<button class="btn-primary" id="ai-add-btn" onclick="addAIEntry()">✓ Ajouter au journal</button>
+<button class="btn-primary" id="ai-add-btn" onclick="addAIEntry()">✓ Confirmer et ajouter</button>
 <div style="display:flex;gap:7px;margin-top:6px;">
 <button class="btn-primary" id="ai-save-fav-btn" onclick="saveAIEntryAsFavorite()" style="flex:1;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);">⭐ Favori</button>
 <button class="btn-primary" id="ai-save-base-btn" onclick="saveAIEntryToBase()" style="flex:1;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);">📦 Base</button>
@@ -5897,8 +5912,15 @@ let aiCurrentCat = "";
 let _aiLastSportData = null; // stores last sport AI result for favorite saving
 let _aiTargetBase = false; // true when AI opened from base tab
 
+function openAIModalGlobal() {
+  aiCurrentCat = '';
+  _aiGlobalMode = true;
+  _openAIModalCore();
+}
+
 function openAIModal() {
   aiCurrentCat = currentCat;
+  _aiGlobalMode = false;
   aiChatHistory = [];
   document.getElementById('ai-chat-log').innerHTML = '';
   document.getElementById('ai-input').value = '';
@@ -5909,8 +5931,52 @@ function openAIModal() {
   document.getElementById('ai-label-qty').textContent = isSport ? 'Durée (min)' : 'Quantité (g)';
   document.getElementById('ai-label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
   document.getElementById('ai-macro-fields').style.display = isSport ? 'none' : 'grid';
+  // Pré-remplir date et catégorie
+  const dEl = document.getElementById('ai-target-date');
+  if (dEl) { dEl.value = journalDateStr(); dEl.style.color = 'var(--muted)'; }
+  const catEl = document.getElementById('ai-target-cat');
+  if (catEl) catEl.value = aiCurrentCat || '';
   document.getElementById('modal-ai').classList.add('open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
+}
+
+let _aiGlobalMode = false;
+let _aiVoiceResponse = false;
+
+function _openAIModalCore() {
+  aiChatHistory = [];
+  document.getElementById('ai-chat-log').innerHTML = '';
+  document.getElementById('ai-input').value = '';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'none';
+  document.getElementById('ai-error').style.display = 'none';
+  const dEl2 = document.getElementById('ai-target-date');
+  if (dEl2) { dEl2.value = journalDateStr(); dEl2.style.color = 'var(--muted)'; }
+  const catEl2 = document.getElementById('ai-target-cat');
+  if (catEl2) catEl2.value = aiCurrentCat || '';
+  const isSport = aiCurrentCat === 'Sport';
+  document.getElementById('ai-label-qty').textContent = isSport ? 'Durée (min)' : 'Quantité (g)';
+  document.getElementById('ai-label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
+  document.getElementById('ai-macro-fields').style.display = isSport ? 'none' : 'grid';
+  document.getElementById('modal-ai').classList.add('open');
+  setTimeout(() => document.getElementById('ai-input').focus(), 180);
+}
+
+function toggleAIVoiceResponse() {
+  _aiVoiceResponse = !_aiVoiceResponse;
+  const btn = document.getElementById('ai-voice-response-btn');
+  btn.textContent = _aiVoiceResponse ? '🔊' : '🔇';
+  btn.style.color = _aiVoiceResponse ? '#a78bfa' : 'var(--muted)';
+  btn.style.borderColor = _aiVoiceResponse ? '#a78bfa' : 'var(--border)';
+}
+
+function speakIfEnabled(text) {
+  if (!_aiVoiceResponse || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 1.05;
+  window.speechSynthesis.speak(utt);
 }
 
 function closeAIModal() {
@@ -5933,6 +5999,15 @@ async function askAI() {
   const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
   const questionsAlways = aiQMode === 'always';
   const userProfile = `Profil : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
+  const recipesCtx = savedRecipes.length > 0
+    ? 'Recettes enregistrees : ' + savedRecipes.map(r => `"${r.name}" (${Math.round(r.totalKcal)} kcal, ${Math.round(r.totalProt)}g prot, ${Math.round(r.totalGluc)}g gluc, ${Math.round(r.totalLip)}g lip pour ${r.items.reduce((s,i)=>s+i.qty,0)}g total)`).join(' | ')
+    : '';
+  const customCtx = customFoods.length > 0
+    ? 'Aliments perso : ' + customFoods.map(f => `"${f.name}" (${f.kcal_100}kcal/100g)`).join(' | ')
+    : '';
+  const targetCat = document.getElementById('ai-target-cat')?.value || aiCurrentCat || '';
+  const targetDate = document.getElementById('ai-target-date')?.value || journalDateStr();
+  const catHint = targetCat ? `Categorie cible : ${targetCat}.` : 'Deduis la categorie parmi : Petit-dejeuner, Dejeuner, Diner, Snack, Boissons, Sport.';
   // Inject saved places into prompt so AI can resolve shortcuts
   const placesContext = savedPlaces.length > 0
     ? 'Lieux enregistres par l utilisateur : ' + savedPlaces.map(p => `"${p.name}" = ${p.address}`).join(', ') + '. Utilise ces adresses exactes dans walk_steps.'
@@ -5941,7 +6016,7 @@ async function askAI() {
     ? "- Pose une question de clarification si la demande n est pas claire."
     : "- Pose une question seulement si une info vraiment CRITIQUE manque et que tu ne peux absolument pas estimer.";
   const sysP = isSport
-    ? `Tu es un assistant sport et nutrition. ${userProfile}
+    ? `Tu es un assistant sport et nutrition. ${userProfile} ${catHint}
 Utilise ce profil pour calculer des calories selon poids/taille/sexe.
 Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
 Tu connais la geographie de Lyon. Sauf mention contraire, tous les lieux sont a Lyon. Tu peux estimer les distances entre lieux lyonnais connus (quartiers, monuments, restaurants connus).
@@ -5955,7 +6030,10 @@ Format sport non-marche : {"type":"sport","activity":"description","duration_min
 Si question indispensable : {"type":"question","message":"question courte"}
 Si l utilisateur corrige juste la quantite ("c etait 200g", "plutot 150") : {"type":"correction","qty_g":200,"note":"Quantite corrigee"}
 ${qLine}`
-    : `Tu es un assistant nutritionnel expert. ${userProfile}
+    : `Tu es un assistant nutritionnel expert. ${userProfile} ${catHint}
+${recipesCtx ? recipesCtx + '.' : ''}
+${customCtx ? customCtx + '.' : ''}
+Si l utilisateur mentionne une recette enregistree, reponds avec : {"type":"recipe","recipe_name":"nom exact","qty_g":POIDS_TOTAL,"note":"detail"}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
 REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"liste chaque element : NomXXg=YYYkcal (ZZZkcal/100g), ex: Raclette200g=570kcal(285/100g), Bleu100g=350kcal(350/100g)"}
@@ -6017,7 +6095,36 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
     aiChatHistory.push({ role: 'user', content: query }, { role: 'model', content: text });
     document.getElementById('ai-loading').style.display = 'none';
     if (p.type === 'question') {
-      addChatMessage('ai', p.message);
+      addChatMessage('ai', p.message); speakIfEnabled(p.message);
+    } else if (p.type === 'recipe') {
+      const rName = normalize(p.recipe_name || '');
+      const found = savedRecipes.find(r => normalize(r.name).includes(rName) || rName.includes(normalize(r.name)));
+      if (!found) {
+        const msg = `Recette "${p.recipe_name}" introuvable. Essaie de la nommer exactement comme dans tes recettes.`;
+        addChatMessage('ai', msg); speakIfEnabled(msg);
+      } else {
+        const totalIngG = found.items.reduce((s,i) => s+i.qty, 0);
+        const totalG = p.qty_g || totalIngG;
+        const factor = totalIngG > 0 ? totalG / totalIngG : 1;
+        const kcal100 = totalIngG > 0 ? Math.round(found.totalKcal / totalIngG * 100) : 0;
+        document.getElementById('ai-label-qty').textContent = 'Quantité (g)';
+        document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
+        document.getElementById('ai-macro-fields').style.display = 'grid';
+        document.getElementById('ai-qty').value = totalG;
+        document.getElementById('ai-kcal').value = kcal100;
+        document.getElementById('ai-p').value = Math.round(found.totalProt * factor * 10) / 10;
+        document.getElementById('ai-g').value = Math.round(found.totalGluc * factor * 10) / 10;
+        document.getElementById('ai-l').value = Math.round(found.totalLip * factor * 10) / 10;
+        document.getElementById('ai-calc-sub').textContent = found.name;
+        if (!targetCat && document.getElementById('ai-target-cat')) document.getElementById('ai-target-cat').value = 'Déjeuner';
+        document.getElementById('ai-save-fav-btn').style.display = 'none';
+        document.getElementById('ai-save-base-btn').style.display = 'none';
+        document.getElementById('ai-result').style.display = 'block';
+        document.getElementById('ai-add-btn').textContent = `✓ Ajouter "${found.name}"`;
+        const msg = `"${found.name}" : ${Math.round(found.totalKcal * factor)} kcal pour ${totalG}g. Confirme ?`;
+        addChatMessage('ai', msg); speakIfEnabled(msg);
+        recalcAI();
+      }
     } else if (p.type === 'sport') {
       document.getElementById('ai-label-qty').textContent = 'Durée (min)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / heure';
@@ -6069,7 +6176,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
         document.getElementById('ai-kcal').value = p.kcal_per_hour || 0;
       }
       const noteEl = document.getElementById('ai-note-text'); if (noteEl) noteEl.textContent = p.note || '';
-      addChatMessage('ai', p.note || 'Voici :');
+      const _noteS = p.note || 'Voici :'; addChatMessage('ai', _noteS); speakIfEnabled(_noteS);
       document.getElementById('ai-calc-sub').textContent = p.activity || query;
       document.getElementById('ai-result').style.display = 'block';
       document.getElementById('ai-add-btn').textContent = '✓ Ajouter l\'activité';
@@ -6080,7 +6187,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       if (spBtn) spBtn.style.display = p.is_walk && p.walk_steps && p.walk_steps.length ? 'block' : 'none';
       recalcAI();
     } else {
-      addChatMessage('ai', p.note || 'Voici :');
+      const _noteF = p.note || 'Voici :'; addChatMessage('ai', _noteF); speakIfEnabled(_noteF);
       const noteEl2 = document.getElementById('ai-note-text'); if (noteEl2) noteEl2.textContent = p.note || '';
       document.getElementById('ai-label-qty').textContent = 'Quantité (g)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
@@ -6271,6 +6378,8 @@ function recalcAI() {
 }
 
 async function addAIEntry() {
+  const selectedCat = document.getElementById('ai-target-cat')?.value || aiCurrentCat || 'Déjeuner';
+  const selectedDate = document.getElementById('ai-target-date')?.value || journalDateStr();
   if (aiCurrentCat === '__recipe__') {
     const f = {
       name: document.getElementById('ai-calc-sub').textContent,
@@ -6283,7 +6392,7 @@ async function addAIEntry() {
     closeAIModal();
     return;
   }
-  const isSport = aiCurrentCat === 'Sport';
+  const isSport = selectedCat === 'Sport';
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const q = parseFloat(document.getElementById('ai-qty').value) || 0;
@@ -6315,13 +6424,13 @@ async function addAIEntry() {
   await sb.from('entries').insert([{
     user_id: user.id,
     type: isSport ? 'burn' : 'food',
-    category: aiCurrentCat,
+    category: selectedCat,
     desc,
     val,
     prot: isSport ? 0 : round1(p * factor),
     gluc: isSport ? 0 : round1(g * factor),
     lip: isSport ? 0 : round1(l * factor),
-    date: journalDateStr()
+    date: selectedDate
   }]);
   closeAIModal();
   closeModal();
@@ -7170,6 +7279,23 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
     });
   }
 
+  // Swipe to close sur le fab-menu (overlay plein écran)
+  function initFabSwipe(overlay) {
+    let startY = 0, active = false;
+    overlay.addEventListener('touchstart', e => {
+      // Ignorer si on touche un bouton
+      if (e.target.closest('button')) return;
+      startY = e.touches[0].clientY;
+      active = true;
+    }, { passive: true });
+    overlay.addEventListener('touchend', e => {
+      if (!active) return;
+      active = false;
+      const dy = e.changedTouches[0].clientY - startY;
+      if (dy > 60) closeFab(); // swipe vers le bas de plus de 60px
+    }, { passive: true });
+  }
+
   // Initialiser après chargement du DOM
   window.addEventListener('DOMContentLoaded', () => {
     Object.entries(CLOSE_FNS).forEach(([modalId, closeFn]) => {
@@ -7178,6 +7304,8 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
       const sheet = modal.querySelector('.modal-sheet');
       if (sheet) initSwipe(sheet, closeFn);
     });
+    const fabMenu = document.getElementById('fab-menu');
+    if (fabMenu) initFabSwipe(fabMenu);
   });
 })();
 
@@ -7216,6 +7344,7 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
 <button onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:rgba(255,140,66,0.15);border:2px solid rgba(255,140,66,0.4);border-radius:32px;padding:20px 32px;color:#FF8C42;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.12s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🍎</span><span style="font-size:20px;font-weight:800;">Snack</span></button>
 <button onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:rgba(46,196,182,0.15);border:2px solid rgba(46,196,182,0.4);border-radius:32px;padding:20px 32px;color:#2EC4B6;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.16s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🥤</span><span style="font-size:20px;font-weight:800;">Boissons</span></button>
 <button onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:rgba(255,77,106,0.15);border:2px solid rgba(255,77,106,0.4);border-radius:32px;padding:20px 32px;color:#FF4D6A;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🏃</span><span style="font-size:20px;font-weight:800;">Sport</span></button>
+<button onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:rgba(124,92,250,0.18);border:2px solid rgba(124,92,250,0.5);border-radius:32px;padding:20px 32px;color:#a78bfa;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.24s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;touch-action:manipulation;"><span style="font-size:32px;width:42px;text-align:center;">🤖</span><span style="font-size:20px;font-weight:800;">Assistant IA</span></button>
 </div>
 <div id="fab-overlay" style="display:none;"></div><!-- overlay handled by fab-menu -->
 <button id="fab-btn" onclick="toggleFab()" style="position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:20px;z-index:201;width:58px;height:58px;border-radius:50%;background:var(--gradient-main);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 6px 24px rgba(0,200,150,0.45);display:flex;align-items:center;justify-content:center;transition:all 0.25s;line-height:1;font-weight:300;">＋</button>
