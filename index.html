@@ -5983,6 +5983,7 @@ function _openAIModalCore() {
   document.getElementById('ai-label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100g';
   document.getElementById('ai-macro-fields').style.display = isSport ? 'none' : 'grid';
   document.getElementById('modal-ai').classList.add('open');
+  document.body.classList.add('modal-open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
 }
 
@@ -7275,6 +7276,21 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
     }
   });
 })();
+
+// ── Bloquer le scroll du fond sous les modals (iOS fix) ─────────────────────
+document.addEventListener('touchmove', (e) => {
+  // Si un modal est ouvert, bloquer le touchmove sauf à l'intérieur d'un scroll autorisé
+  if (!document.body.classList.contains('modal-open')) return;
+  const scrollable = e.target.closest('.modal-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list');
+  if (!scrollable) {
+    e.preventDefault();
+    return;
+  }
+  // Laisser scroller uniquement si le contenu est scrollable
+  if (scrollable.scrollHeight <= scrollable.clientHeight) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 // ── Swipe to dismiss — bottom sheets ────────────────────────────────────────
 (function() {
