@@ -4960,11 +4960,11 @@ html += `<div class="entry-group">
 <div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span>${!isSport && items.length ? `<button onclick="clearMealEntries('${cat}')" title="Tout supprimer" style="background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 6px;">🗑️</button>` : ''}</div>
 <div class="entry-group-actions">
 <button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
-${!isSport && items.length ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')">→ Recette</button>` : ''}
-${!isSport && items.length ? `<button class="meal-save-btn" style="background:rgba(91,127,255,0.12);color:var(--accent);border-color:rgba(91,127,255,0.3);" onclick="openCopyMealModal('${cat}')">📋</button>` : ''}
+${!isSport ? `<button class="meal-save-btn" onclick="openLinkMealModal('${cat}')" ${!items.length ? 'disabled style="opacity:0.25;pointer-events:none;"' : ''}>→ Recette</button>` : ''}
+${!isSport ? `<button class="meal-save-btn" style="background:rgba(91,127,255,0.12);color:var(--accent);border-color:rgba(91,127,255,0.3);${!items.length ? 'opacity:0.25;pointer-events:none;' : ''}" onclick="openCopyMealModal('${cat}')">📋</button>` : ''}
+<span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.3;font-size:12px;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
-${sub !== 0 ? `<div style="text-align:right;padding:0 2px 4px;"><span class="entry-group-total ${isSport ? 'sport' : ''}">${isSport ? '−' : '+'}${sub} kcal</span></div>` : ''}
 ${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
 <div class="entry-group-items">${items.length ? items.map(e => {
 const raw = e.desc || '';
