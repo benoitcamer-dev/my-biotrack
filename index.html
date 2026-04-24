@@ -54,9 +54,7 @@ background: rgba(245,244,255,0.92) !important;
 border-bottom: 1px solid rgba(91,79,232,0.1) !important;
 }
 [data-theme="light"] .kcal-number {
-background: linear-gradient(135deg,#0A1A12 20%,#00A87E);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
+color: #0A1A12;
 }
 html { background: var(--bg); overscroll-behavior: none; }
 body {
@@ -1665,17 +1663,17 @@ margin-left: 4px;
 <div class="stat-box bilan" style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;">
 <div class="s-label">📊 Bilan</div><div class="s-val" id="stat-bilan">—</div>
 </div>
-<div id="prot-goal-bar-wrap" style="display:none;margin-bottom:10px;">
-<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px;">
-<span>💪 Protéines</span>
-<span id="prot-goal-label">0 / 0 g</span>
+<div id="prot-goal-bar-wrap" style="display:none;margin-top:14px;margin-bottom:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px 14px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">💪 Protéines</span>
+<span id="prot-goal-label" style="font-size:20px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text);font-variant-numeric:tabular-nums;">0 / 0 g</span>
 </div>
 <div class="progress-bar-bg">
-<div id="prot-goal-fill" class="progress-bar-fill" style="width:0%;background:linear-gradient(90deg,var(--accent),#7c5cfa);"></div>
+<div id="prot-goal-fill" class="progress-bar-fill" style="width:0%;"></div>
 </div>
 </div>
-<div class="macro-grid">
-<div class="macro-pill prot"><div class="label">Protéines</div><div class="val" id="total-p">0 g</div></div>
+<div class="macro-grid" style="margin-top:10px;" id="macro-grid-main">
+<div class="macro-pill prot" id="prot-macro-pill"><div class="label">Protéines</div><div class="val" id="total-p">0 g</div></div>
 <div class="macro-pill gluc"><div class="label">Glucides</div><div class="val" id="total-g">0 g</div></div>
 <div class="macro-pill lip"><div class="label">Lipides</div><div class="val" id="total-l">0 g</div></div>
 </div>
@@ -3118,6 +3116,9 @@ document.getElementById('modal-barcode').addEventListener('click', function(e) {
 function showPage(page) {
 currentPage = page;
 localStorage.setItem('bt_current_page', page);
+const fabBtn = document.getElementById('fab-btn');
+if (fabBtn) fabBtn.style.display = page === 'journal' ? 'flex' : 'none';
+closeFab && closeFab();
 ['journal', 'bilan'].forEach(p => {
 document.getElementById('page-' + p).classList.toggle('active', p === page);
 document.getElementById('tab-' + p).classList.toggle('active', p === page);
@@ -5023,16 +5024,20 @@ document.getElementById('stat-sport').textContent = tSport;
 document.getElementById('stat-bilan').textContent = bilan >= 0 ? `+${bilan}` : bilan;
 document.getElementById('total-p').innerHTML = Math.round(tP) + ' <span class="unit-g">g</span>';
 const protWrap = document.getElementById('prot-goal-bar-wrap');
+const protPill = document.getElementById('prot-macro-pill');
 if (userProtGoal > 0 && protWrap) {
   protWrap.style.display = 'block';
+  if (protPill) protPill.style.display = 'none';
   const protPct = Math.min(100, Math.round((tP / userProtGoal) * 100));
   document.getElementById('prot-goal-fill').style.width = protPct + '%';
   const protRounded = Math.round(tP);
   const protOver = protRounded > userProtGoal;
   document.getElementById('prot-goal-label').textContent = protRounded + ' / ' + userProtGoal + ' g' + (protOver ? ' (+' + (protRounded - userProtGoal) + ')' : '');
-  document.getElementById('prot-goal-fill').style.background = tP >= userProtGoal ? 'linear-gradient(90deg,var(--green),#22c55e)' : 'linear-gradient(90deg,var(--accent),#7c5cfa)';
+  document.getElementById('prot-goal-fill').style.background = tP >= userProtGoal ? 'linear-gradient(90deg,#00C896,#00E8B0)' : 'linear-gradient(90deg,#00C896,#00A87E)';
+document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? '0 0 12px rgba(0,200,150,0.5)' : '0 0 8px rgba(0,200,150,0.3)';
 } else if (protWrap) {
   protWrap.style.display = 'none';
+  if (protPill) protPill.style.display = '';
 }
 document.getElementById('total-g').innerHTML = Math.round(tG) + ' <span class="unit-g">g</span>';
 document.getElementById('total-l').innerHTML = Math.round(tL) + ' <span class="unit-g">g</span>';
@@ -5179,7 +5184,34 @@ const res = await sb.auth.signInWithPassword({ email, password: pass });
 error = res.error;
 }
 if (error) { document.getElementById('auth-error').style.display = 'block'; document.getElementById('auth-error').textContent = error.message; }
-else { await init();
+else { await let _fabOpen = false;
+function toggleFab() {
+  _fabOpen ? closeFab() : openFab();
+}
+function openFab() {
+  _fabOpen = true;
+  const menu = document.getElementById('fab-menu');
+  const overlay = document.getElementById('fab-overlay');
+  const btn = document.getElementById('fab-btn');
+  menu.style.display = 'flex';
+  overlay.style.display = 'block';
+  btn.style.transform = 'rotate(45deg)';
+  btn.style.boxShadow = '0 4px 28px rgba(0,200,150,0.6)';
+  // Stagger items
+  menu.querySelectorAll('.fab-item').forEach((el, i) => {
+    el.style.animationDelay = i * 0.04 + 's';
+  });
+}
+function closeFab() {
+  _fabOpen = false;
+  document.getElementById('fab-menu').style.display = 'none';
+  document.getElementById('fab-overlay').style.display = 'none';
+  const btn = document.getElementById('fab-btn');
+  btn.style.transform = '';
+  btn.style.boxShadow = '0 4px 20px rgba(0,200,150,0.4)';
+}
+
+init();
 
 // Fix mobile cursor bug: blur+refocus input when returning to app
 document.addEventListener('visibilitychange', () => {
@@ -6863,5 +6895,16 @@ function openRecipeAIModal() {
 </div>
 </div>
 </div>
+<!-- FAB -->
+<div id="fab-menu" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:200;display:none;flex-direction:column;align-items:center;gap:8px;">
+<button class="fab-item" onclick="openModal('Petit-déjeuner');closeFab()">🥐 Petit-déjeuner</button>
+<button class="fab-item" onclick="openModal('Déjeuner');closeFab()">🍽️ Déjeuner</button>
+<button class="fab-item" onclick="openModal('Dîner');closeFab()">🌙 Dîner</button>
+<button class="fab-item" onclick="openModal('Snack');closeFab()">🍎 Snack</button>
+<button class="fab-item" onclick="openModal('Boissons');closeFab()">🥤 Boissons</button>
+<button class="fab-item" onclick="openModal('Sport');closeFab()">🏃 Sport</button>
+</div>
+<button id="fab-btn" onclick="toggleFab()" style="position:fixed;bottom:90px;right:18px;z-index:201;width:52px;height:52px;border-radius:50%;background:var(--gradient-main);border:none;color:#fff;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,150,0.4);display:flex;align-items:center;justify-content:center;transition:all 0.2s;line-height:1;" id="fab-btn">＋</button>
+<div id="fab-overlay" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);"></div>
 </body>
 </html>
