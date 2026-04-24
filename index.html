@@ -44,6 +44,11 @@
 --gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
 --gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
 }
+[data-theme="light"] .input-box { background: rgba(91,79,232,0.04); border-color: rgba(91,79,232,0.1); }
+[data-theme="light"] .calc-result { background: linear-gradient(135deg,rgba(91,79,232,0.08),rgba(79,110,247,0.05)); border-color: rgba(91,79,232,0.2); }
+[data-theme="light"] .calc-result .big { background: linear-gradient(135deg,#0D0C1A 20%,#5B4FE8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+[data-theme="light"] .btn-primary { box-shadow: 0 4px 20px rgba(91,79,232,0.25); }
+[data-theme="light"] .macro-input { background: rgba(91,79,232,0.04); border-color: rgba(91,79,232,0.1); }
 [data-theme="light"] header {
 background: rgba(245,244,255,0.88) !important;
 border-bottom: 1px solid rgba(91,79,232,0.1) !important;
@@ -512,22 +517,27 @@ box-shadow: 0 0 0 3px rgba(124,111,255,0.1);
 .search-input::placeholder,.text-input::placeholder { color: var(--muted); }
 .search-input:focus,.text-input:focus,.setting-row input:focus,.setting-row select:focus { border-color: var(--accent); }
 .search-btn,.mini-primary {
-background: var(--accent);
+background: var(--gradient-main);
 color: #fff;
 border: none;
-border-radius: 12px;
-padding: 11px 13px;
-font-size: 13px;
+border-radius: 14px;
+padding: 11px 14px;
+font-size: 14px;
 font-weight: 700;
 cursor: pointer;
+box-shadow: 0 3px 12px rgba(124,111,255,0.3);
+transition: all 0.2s;
 }
+.search-btn:active { transform: scale(0.96); }
 .recipes-list,.summary-cards,.daily-week-list { display: flex; flex-direction: column; gap: 10px; }
-.recipe-card,.summary-card,.day-line,.recipe-form,.recipe-link-card,.builder-item,.nav-card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: 14px;
+.recipe-card,.day-line,.recipe-form,.recipe-link-card,.builder-item,.nav-card {
+background: rgba(255,255,255,0.02);
+border: 1px solid rgba(255,255,255,0.05);
+border-radius: 18px;
 padding: 13px;
+transition: border-color 0.2s;
 }
+.recipe-card.clickable:hover { border-color: rgba(124,111,255,0.3); background: rgba(124,111,255,0.04); }
 .recipe-card.clickable {
 cursor: pointer;
 }
@@ -860,14 +870,19 @@ gap: 9px;
 margin-bottom: 10px;
 }
 .input-box {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: 11px;
-padding: 11px 13px;
+background: rgba(255,255,255,0.03);
+border: 1px solid rgba(255,255,255,0.07);
+border-radius: 16px;
+padding: 12px 14px;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-box:focus-within {
+border-color: rgba(124,111,255,0.4);
+box-shadow: 0 0 0 3px rgba(124,111,255,0.08);
 }
 .input-box label {
 display: block;
-font-size: 8px;
+font-size: 9px;
 font-weight: 700;
 color: var(--muted);
 text-transform: uppercase;
@@ -880,11 +895,11 @@ background: none;
 border: none;
 outline: none;
 font-family: 'Syne',sans-serif;
-font-size: 17px;
-font-weight: 700;
+font-size: 19px;
+font-weight: 800;
 color: var(--text);
 }
-.input-box input::placeholder { color: var(--border2); }
+.input-box input::placeholder { color: rgba(255,255,255,0.15); }
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .macros-row {
@@ -894,12 +909,14 @@ gap: 7px;
 margin-bottom: 14px;
 }
 .macro-input {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: 11px;
-padding: 9px 10px;
+background: rgba(255,255,255,0.03);
+border: 1px solid rgba(255,255,255,0.07);
+border-radius: 16px;
+padding: 10px 10px;
 text-align: center;
+transition: border-color 0.2s;
 }
+.macro-input:focus-within { border-color: rgba(124,111,255,0.35); }
 .macro-input label {
 display: block;
 font-size: 8px;
@@ -923,56 +940,63 @@ color: var(--text);
 .macro-input.gluc label { color: var(--orange); }
 .macro-input.lip label { color: var(--pink); }
 .calc-result {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: 11px;
-padding: 14px;
+background: linear-gradient(135deg, rgba(124,111,255,0.1), rgba(91,127,255,0.06));
+border: 1px solid rgba(124,111,255,0.2);
+border-radius: 20px;
+padding: 18px 14px;
 text-align: center;
 margin-bottom: 14px;
+box-shadow: 0 0 24px rgba(124,111,255,0.1);
 }
 .calc-result .big {
 font-family: 'Syne',sans-serif;
-font-size: 32px;
+font-size: 42px;
 font-weight: 800;
-color: var(--text);
+letter-spacing: -2px;
+background: linear-gradient(135deg,#fff 20%,#A89FFF);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
 }
 .calc-result .sub {
-font-size: 9px;
+font-size: 10px;
 color: var(--muted);
-font-weight: 500;
-margin-top: 2px;
+font-weight: 600;
+margin-top: 4px;
 text-transform: uppercase;
-letter-spacing: 2px;
+letter-spacing: 2.5px;
 }
 .btn-primary {
 width: 100%;
-background: var(--accent);
+background: var(--gradient-main);
 border: none;
-border-radius: 11px;
-padding: 15px;
+border-radius: 16px;
+padding: 16px;
 color: white;
 font-family: 'Syne',sans-serif;
-font-size: 12px;
+font-size: 13px;
 font-weight: 700;
 letter-spacing: 2px;
 text-transform: uppercase;
-transition: all 0.15s;
+transition: all 0.2s;
 cursor: pointer;
+box-shadow: 0 4px 20px rgba(124,111,255,0.3);
 }
-.btn-primary:hover { background: var(--accent2); }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,111,255,0.4); }
+.btn-primary:active { transform: scale(0.98) translateY(0); box-shadow: none; }
 .btn-cancel {
 width: 100%;
-background: none;
-border: none;
-padding: 11px;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.07);
+border-radius: 14px;
+padding: 13px;
 color: var(--muted);
-font-size: 11px;
-font-weight: 500;
+font-size: 13px;
+font-weight: 600;
 cursor: pointer;
 margin-top: 6px;
+transition: all 0.2s;
 }
-.btn-cancel:hover { color: var(--text); }
+.btn-cancel:hover { color: var(--text); background: rgba(255,255,255,0.07); }
 .setting-row { margin-bottom: 13px; }
 .setting-row label {
 display: block;
@@ -1681,9 +1705,9 @@ margin-left: 4px;
 <div id="bilan-nav"></div>
 <div style="text-align:right;margin-bottom:10px;"><button class="btn-icon" onclick="exportCSV()" style="color:var(--green);border-color:rgba(61,214,140,0.3);">📥 Exporter CSV</button></div>
 <div id="bilan-summary" class="summary-cards"></div>
-<div id="bilan-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
-<div id="bilan-net-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
-<div id="bilan-prot-chart-wrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;"></div>
+<div id="bilan-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
+<div id="bilan-net-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
+<div id="bilan-prot-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
 <div id="bilan-detail" class="daily-week-list"></div>
 </section>
 </main>
