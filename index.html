@@ -16,51 +16,51 @@
 <title>LeGrosBarbu</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
---bg: #08080F; --surface: #0F0F1A; --surface2: #16162A; --surface3: #1E1E35;
+--bg: #080C0A; --surface: #0F1510; --surface2: #161E17; --surface3: #1C261D;
 --border: rgba(255,255,255,0.05); --border2: rgba(255,255,255,0.1);
---text: #EEEEFF; --muted: #6B6B99; --accent: #7C6FFF; --accent2: #9B5CFF;
---orange: #FF8C42; --green: #2ECC8F; --pink: #F062C0; --danger: #FF4D6A;
---gold: #FFD166; --radius: 20px; --radius-sm: 14px;
+--text: #EEF2EF; --muted: #5A7060; --accent: #00C896; --accent2: #00A87E;
+--orange: #FF8C42; --green: #00C896; --pink: #00C896; --danger: #FF4D6A;
+--gold: #00C896; --radius: 20px; --radius-sm: 14px;
 --text-size: 15px;
---glow-accent: rgba(124,111,255,0.15);
---glow-green: rgba(46,204,143,0.15);
+--glow-accent: rgba(0,200,150,0.15);
+--glow-green: rgba(0,200,150,0.15);
 --glow-danger: rgba(255,77,106,0.15);
---gradient-main: linear-gradient(135deg, #7C6FFF, #5B7FFF);
---gradient-surface: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%);
+--gradient-main: linear-gradient(135deg, #00C896, #00A87E);
+--gradient-surface: linear-gradient(160deg, #0F1510 0%, #0D1A14 100%);
 }
 [data-theme="light"] {
---bg: #F5F4FF; --surface: #FFFFFF; --surface2: #ECEAFF; --surface3: #E0DDFF;
---border: rgba(100,90,200,0.1); --border2: rgba(100,90,200,0.2);
---text: #0D0C1A; --muted: #6B6B99; --accent: #5B4FE8; --accent2: #7B3FE4;
---orange: #E8620A; --green: #16A34A; --pink: #C026D3; --danger: #DC2626;
---gold: #B8860B;
---glow-accent: rgba(91,79,232,0.1);
---glow-green: rgba(22,163,74,0.1);
+--bg: #F2FAF6; --surface: #FFFFFF; --surface2: #E8F5EE; --surface3: #D8EDE2;
+--border: rgba(0,150,100,0.1); --border2: rgba(0,150,100,0.2);
+--text: #0A1A12; --muted: #4A7060; --accent: #00A87E; --accent2: #008F6A;
+--orange: #E8620A; --green: #00A87E; --pink: #00A87E; --danger: #DC2626;
+--gold: #00A87E;
+--glow-accent: rgba(0,168,126,0.1);
+--glow-green: rgba(0,168,126,0.1);
 --glow-danger: rgba(220,38,38,0.1);
---gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
---gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
+--gradient-main: linear-gradient(135deg, #00A87E, #008F6A);
+--gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0FAF5 100%);
 }
-[data-theme="light"] .input-box { background: rgba(91,79,232,0.04); border-color: rgba(91,79,232,0.1); }
-[data-theme="light"] .calc-result { background: linear-gradient(135deg,rgba(91,79,232,0.08),rgba(79,110,247,0.05)); border-color: rgba(91,79,232,0.2); }
-[data-theme="light"] .calc-result .big { background: linear-gradient(135deg,#0D0C1A 20%,#5B4FE8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-[data-theme="light"] .btn-primary { box-shadow: 0 4px 20px rgba(91,79,232,0.25); }
-[data-theme="light"] .macro-input { background: rgba(91,79,232,0.04); border-color: rgba(91,79,232,0.1); }
+[data-theme="light"] .input-box { background: rgba(0,168,126,0.04); border-color: rgba(0,168,126,0.1); }
+[data-theme="light"] .calc-result { background: linear-gradient(135deg,rgba(0,168,126,0.08),rgba(0,143,106,0.04)); border-color: rgba(0,168,126,0.2); }
+[data-theme="light"] .calc-result .big { background: linear-gradient(135deg,#0A1A12 20%,#00A87E); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+[data-theme="light"] .btn-primary { box-shadow: 0 4px 20px rgba(0,168,126,0.25); }
+[data-theme="light"] .macro-input { background: rgba(0,168,126,0.04); border-color: rgba(0,168,126,0.1); }
 [data-theme="light"] header {
-background: rgba(245,244,255,0.88) !important;
-border-bottom: 1px solid rgba(91,79,232,0.1) !important;
+background: rgba(242,250,246,0.92) !important;
+border-bottom: 1px solid rgba(0,168,126,0.1) !important;
 }
 [data-theme="light"] .kcal-number {
-background: linear-gradient(135deg,#0D0C1A 20%,#5B4FE8);
+background: linear-gradient(135deg,#0A1A12 20%,#00A87E);
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
 }
 html { background: var(--bg); overscroll-behavior: none; }
 body {
-font-family: 'Plus Jakarta Sans', sans-serif;
+font-family: 'Inter', sans-serif;
 background: var(--bg);
 color: var(--text);
 min-height: 100dvh;
@@ -69,7 +69,7 @@ padding-bottom: 32px;
 font-size: var(--text-size);
 overscroll-behavior: none;
 }
-h1,h2,h3,.mono { font-family: 'Syne', sans-serif; }
+h1,h2,h3,.mono { font-family: 'Inter', sans-serif; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -81,15 +81,48 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-background: rgba(8,8,15,0.88);
+background: rgba(8,12,10,0.92);
 backdrop-filter: blur(24px);
 -webkit-backdrop-filter: blur(24px);
-border-bottom: 1px solid rgba(124,111,255,0.1);
+border-bottom: 1px solid rgba(0,200,150,0.08);
 gap: 8px;
-flex-wrap: wrap;
 }
+.bottom-nav {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 50;
+display: flex;
+justify-content: space-around;
+align-items: center;
+padding: 10px 4px calc(10px + env(safe-area-inset-bottom));
+background: rgba(8,12,10,0.95);
+backdrop-filter: blur(24px);
+-webkit-backdrop-filter: blur(24px);
+border-top: 1px solid rgba(0,200,150,0.08);
+}
+.bottom-nav-btn {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 3px;
+background: none;
+border: none;
+cursor: pointer;
+padding: 4px 8px;
+border-radius: 12px;
+transition: all 0.2s;
+color: var(--muted);
+font-size: 10px;
+font-weight: 600;
+font-family: 'Inter', sans-serif;
+}
+.bottom-nav-btn span:first-child { font-size: 20px; }
+.bottom-nav-btn:hover { color: var(--accent); background: rgba(0,200,150,0.08); }
+.bottom-nav-btn:active { transform: scale(0.92); }
 .logo {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-weight: 800;
 font-size: 17px;
 letter-spacing: -0.5px;
@@ -130,10 +163,10 @@ transition: all 0.2s;
 letter-spacing: 0.3px;
 }
 .tab-btn.active {
-background: linear-gradient(135deg,rgba(124,111,255,0.2),rgba(91,127,255,0.12));
+background: rgba(0,200,150,0.1);
 color: var(--text);
-border-color: rgba(124,111,255,0.3);
-box-shadow: 0 0 20px rgba(124,111,255,0.1);
+border-color: rgba(0,200,150,0.2);
+box-shadow: 0 0 20px rgba(0,200,150,0.08);
 }
 .page { display: none; }
 .page.active { display: block; }
@@ -161,7 +194,7 @@ flex-shrink: 0;
 .date-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 .date-nav-center { flex: 1; text-align: center; cursor: pointer; position: relative; }
 .date-nav-label {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 color: var(--text);
@@ -169,8 +202,8 @@ text-transform: capitalize;
 }
 .date-nav-sub { font-size: 9px; color: var(--muted); margin-top: 1px; }
 .date-nav-today {
-background: rgba(91,127,255,0.15);
-border: 1px solid rgba(91,127,255,0.3);
+background: rgba(0,200,150,0.12);
+border: 1px solid rgba(0,200,150,0.25);
 color: var(--accent);
 border-radius: 6px;
 padding: 4px 8px;
@@ -196,7 +229,7 @@ display: none;
 .cal-dropdown.open { display: block; }
 .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .cal-month-label {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 text-transform: capitalize;
@@ -229,13 +262,13 @@ color: var(--text);
 transition: background 0.15s;
 }
 .cal-day:hover { background: var(--surface2); }
-.cal-day.today { background: rgba(91,127,255,0.15); color: var(--accent); font-weight: 700; }
+.cal-day.today { background: rgba(0,200,150,0.15); color: var(--accent); font-weight: 700; }
 .cal-day.selected { background: var(--accent); color: #fff; font-weight: 700; }
 .cal-day.other-month { color: var(--muted); opacity: 0.4; }
 .cal-day.empty { cursor: default; }
 .kcal-card {
 background: var(--gradient-surface);
-border: 1px solid rgba(124,111,255,0.12);
+border: 1px solid rgba(0,200,150,0.1);
 border-radius: 28px;
 padding: 24px 18px 20px;
 margin-bottom: 14px;
@@ -251,17 +284,17 @@ left: 50%;
 transform: translateX(-50%);
 width: 280px;
 height: 280px;
-background: radial-gradient(circle,rgba(124,111,255,0.12) 0%,transparent 65%);
+background: radial-gradient(circle,rgba(0,200,150,0.1) 0%,transparent 65%);
 pointer-events: none;
 }
 .kcal-hero { text-align: center; margin-bottom: 16px; }
 .kcal-number {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 60px;
 font-weight: 800;
 letter-spacing: -3px;
 line-height: 1;
-background: linear-gradient(135deg,#FFFFFF 40%,#C4BEFF);
+background: linear-gradient(135deg,#FFFFFF 35%,#00C896);
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
 }
@@ -282,10 +315,10 @@ overflow: hidden;
 }
 .progress-bar-fill {
 height: 100%;
-background: linear-gradient(90deg,#7C6FFF,#9B5CFF);
+background: linear-gradient(90deg,#00C896,#00A87E);
 border-radius: 99px;
 transition: width 0.6s cubic-bezier(0.34,1.2,0.64,1);
-box-shadow: 0 0 12px rgba(124,111,255,0.4);
+box-shadow: 0 0 12px rgba(0,200,150,0.4);
 }
 .progress-labels {
 display: flex;
@@ -311,7 +344,7 @@ color: var(--muted);
 margin-bottom: 3px;
 }
 .stat-box .s-val {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 19px;
 font-weight: 700;
 }
@@ -336,14 +369,14 @@ letter-spacing: 1.5px;
 margin-bottom: 3px;
 }
 .macro-pill .val {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 18px;
 font-weight: 800;
 letter-spacing: -0.5px;
 }
 .macro-pill.prot .label { color: var(--accent); }
-.macro-pill.gluc .label { color: var(--orange); }
-.macro-pill.lip .label { color: var(--pink); }
+.macro-pill.gluc .label { color: #A0B0A8; }
+.macro-pill.lip .label { color: #7A9088; }
 .section-label {
 font-size: 11px;
 font-weight: 700;
@@ -360,12 +393,12 @@ margin: -4px 0 10px 2px;
 }
 .daily-section { margin-bottom: 8px; }
 #daily-list { display: flex; flex-direction: column; gap: 12px; }
-.entry-group[data-cat="Petit-déjeuner"] .entry-group-title { color: var(--gold); }
-.entry-group[data-cat="Déjeuner"] .entry-group-title { color: #7C6FFF; }
-.entry-group[data-cat="Dîner"] .entry-group-title { color: #9B5CFF; }
-.entry-group[data-cat="Snack"] .entry-group-title { color: var(--orange); }
-.entry-group[data-cat="Boissons"] .entry-group-title { color: #2EC4B6; }
-.entry-group[data-cat="Sport"] .entry-group-title { color: var(--green); }
+.entry-group[data-cat="Petit-déjeuner"] .entry-group-title { color: var(--text); }
+.entry-group[data-cat="Déjeuner"] .entry-group-title { color: var(--text); }
+.entry-group[data-cat="Dîner"] .entry-group-title { color: var(--text); }
+.entry-group[data-cat="Snack"] .entry-group-title { color: var(--text); }
+.entry-group[data-cat="Boissons"] .entry-group-title { color: var(--text); }
+.entry-group[data-cat="Sport"] .entry-group-title { color: var(--text); }
 .entry-group { margin-bottom: 4px; }
 .entry-group-header {
 display: flex;
@@ -381,7 +414,7 @@ display: flex; align-items: center; gap: 6px;
 min-width: 0; flex: 1; overflow: hidden;
 }
 .entry-group-title {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 15px;
 font-weight: 700;
 color: var(--text);
@@ -398,18 +431,19 @@ flex-shrink: 0;
 .entry-group-kcal-row { text-align: right; padding: 1px 2px 5px; }
 .meal-save-btn.icon-only { padding: 6px 9px; min-width: 34px; font-size: 12px; }
 .entry-group-total {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 15px;
 font-weight: 800;
-color: var(--text);
+color: var(--accent);
 white-space: nowrap;
+font-variant-numeric: tabular-nums;
 }
 .entry-group-total.sport { color: var(--orange); }
 .entry-add-btn {
 border: 1px solid var(--border);
-background: rgba(124,111,255,0.1);
+background: rgba(0,200,150,0.08);
 color: var(--text);
-border-color: rgba(124,111,255,0.2);
+border-color: rgba(0,200,150,0.15);
 border-radius: 999px;
 padding: 7px 12px;
 font-size: 12px;
@@ -474,7 +508,7 @@ text-overflow: ellipsis;
 .meal-macro.p { background: rgba(91,127,255,0.12); color: #7da4ff; }
 .meal-macro.g { background: rgba(251,191,36,0.12); color: #fbbf24; }
 .meal-macro.l { background: rgba(249,115,22,0.12); color: #f97316; }
-.entry-kcal {font-family: 'Syne', sans-serif;
+.entry-kcal {font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 }
@@ -504,7 +538,7 @@ border-radius: 14px;
 padding: 13px 16px;
 font-size: 15px;
 color: var(--text);
-font-family: 'Plus Jakarta Sans', sans-serif;
+font-family: 'Inter', sans-serif;
 width: 100%;
 outline: none;
 transition: all 0.2s;
@@ -525,7 +559,7 @@ padding: 11px 14px;
 font-size: 14px;
 font-weight: 700;
 cursor: pointer;
-box-shadow: 0 3px 12px rgba(124,111,255,0.3);
+box-shadow: 0 3px 12px rgba(0,200,150,0.25);
 transition: all 0.2s;
 }
 .search-btn:active { transform: scale(0.96); }
@@ -545,7 +579,7 @@ cursor: pointer;
 border-color: var(--accent);
 }
 .recipe-name,.summary-title {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 }
@@ -625,7 +659,7 @@ letter-spacing: 1.2px;
 margin-bottom: 3px;
 }
 .mini-kpi .val {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 17px;
 font-weight: 700;
 }
@@ -652,13 +686,13 @@ letter-spacing: 1px;
 margin-bottom: 3px;
 }
 .macro-kpi .val {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 }
 .macro-kpi.p .label { color: var(--accent); }
-.macro-kpi.g .label { color: var(--orange); }
-.macro-kpi.l .label { color: var(--pink); }
+.macro-kpi.g .label { color: #A0B0A8; }
+.macro-kpi.l .label { color: var(--muted); }
 .day-line {
 background: var(--surface);
 border: 1px solid var(--border);
@@ -674,10 +708,10 @@ margin-bottom: 6px;
 .day-line-name {
 font-size: 12px;
 font-weight: 700;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 }
 .day-line-bal {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 11px;
 font-weight: 700;
 }
@@ -738,7 +772,7 @@ z-index: 60;
 .modal-overlay.z90 { z-index: 90; }
 .modal-sheet,.settings-sheet {
 background: var(--surface);
-border: 1px solid rgba(124,111,255,0.1);
+border: 1px solid rgba(0,200,150,0.1);
 border-top: 1px solid rgba(255,255,255,0.08);
 border-radius: 28px 28px 0 0;
 width: 100%;
@@ -767,7 +801,7 @@ align-items: center;
 margin-bottom: 16px;
 }
 .modal-title {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 22px;
 font-weight: 800;
 letter-spacing: -0.5px;
@@ -805,7 +839,7 @@ cursor: pointer;
 transition: background 0.15s;
 }
 .result-item:last-child { border-bottom: none; }
-.result-item:hover { background: rgba(91,127,255,0.08); }
+.result-item:hover { background: rgba(0,200,150,0.06); }
 .result-name {
 font-size: 12px;
 font-weight: 500;
@@ -832,7 +866,7 @@ margin-bottom: 2px;
 .create-food-btn {
 width: 100%;
 padding: 11px 14px;
-background: rgba(91,127,255,0.08);
+background: rgba(0,200,150,0.06);
 border: none;
 border-top: 1px solid var(--border);
 color: var(--accent);
@@ -877,8 +911,8 @@ padding: 12px 14px;
 transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input-box:focus-within {
-border-color: rgba(124,111,255,0.4);
-box-shadow: 0 0 0 3px rgba(124,111,255,0.08);
+border-color: rgba(0,200,150,0.4);
+box-shadow: 0 0 0 3px rgba(0,200,150,0.08);
 }
 .input-box label {
 display: block;
@@ -894,7 +928,7 @@ width: 100%;
 background: none;
 border: none;
 outline: none;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 19px;
 font-weight: 800;
 color: var(--text);
@@ -916,7 +950,7 @@ padding: 10px 10px;
 text-align: center;
 transition: border-color 0.2s;
 }
-.macro-input:focus-within { border-color: rgba(124,111,255,0.35); }
+.macro-input:focus-within { border-color: rgba(0,200,150,0.3); }
 .macro-input label {
 display: block;
 font-size: 8px;
@@ -931,29 +965,29 @@ background: none;
 border: none;
 outline: none;
 text-align: center;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 color: var(--text);
 }
 .macro-input.prot label { color: var(--accent); }
-.macro-input.gluc label { color: var(--orange); }
-.macro-input.lip label { color: var(--pink); }
+.macro-input.gluc label { color: #A0B0A8; }
+.macro-input.lip label { color: #7A9088; }
 .calc-result {
-background: linear-gradient(135deg, rgba(124,111,255,0.1), rgba(91,127,255,0.06));
-border: 1px solid rgba(124,111,255,0.2);
+background: linear-gradient(135deg, rgba(0,200,150,0.08), rgba(0,168,126,0.04));
+border: 1px solid rgba(0,200,150,0.2);
 border-radius: 20px;
 padding: 18px 14px;
 text-align: center;
 margin-bottom: 14px;
-box-shadow: 0 0 24px rgba(124,111,255,0.1);
+box-shadow: 0 0 24px rgba(0,200,150,0.08);
 }
 .calc-result .big {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 42px;
 font-weight: 800;
 letter-spacing: -2px;
-background: linear-gradient(135deg,#fff 20%,#A89FFF);
+background: linear-gradient(135deg,#ffffff 30%,#00C896);
 -webkit-background-clip: text;
 -webkit-text-fill-color: transparent;
 }
@@ -972,16 +1006,16 @@ border: none;
 border-radius: 16px;
 padding: 16px;
 color: white;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 letter-spacing: 2px;
 text-transform: uppercase;
 transition: all 0.2s;
 cursor: pointer;
-box-shadow: 0 4px 20px rgba(124,111,255,0.3);
+box-shadow: 0 4px 20px rgba(0,200,150,0.25);
 }
-.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,111,255,0.4); }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,200,150,0.35); }
 .btn-primary:active { transform: scale(0.98) translateY(0); box-shadow: none; }
 .btn-cancel {
 width: 100%;
@@ -1026,7 +1060,7 @@ letter-spacing: 1.5px;
 margin-bottom: 3px;
 }
 .bmr-item .b-val {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 20px;
 font-weight: 800;
 color: var(--accent);
@@ -1076,7 +1110,7 @@ width: 100%;
 max-width: 360px;
 }
 .auth-logo {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 26px;
 font-weight: 800;
 letter-spacing: -1px;
@@ -1094,7 +1128,7 @@ background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 11px;
 padding: 13px 15px;
-font-family: 'Plus Jakarta Sans', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 14px;
 color: var(--text);
 outline: none;
@@ -1119,7 +1153,7 @@ justify-content: center;
 }
 #loading-screen.hidden { display: none; }
 .loading-text {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 18px;
 font-weight: 800;
 color: var(--muted);
@@ -1238,7 +1272,7 @@ background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 9px;
 padding: 10px 12px;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 16px;
 font-weight: 700;
 color: var(--text);
@@ -1264,7 +1298,7 @@ margin-bottom: 14px;
 position: relative;
 }
 .weight-chart-title {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 margin-bottom: 12px;
@@ -1278,13 +1312,13 @@ padding: 16px;
 margin-bottom: 14px;
 }
 .imc-title {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 13px;
 font-weight: 700;
 margin-bottom: 4px;
 }
 .imc-val {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 28px;
 font-weight: 800;
 margin-bottom: 2px;
@@ -1349,7 +1383,7 @@ font-size: 11px;
 color: var(--muted);
 }
 .weight-entry-val {
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 }
@@ -1437,7 +1471,7 @@ background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 9px;
 padding: 9px 12px;
-font-family: 'Plus Jakarta Sans', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 12px;
 color: var(--text);
 outline: none;
@@ -1496,7 +1530,7 @@ margin-bottom: 5px;
 background: none;
 border: none;
 outline: none;
-font-family: 'Syne',sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 16px;
 font-weight: 700;
 color: var(--text);
@@ -1558,7 +1592,7 @@ gap: 12px;
 margin-bottom: 8px;
 }
 .imc-weight-val {
-font-family: 'Syne', sans-serif;
+font-family: 'Inter', sans-serif;
 font-size: 24px;
 font-weight: 800;
 }
@@ -1577,16 +1611,18 @@ margin-left: 4px;
 <div class="header-date" id="header-date"></div>
 </div>
 <div class="header-btns">
-<button class="btn-icon gold" onclick="openAlimentsModal()">⭐ Aliments</button>
-<button class="btn-icon" onclick="openRecipesModal()">📚 Recettes</button>
-<button class="btn-icon" onclick="openPlacesModal()">📍 Lieux</button>
-
-<button class="btn-icon" onclick="openSportFavsModal()">⭐ Sports</button>
-<button class="btn-icon green" onclick="openWeightModal()">⚖️ Poids</button>
-<button class="btn-icon" onclick="openSettings()">⚙️ Réglages</button>
-<button class="btn-icon" onclick="logout()">↪</button>
+<button class="btn-icon" onclick="toggleTheme()" id="theme-btn" style="font-size:16px;padding:8px 10px;">🌙</button>
+<button class="btn-icon" onclick="logout()" style="font-size:13px;">↪</button>
 </div>
 </header>
+<nav class="bottom-nav">
+<button class="bottom-nav-btn" onclick="openAlimentsModal()"><span>⭐</span><span>Aliments</span></button>
+<button class="bottom-nav-btn" onclick="openRecipesModal()"><span>📚</span><span>Recettes</span></button>
+<button class="bottom-nav-btn" onclick="openPlacesModal()"><span>📍</span><span>Lieux</span></button>
+<button class="bottom-nav-btn" onclick="openSportFavsModal()"><span>🏃</span><span>Sports</span></button>
+<button class="bottom-nav-btn" onclick="openWeightModal()"><span>⚖️</span><span>Poids</span></button>
+<button class="bottom-nav-btn" onclick="openSettings()"><span>⚙️</span><span>Réglages</span></button>
+</nav>
 <main>
 <div class="tabs">
 <button class="tab-btn active" id="tab-journal" onclick="showPage('journal')">Journal</button>
@@ -1705,9 +1741,9 @@ margin-left: 4px;
 <div id="bilan-nav"></div>
 <div style="text-align:right;margin-bottom:10px;"><button class="btn-icon" onclick="exportCSV()" style="color:var(--green);border-color:rgba(61,214,140,0.3);">📥 Exporter CSV</button></div>
 <div id="bilan-summary" class="summary-cards"></div>
-<div id="bilan-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
-<div id="bilan-net-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
-<div id="bilan-prot-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
+<div id="bilan-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(0,200,150,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
+<div id="bilan-net-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(0,200,150,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
+<div id="bilan-prot-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(0,200,150,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
 <div id="bilan-detail" class="daily-week-list"></div>
 </section>
 </main>
@@ -1729,7 +1765,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">📚 Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
-<button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
+<button id="ai-btn" class="fav-link-btn" style="background:rgba(0,200,150,0.1);color:var(--accent);border:1px solid rgba(0,200,150,0.25);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
 </div>
 <div id="search-results"></div>
 <!-- SPORT FAVS (marche + vélo) -->
@@ -2039,7 +2075,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px;" id="aliments-actions">
 <button class="btn-primary" style="flex:1;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
-<button class="btn-primary" style="flex:0 0 auto;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);font-size:13px;padding:10px 16px;" onclick="openAIFromBase()">🤖 IA</button>
+<button class="btn-primary" style="flex:0 0 auto;background:rgba(0,200,150,0.1);color:var(--accent);border:1px solid rgba(0,200,150,0.25);font-size:13px;padding:10px 16px;" onclick="openAIFromBase()">🤖 IA</button>
 <button class="btn-primary" style="flex:0 0 auto;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
 </div>
 <div id="aliments-list"></div>
@@ -4777,7 +4813,7 @@ document.getElementById('bilan-summary').innerHTML = `
     const isD = netTotal < 0;
     return `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net période</div>
-      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${netTotal} kcal</div>
+      <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:${isD ? 'var(--green)' : 'var(--danger)'};">${isD ? '' : '+'}${netTotal} kcal</div>
       <div style="font-size:12px;color:${isD ? 'var(--green)' : 'var(--danger)'};">≈ ${kg} kg ${isD ? 'perdu' : 'pris'}</div>
     </div>`;
   })()}
@@ -6392,7 +6428,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
 
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
@@ -6451,7 +6487,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${d.bal >= 0 ? barY - 3 : barY + bh + 9}" tex
   wrap.innerHTML = `
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⚖️ Bilan net / jour</div>
-      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</div>
+      <div style="font-family:'Inter',sans-serif;font-size:26px;font-weight:800;color:${lineCol};">${finalCumul > 0 ? '+' : ''}${finalCumul} kcal</div>
       <div style="font-size:13px;font-weight:700;color:${lineCol};margin-top:2px;">≈ ${Math.abs(Math.round(finalCumul/7700*100)/100)} kg ${finalCumul < 0 ? 'de graisse perdue' : 'de graisse prise'}</div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
@@ -6516,7 +6552,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="m
   }).join('');
 
   wrap.innerHTML = `
-    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">💪 Protéines / jour</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">💪 Protéines / jour</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
@@ -6809,7 +6845,7 @@ function openRecipeAIModal() {
 <div id="modal-dose-fav" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:flex-end;justify-content:center;">
 <div style="background:var(--surface);border:1px solid var(--border2);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:20px 18px 40px;animation:slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);">
 <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;"></div>
-<div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">📏 Dose par défaut</div>
+<div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">📏 Dose par défaut</div>
 <div id="dose-fav-name" style="font-size:12px;color:var(--muted);margin-bottom:16px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;align-items:end;margin-bottom:14px;">
 <div class="input-box" style="margin:0;"><label>Quantité</label><input id="dose-fav-qty" type="number" value="100" min="0.1" step="0.1"></div>
