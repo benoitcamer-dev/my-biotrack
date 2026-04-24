@@ -791,7 +791,7 @@ z-index: 60;
 .modal-overlay.z86 { z-index: 86; }
 .modal-overlay.z87 { z-index: 87; }
 .modal-overlay.z88 { z-index: 88; }
-.modal-overlay.z90 { z-index: 90; }
+.modal-overlay.z90 { z-index: 202; }
 .modal-sheet,.settings-sheet {
 background: var(--surface);
 border: 1px solid rgba(124,111,255,0.1);
@@ -1132,6 +1132,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
 }
 input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+/* FAB menu — boutons plus compacts sur desktop */
+@media (min-width: 600px) {
+  #fab-menu button {
+    padding: 14px 24px !important;
+    font-size: 16px !important;
+    width: min(320px, 90vw) !important;
+    border-radius: 24px !important;
+  }
+  #fab-menu button span:first-child {
+    font-size: 24px !important;
+  }
+  #fab-menu button span:last-child {
+    font-size: 16px !important;
+  }
+  #fab-menu { gap: 10px !important; }
+}
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -2441,9 +2457,9 @@ Oui si nécessaire
 <div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
 <div style="display:flex;gap:7px;margin-bottom:10px;">
 <input id="ai-input" class="search-input" type="text" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askAI();}">
-<button class="search-btn" onclick="askAI()">→</button>
-<button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;">🎤</button>
-<label title="Envoyer une photo" style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:18px;flex-shrink:0;">
+<button class="search-btn" onclick="askAI()" style="width:50px;height:50px;font-size:20px;flex-shrink:0;">→</button>
+<button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">🎤</button>
+<label title="Envoyer une photo" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
 📷<input type="file" id="ai-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="askAIWithPhoto(this)">
 </label>
 </div>
@@ -5915,6 +5931,8 @@ let _aiTargetBase = false; // true when AI opened from base tab
 function openAIModalGlobal() {
   aiCurrentCat = '';
   _aiGlobalMode = true;
+  const fab = document.getElementById('fab-btn');
+  if (fab) fab.style.display = 'none';
   _openAIModalCore();
 }
 
@@ -5981,6 +5999,9 @@ function speakIfEnabled(text) {
 
 function closeAIModal() {
   document.getElementById('modal-ai').classList.remove('open');
+  // Remettre le FAB si on est sur la page journal
+  const fab = document.getElementById('fab-btn');
+  if (fab && currentPage === 'journal') fab.style.display = 'flex';
 }
 
 async function askAI() {
@@ -6027,6 +6048,20 @@ Format marche SIMPLE (A vers B) : {"type":"sport","activity":"description","dura
 Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B","adresse C"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
 Toujours mettre les etapes dans "walk_steps" (tableau). Ne pas mettre walk_from/walk_to.
 Format sport non-marche : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
+Calcul kcal/heure selon poids de l utilisateur et intensite :
+- Velo leger (< 16km/h) : poids * 4
+- Velo modere (16-19km/h) : poids * 6
+- Velo soutenu (20-25km/h) : poids * 8
+- Velo intense (> 25km/h) : poids * 10
+- Natation : poids * 7
+- Course a pied leger : poids * 7
+- Course a pied soutenu : poids * 10
+- Musculation : poids * 4
+- Yoga/stretching : poids * 2.5
+- Football/basketball : poids * 7
+- Tennis : poids * 6
+Par defaut si activite inconnue : poids * 5
+TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 Si question indispensable : {"type":"question","message":"question courte"}
 Si l utilisateur corrige juste la quantite ("c etait 200g", "plutot 150") : {"type":"correction","qty_g":200,"note":"Quantite corrigee"}
 ${qLine}`
@@ -6130,6 +6165,9 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-label-kcal').textContent = 'Kcal / heure';
       document.getElementById('ai-macro-fields').style.display = 'none';
       _aiLastSportData = p;
+      // Forcer la catégorie sur Sport dans le sélecteur
+      const catSel = document.getElementById('ai-target-cat');
+      if (catSel) catSel.value = 'Sport';
       if (p.is_walk && p.walk_steps && p.walk_steps.length >= 2) {
         // Geocode + real route calculation
         addChatMessage('ai', '📍 Calcul de l\'itinéraire…');
