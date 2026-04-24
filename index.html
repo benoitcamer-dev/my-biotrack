@@ -1103,6 +1103,14 @@ justify-content: center;
 padding: 32px;
 }
 #auth-screen.hidden { display: none !important; pointer-events: none !important; }
+/* Fondu journal au changement de jour */
+#daily-list, .kcal-card {
+  transition: opacity 0.18s ease;
+}
+.data-loading #daily-list, .data-loading .kcal-card {
+  opacity: 0.35;
+}
+
 .auth-card {
 background: var(--surface);
 border: 1px solid var(--border2);
@@ -3365,10 +3373,8 @@ const isFav = favoriteIds.includes(f.id);
 let fn;
 if (isRecipe) {
   fn = `fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
-} else if (f.unit_label && f.unit_label !== 'g') {
-  fn = `fillFoodWithUnit(${JSON.stringify({name:f.name,kcal_100:f.kcal_100,prot_100:f.prot_100,gluc_100:f.gluc_100,lip_100:f.lip_100,unit_label:f.unit_label,unit_g:f.unit_g,default_qty:f.default_qty})})`;
 } else {
-  fn = `fillFood('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100})`;
+  fn = `fillFoodWithUnit(${JSON.stringify({name:f.name,kcal_100:f.kcal_100,prot_100:f.prot_100,gluc_100:f.gluc_100,lip_100:f.lip_100,unit_label:f.unit_label||'g',unit_g:f.unit_g||1,default_qty:f.default_qty||100})})`;
 }
 const unitBadge = (f.unit_label && f.unit_label !== 'g') ? ` · ${f.default_qty} ${unitLabelFull(f.unit_label)}` : '';
 return `<div class="result-item" onclick="event.stopPropagation();(function(){${fn}})();">
@@ -3456,6 +3462,7 @@ div.innerHTML = items.map(s => `<div class="result-item" onclick="${s.fn}"><div 
 }
 // Track current search query to avoid stale results
 let _searchToken = 0;
+let _searchAbortCtrl = null;
 async function searchFood(v, target = 'main') {
 const isR = target === 'recipe', div = isR ? document.getElementById('re-search-results') : document.getElementById('search-results');
 div.style.display = 'block';
@@ -3487,7 +3494,9 @@ div.innerHTML = localCombined ? (localCombined + netLoader + cb) : (netLoader + 
 let oH = '', att = 0, ok = false;
 while (att < 2 && !ok) {
 try {
-const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 6000);
+if (_searchAbortCtrl) { try { _searchAbortCtrl.abort(); } catch(_){} }
+_searchAbortCtrl = new AbortController();
+const ctrl = _searchAbortCtrl, t = setTimeout(() => ctrl.abort(), 6000);
 const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(v)}&json=1&page_size=40&action=process&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text`, { signal: ctrl.signal });
 clearTimeout(t);
 const d = await res.json();
@@ -3504,7 +3513,7 @@ return `<div class="result-item" style="display:flex;align-items:center;gap:6px;
 <div class="result-name">${n}</div>
 <div class="result-kcal">${k} kcal/100g</div>
 </div>
-${!isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">📦</button>` : ''}
+${!isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : ''}
 </div>`;
 }).filter(Boolean).join('');
 } catch (e) { att++; if (att < 2) await new Promise(r => setTimeout(r, 800)); }
@@ -4239,6 +4248,7 @@ let error = null;
 if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
 else { const res = await sb.from('entries').insert([payload]); error = res.error; }
 if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmitting = false; return; }
+haptic(10);
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
@@ -5024,6 +5034,8 @@ el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-i
 </div>`).join('');
 }
 async function loadData() {
+const _journal = document.getElementById('page-journal');
+if (_journal) _journal.classList.add('data-loading');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
@@ -5132,7 +5144,9 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
-} catch (e) { console.error('loadData:', e); }
+} catch (e) { console.error('loadData:', e); } finally {
+if (_journal) _journal.classList.remove('data-loading');
+}
 }
 let _copyMealSourceCat = null;
 function openCopyMealModal(cat) {
@@ -5179,7 +5193,7 @@ async function confirmCopyMeal() {
   setTimeout(() => toast.remove(), 3000);
 }
 
-async function del(id) { await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
+async function del(id) { haptic(6); await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
 async function clearMealEntries(cat) {
 if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
 const { data: { user } } = await sb.auth.getUser();
@@ -6921,6 +6935,33 @@ function openRecipeAIModal() {
   document.getElementById('modal-ai').classList.add('open');
   setTimeout(() => document.getElementById('ai-input').focus(), 180);
 }
+
+
+// Retour haptique léger (Android uniquement)
+function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+
+// ── Gestion offline ──────────────────────────────────────────────────────────
+(function() {
+  let _offlineToast = null;
+  function showOfflineToast() {
+    if (_offlineToast) return;
+    _offlineToast = document.createElement('div');
+    _offlineToast.textContent = '📡 Hors ligne — les modifications seront perdues';
+    _offlineToast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1020;border:1px solid var(--danger);color:var(--danger);padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(255,77,106,0.3);';
+    document.body.appendChild(_offlineToast);
+  }
+  function hideOfflineToast() {
+    if (_offlineToast) { _offlineToast.remove(); _offlineToast = null; }
+    const t = document.createElement('div');
+    t.textContent = '✅ Connexion rétablie';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--green);color:var(--green);padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;white-space:nowrap;';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }
+  window.addEventListener('offline', showOfflineToast);
+  window.addEventListener('online', hideOfflineToast);
+  if (!navigator.onLine) showOfflineToast();
+})();
 
 // ── Clavier mobile : remonte le modal-add au-dessus du clavier ──
 (function() {
