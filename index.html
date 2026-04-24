@@ -297,8 +297,8 @@ background: linear-gradient(135deg,#FFFFFF 35%,#C4BEFF);
 -webkit-text-fill-color: transparent;
 }
 .kcal-label {
-font-size: 9px;
-font-weight: 500;
+font-size: 10px;
+font-weight: 600;
 color: var(--muted);
 text-transform: uppercase;
 letter-spacing: 3px;
@@ -2971,7 +2971,7 @@ function renderAlimentItem(f, isFav) {
 const doseInfo = f.default_qty ? `· ${f.default_qty}${f.unit_label && f.unit_label !== 'g' ? ' ' + (f.unit_label === 'cac' ? 'c.café' : f.unit_label === 'cas' ? 'c.soupe' : f.unit_label) : 'g'}/dose` : '';
 const nameEsc = f.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 return `<div class="food-item">
-<div class="food-item-main" onclick="selectFoodFromAliments({name:'${nameEsc}',kcal_100:${f.kcal_100},prot_100:${f.prot_100},gluc_100:${f.gluc_100},lip_100:${f.lip_100},unit_label:'${f.unit_label||'g'}',unit_g:${f.unit_g||1},default_qty:${f.default_qty||100}})" style="cursor:pointer;flex:1;min-width:0;">
+<div class="food-item-main" onclick="_alimentsFromAdd ? selectFoodFromAliments({name:'${nameEsc}',kcal_100:${f.kcal_100},prot_100:${f.prot_100},gluc_100:${f.gluc_100},lip_100:${f.lip_100},unit_label:'${f.unit_label||'g'}',unit_g:${f.unit_g||1},default_qty:${f.default_qty||100}}) : (closeAlimentsModal(), openCustomFoodModal('','${f.id}'))" style="cursor:pointer;flex:1;min-width:0;">
 <div class="food-item-name">${f.name}</div>
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
