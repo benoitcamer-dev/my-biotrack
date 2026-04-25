@@ -1154,6 +1154,117 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 }
 /* Scroll lock quand un modal est ouvert */
 body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+/* Bouton + ajouter en bas du groupe repas */
+.entry-add-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 4px 2px;
+  padding: 12px 16px;
+  border: 2px dashed rgba(124,111,255,0.35);
+  border-radius: 16px;
+  background: rgba(124,111,255,0.04);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.18s;
+  letter-spacing: 0.2px;
+}
+.entry-add-bottom:hover, .entry-add-bottom:active {
+  background: rgba(124,111,255,0.1);
+  border-color: rgba(124,111,255,0.6);
+}
+[data-theme="light"] .entry-add-bottom {
+  border-color: rgba(91,79,232,0.3);
+  background: rgba(91,79,232,0.03);
+  color: #4f46e5;
+}
+
+/* Swipe left sur les entrées */
+.entry-item {
+  position: relative;
+  overflow: hidden;
+}
+.entry-item-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--surface);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+  will-change: transform;
+}
+.entry-swipe-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  z-index: 0;
+}
+.entry-swipe-edit {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 0 18px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+.entry-swipe-delete {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 0 18px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  border-radius: 0 10px 10px 0;
+}
+
+/* Menu contextuel repas */
+.meal-ctx-menu {
+  position: absolute;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  z-index: 999;
+  overflow: hidden;
+  min-width: 200px;
+  animation: fadeUp 0.15s ease;
+}
+.meal-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  color: var(--text);
+  text-align: left;
+  touch-action: manipulation;
+}
+.meal-ctx-item:hover { background: var(--surface); }
+.meal-ctx-item.danger { color: var(--danger); }
+.meal-ctx-item + .meal-ctx-item { border-top: 1px solid var(--border); }
+
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -5211,9 +5322,19 @@ if (remaining < 0) bar.style.background = 'linear-gradient(90deg,#ef4444,#f97316
 else if (remaining < 300) bar.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
 else bar.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
 const ke = document.getElementById('kcal-left');
-if (remaining < 0) { ke.style.background = 'linear-gradient(135deg,#ff0000,#ef4444)'; ke.style.textShadow = '0 0 20px rgba(255,0,0,0.5)'; }
-else if (remaining < 200) { ke.style.background = 'linear-gradient(135deg,#f97316,#fbbf24)'; ke.style.textShadow = '0 0 20px rgba(249,115,22,0.4)'; }
-else { ke.style.background = document.documentElement.getAttribute('data-theme') === 'light' ? 'linear-gradient(135deg,#111827 30%,#3b52c4)' : 'linear-gradient(135deg,#fff 30%,#7a8098)'; ke.style.textShadow = 'none'; }
+const _isLight = document.documentElement.getAttribute('data-theme') === 'light';
+if (remaining < 0) {
+  ke.style.background = _isLight ? 'linear-gradient(135deg,#dc2626,#ef4444)' : 'linear-gradient(135deg,#ff0000,#ef4444)';
+  ke.style.textShadow = _isLight ? 'none' : '0 0 20px rgba(255,0,0,0.5)';
+} else if (remaining < 200) {
+  ke.style.background = _isLight ? 'linear-gradient(135deg,#ea580c,#f97316)' : 'linear-gradient(135deg,#f97316,#fbbf24)';
+  ke.style.textShadow = _isLight ? 'none' : '0 0 20px rgba(249,115,22,0.4)';
+}
+else {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  ke.style.background = isLight ? 'linear-gradient(135deg,#16a34a,#4ade80)' : 'linear-gradient(135deg,#fff 30%,#7a8098)';
+  ke.style.textShadow = isLight ? '0 0 20px rgba(22,163,74,0.25)' : 'none';
+}
 ke.style.webkitBackgroundClip = 'text';
 ke.style.webkitTextFillColor = 'transparent';
 const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Sport'];
@@ -5230,15 +5351,13 @@ const mL = items.filter(e => e.type==='food').reduce((s,e) => s+(e.lip||0), 0);
 const hasMacros = !isSport && items.filter(e=>e.type==='food').length > 0;
 html += `<div class="entry-group" data-cat="${cat}">
 <div class="entry-group-header">
-<div class="entry-group-left"><span>${ICONS[cat]}</span><span class="entry-group-title">${cat}</span>${!isSport && items.length ? `<button onclick="clearMealEntries('${cat}')" title="Tout supprimer" style="background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:0 6px 0 2px;">🗑️</button>` : ''}</div>
+<div class="entry-group-left">
+  <span>${ICONS[cat]}</span>
+  <span class="entry-group-title" style="cursor:pointer;" onclick="showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
+</div>
 <div class="entry-group-actions">
-<button class="entry-add-btn" onclick="openModal('${cat}')">+ Ajouter</button>
-${!isSport ? `<button class="meal-save-btn icon-only" title="Lier à une recette" onclick="openLinkMealModal('${cat}')" ${!items.length ? 'disabled style="opacity:0.25;pointer-events:none;"' : ''}>→</button>` : ''}
-${!isSport ? `<button class="meal-save-btn icon-only" title="Copier ce repas" style="background:rgba(124,111,255,0.12);color:var(--accent);border-color:rgba(124,111,255,0.3);${!items.length ? 'opacity:0.25;pointer-events:none;' : ''}" onclick="openCopyMealModal('${cat}')">📋</button>` : ''}
+  <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
-</div>
-<div class="entry-group-kcal-row">
-<span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 ${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
 <div class="entry-group-items">${items.length ? items.map(e => {
@@ -5246,7 +5365,12 @@ const raw = e.desc || '';
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
-return `<div class="entry-item">
+return `<div class="entry-item" data-id="${e.id}">
+<div class="entry-swipe-actions">
+  <button class="entry-swipe-edit" onclick="editEntry(${e.id});closeSwipeEntry()">✎</button>
+  <button class="entry-swipe-delete" onclick="del(${e.id});closeSwipeEntry()">✕</button>
+</div>
+<div class="entry-item-inner">
 <div class="entry-main">
 <div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${main}</span>` : main}</div>
 ${sub2 ? `<div class="entry-sub">${sub2}</div>` : ''}
@@ -5259,11 +5383,11 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
   const isFav = matchedFood && favoriteIds.includes(matchedFood.id);
   return `<button class="entry-action" data-fav-entry="${e.id}" onclick="toggleEntryFavorite(${e.id},this)" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" style="color:var(--gold);font-size:14px;">${isFav ? '⭐' : '☆'}</button>`;
 })() : ''}
-<button class="entry-action" onclick="editEntry(${e.id})">✎</button>
-<button class="entry-action delete" onclick="del(${e.id})">✕</button>
+</div>
 </div>
 </div>`;
 }).join('') : ''}</div>
+<button class="entry-add-bottom" onclick="openModal('${cat}')">＋ Ajouter à ${cat}</button>
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
@@ -5271,6 +5395,105 @@ document.getElementById('daily-list').innerHTML = html;
 if (_journal) _journal.classList.remove('data-loading');
 }
 }
+// ── Menu contextuel repas ────────────────────────────────────────────────────
+let _ctxMenu = null;
+function closeMealCtxMenu() {
+  if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+}
+function showMealCtxMenu(e, cat, hasItems, isFood) {
+  e.stopPropagation();
+  closeMealCtxMenu();
+  const menu = document.createElement('div');
+  menu.className = 'meal-ctx-menu';
+  const actions = [];
+  if (isFood && hasItems) {
+    actions.push({ icon: '→', label: 'Lier à une recette', fn: `openLinkMealModal('${cat}');closeMealCtxMenu()` });
+    actions.push({ icon: '📋', label: 'Copier ce repas', fn: `openCopyMealModal('${cat}');closeMealCtxMenu()` });
+  }
+  if (hasItems) {
+    actions.push({ icon: '🗑️', label: 'Vider le repas', fn: `clearMealEntries('${cat}');closeMealCtxMenu()`, danger: true });
+  }
+  if (!actions.length) { return; }
+  menu.innerHTML = actions.map(a =>
+    `<button class="meal-ctx-item${a.danger ? ' danger' : ''}" onclick="${a.fn}">${a.icon} ${a.label}</button>`
+  ).join('');
+  // Positionner près du titre cliqué
+  const rect = e.target.getBoundingClientRect();
+  menu.style.cssText = `position:fixed;top:${rect.bottom + 6}px;left:${rect.left}px;`;
+  document.body.appendChild(menu);
+  _ctxMenu = menu;
+  // Fermer au prochain tap
+  setTimeout(() => document.addEventListener('click', closeMealCtxMenu, { once: true }), 10);
+}
+
+// ── Swipe gauche sur les entrées ──────────────────────────────────────────────
+let _swipedEntry = null;
+const SWIPE_THRESHOLD = 60;
+const ACTION_WIDTH = 112; // largeur des deux boutons d'action
+
+function closeSwipeEntry() {
+  if (_swipedEntry) {
+    const inner = _swipedEntry.querySelector('.entry-item-inner');
+    if (inner) { inner.style.transition = 'transform 0.2s ease'; inner.style.transform = ''; }
+    _swipedEntry = null;
+  }
+}
+
+document.addEventListener('touchstart', e => {
+  const item = e.target.closest('.entry-item');
+  if (!item) { closeSwipeEntry(); return; }
+  // Fermer l'entrée précédente si différente
+  if (_swipedEntry && _swipedEntry !== item) closeSwipeEntry();
+  const inner = item.querySelector('.entry-item-inner');
+  if (!inner) return;
+  const startX = e.touches[0].clientX;
+  const startY = e.touches[0].clientY;
+  let moved = false;
+  let isHorizontal = null;
+
+  function onMove(ev) {
+    const dx = ev.touches[0].clientX - startX;
+    const dy = ev.touches[0].clientY - startY;
+    if (isHorizontal === null) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      isHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!isHorizontal) { cleanup(); return; }
+    ev.preventDefault();
+    moved = true;
+    const clamped = Math.max(-ACTION_WIDTH, Math.min(0, dx));
+    inner.style.transition = 'none';
+    inner.style.transform = `translateX(${clamped}px)`;
+  }
+
+  function onEnd(ev) {
+    cleanup();
+    if (!moved || !isHorizontal) return;
+    const dx = ev.changedTouches[0].clientX - startX;
+    inner.style.transition = 'transform 0.2s ease';
+    if (dx < -SWIPE_THRESHOLD) {
+      inner.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      _swipedEntry = item;
+    } else {
+      inner.style.transform = '';
+      _swipedEntry = null;
+    }
+  }
+
+  function cleanup() {
+    item.removeEventListener('touchmove', onMove);
+    item.removeEventListener('touchend', onEnd);
+  }
+
+  item.addEventListener('touchmove', onMove, { passive: false });
+  item.addEventListener('touchend', onEnd, { once: true });
+}, { passive: true });
+
+// Fermer le swipe si on tape ailleurs
+document.addEventListener('click', e => {
+  if (!e.target.closest('.entry-item')) closeSwipeEntry();
+});
+
 let _copyMealSourceCat = null;
 function openCopyMealModal(cat) {
   _copyMealSourceCat = cat;
