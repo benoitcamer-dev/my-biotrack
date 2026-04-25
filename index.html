@@ -1261,6 +1261,28 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
 .meal-ctx-item.danger { color: var(--danger); }
 .meal-ctx-item + .meal-ctx-item { border-top: 1px solid var(--border); }
 
+/* Swipe actions visibles au hover sur PC */
+@media (hover: hover) {
+  .entry-swipe-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+  .entry-item:hover .entry-swipe-actions { opacity: 1; }
+  .entry-swipe-edit, .entry-swipe-delete {
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    margin: auto 2px;
+  }
+  .entry-swipe-delete { border-radius: 8px; }
+  .entry-item-inner { padding-right: 6px; }
+}
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -5398,6 +5420,7 @@ function closeMealCtxMenu() {
 }
 function showMealCtxMenu(e, cat, hasItems, isFood) {
   e.stopPropagation();
+  if (_ctxMenu) { closeMealCtxMenu(); return; } // toggle
   closeMealCtxMenu();
   const menu = document.createElement('div');
   menu.className = 'meal-ctx-menu';
@@ -7485,17 +7508,25 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
     if (!sheet) return;
     const keyboardHeight = window.innerHeight - window.visualViewport.height;
     if (keyboardHeight > 80) {
-      sheet.style.transform = `translateY(-${keyboardHeight}px)`;
+      // Remonter seulement si le sheet déborde sous le clavier
+      const sheetRect = sheet.getBoundingClientRect();
+      const sheetBottom = sheetRect.bottom;
+      const visibleBottom = window.innerHeight - keyboardHeight;
+      const overflow = sheetBottom - visibleBottom;
+      // Ne remonter que de l'overflow + 8px de marge, max 60% du clavier
+      const lift = Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6));
+      sheet.style.transform = lift > 0 ? `translateY(-${Math.round(lift)}px)` : '';
       sheet.style.transition = 'transform 0.15s ease';
     } else {
       sheet.style.transform = '';
     }
   });
 
-  // Remet à zéro quand le modal se ferme
+  // Remet à zéro quand le modal se ferme via overlay ou bouton close
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-close')) {
       document.querySelectorAll('.modal-sheet').forEach(s => s.style.transform = '');
+      document.body.classList.remove('modal-open');
     }
   });
 })();
