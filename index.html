@@ -1044,18 +1044,26 @@ box-shadow: 0 4px 20px rgba(124,111,255,0.3);
 .btn-primary:active { transform: scale(0.98) translateY(0); box-shadow: none; }
 .btn-cancel {
 width: 100%;
-background: rgba(255,255,255,0.04);
-border: 1px solid rgba(255,255,255,0.07);
-border-radius: 14px;
-padding: 13px;
-color: var(--muted);
-font-size: 13px;
-font-weight: 600;
+background: rgba(255,255,255,0.06);
+border: 1.5px solid rgba(255,255,255,0.12);
+border-radius: 16px;
+padding: 16px;
+color: var(--text);
+font-size: 15px;
+font-weight: 700;
 cursor: pointer;
-margin-top: 6px;
+margin-top: 8px;
 transition: all 0.2s;
+touch-action: manipulation;
 }
-.btn-cancel:hover { color: var(--text); background: rgba(255,255,255,0.07); }
+.btn-cancel:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+.btn-cancel:active { transform: scale(0.98); }
+[data-theme="light"] .btn-cancel {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.1);
+  color: #374151;
+}
+[data-theme="light"] .btn-cancel:hover { background: rgba(0,0,0,0.08); }
 .setting-row { margin-bottom: 13px; }
 .setting-row label {
 display: block;
@@ -7564,15 +7572,10 @@ document.addEventListener('touchmove', (e) => {
     let startY = 0, currentY = 0, startTime = 0, dragging = false;
 
     sheet.addEventListener('touchstart', e => {
-      // Seulement si le touch commence sur le handle ou le titre (pas sur un input/select/scroll)
       const tag = e.target.tagName.toLowerCase();
       if (['input','select','textarea','button'].includes(tag)) return;
-
-      // Autoriser seulement si on est en haut du scroll interne
-      const scrollable = sheet.querySelector('.modal-scroll, .settings-body') || sheet;
-      if (scrollable.scrollTop > 4) return;
-
       startY = e.touches[0].clientY;
+      currentY = startY;
       startTime = Date.now();
       dragging = true;
       sheet.style.transition = 'none';
@@ -7588,25 +7591,27 @@ document.addEventListener('touchmove', (e) => {
     sheet.addEventListener('touchend', () => {
       if (!dragging) return;
       dragging = false;
-      const dy = Math.max(0, currentY - startY);
+      const dy = currentY - startY; // peut être négatif (swipe vers le haut)
       const elapsed = Date.now() - startTime;
       const velocity = dy / elapsed; // px/ms
       const sheetH = sheet.offsetHeight;
 
-      sheet.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+      sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
 
-      if (dy > sheetH * CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
-        // Fermer — animer vers le bas puis appeler closeFn
+      const shouldClose = dy > sheetH * CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+
+      if (shouldClose) {
+        // Snap vers le bas → fermer
         sheet.style.transform = `translateY(${sheetH + 60}px)`;
         setTimeout(() => {
           sheet.style.transform = '';
           sheet.style.transition = '';
           closeFn();
-        }, 260);
+        }, 280);
       } else {
-        // Revenir en place
+        // Snap vers le haut → revenir en pleine hauteur
         sheet.style.transform = '';
-        setTimeout(() => { sheet.style.transition = ''; }, 300);
+        setTimeout(() => { sheet.style.transition = ''; }, 320);
       }
     });
   }
