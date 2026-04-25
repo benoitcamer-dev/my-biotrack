@@ -497,12 +497,9 @@ margin-left: 4px;
 background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 11px;
-padding: 9px 11px;
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: 8px;
 animation: fadeUp 0.28s ease;
+position: relative;
+overflow: hidden;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .entry-main { flex: 1; min-width: 0; }
@@ -1159,40 +1156,39 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 8px 4px 2px;
-  padding: 12px 16px;
-  border: 2px dashed rgba(124,111,255,0.35);
-  border-radius: 16px;
-  background: rgba(124,111,255,0.04);
+  gap: 10px;
+  margin: 10px 0 4px;
+  padding: 14px 20px;
+  border: 2px dashed rgba(124,111,255,0.45);
+  border-radius: 18px;
+  background: rgba(124,111,255,0.06);
   color: var(--accent);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
   transition: all 0.18s;
   letter-spacing: 0.2px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .entry-add-bottom:hover, .entry-add-bottom:active {
-  background: rgba(124,111,255,0.1);
-  border-color: rgba(124,111,255,0.6);
+  background: rgba(124,111,255,0.14);
+  border-color: rgba(124,111,255,0.7);
 }
 [data-theme="light"] .entry-add-bottom {
-  border-color: rgba(91,79,232,0.3);
-  background: rgba(91,79,232,0.03);
+  border-color: rgba(91,79,232,0.35);
+  background: rgba(91,79,232,0.04);
   color: #4f46e5;
 }
 
 /* Swipe left sur les entrées */
-.entry-item {
-  position: relative;
-  overflow: hidden;
-}
 .entry-item-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 9px 11px;
+  gap: 8px;
   background: var(--surface);
   position: relative;
   z-index: 1;
@@ -1212,8 +1208,8 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   background: #3b82f6;
   color: #fff;
   border: none;
-  padding: 0 18px;
-  font-size: 18px;
+  width: 52px;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1224,8 +1220,8 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   background: #ef4444;
   color: #fff;
   border: none;
-  padding: 0 18px;
-  font-size: 18px;
+  width: 52px;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -5429,7 +5425,7 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
 // ── Swipe gauche sur les entrées ──────────────────────────────────────────────
 let _swipedEntry = null;
 const SWIPE_THRESHOLD = 60;
-const ACTION_WIDTH = 112; // largeur des deux boutons d'action
+const ACTION_WIDTH = 104; // largeur des deux boutons d'action (52+52)
 
 function closeSwipeEntry() {
   if (_swipedEntry) {
