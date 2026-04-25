@@ -1159,6 +1159,43 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 }
 /* Scroll lock quand un modal est ouvert */
 body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+/* Popup détail entrée */
+.entry-detail-popup {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 36px;
+  z-index: 300;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  animation: slideUp 0.22s cubic-bezier(0.32,1.2,0.64,1);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.entry-detail-popup .detail-handle {
+  width: 40px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.entry-detail-title {
+  font-size: 16px; font-weight: 800;
+  color: var(--text); margin-bottom: 6px;
+}
+.entry-detail-macros {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.entry-detail-note {
+  font-size: 13px; color: var(--muted);
+  line-height: 1.6; white-space: pre-wrap;
+  background: var(--surface); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 14px;
+}
+.entry-detail-overlay {
+  position: fixed; inset: 0; z-index: 299;
+  background: rgba(0,0,0,0.4);
+}
 /* Bouton + ajouter en bas du groupe repas */
 .entry-add-bottom {
   display: flex;
@@ -5391,7 +5428,7 @@ const raw = e.desc || '';
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
-return `<div class="entry-item" data-id="${e.id}">
+return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="_onEntryTap(this)">
 <div class="entry-swipe-actions">
   <button class="entry-swipe-edit" onclick="editEntry(${e.id});closeSwipeEntry()">✎</button>
   <button class="entry-swipe-delete" onclick="del(${e.id});closeSwipeEntry()">✕</button>
@@ -5520,6 +5557,56 @@ document.addEventListener('touchstart', e => {
 document.addEventListener('click', e => {
   if (!e.target.closest('.entry-item')) closeSwipeEntry();
 });
+
+// ── Popup détail entrée ──────────────────────────────────────────────────────
+function _onEntryTap(el) {
+  // Ne pas ouvrir si swipe en cours
+  const inner = el.querySelector('.entry-item-inner');
+  if (inner && inner.style.transform && inner.style.transform !== 'translateX(0px)' && inner.style.transform !== '') return;
+  const id = el.dataset.id;
+  const desc = el.dataset.desc;
+  const val = parseFloat(el.dataset.val) || 0;
+  const prot = parseFloat(el.dataset.prot) || 0;
+  const gluc = parseFloat(el.dataset.gluc) || 0;
+  const lip = parseFloat(el.dataset.lip) || 0;
+  const type = el.dataset.type;
+  showEntryDetail(id, desc, val, prot, gluc, lip, type);
+}
+
+function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
+  // Supprimer popup existant
+  document.querySelectorAll('.entry-detail-popup, .entry-detail-overlay').forEach(e => e.remove());
+
+  const parts = descRaw.split('||');
+  const mainDesc = parts[0];
+  const note = parts[1] || '';
+  const sign = type === 'burn' ? '−' : '+';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'entry-detail-overlay';
+  overlay.onclick = () => { overlay.remove(); popup.remove(); document.body.classList.remove('modal-open'); };
+
+  const popup = document.createElement('div');
+  popup.className = 'entry-detail-popup';
+  popup.innerHTML = `
+    <div class="detail-handle"></div>
+    <div class="entry-detail-title">${mainDesc}</div>
+    <div class="entry-detail-macros">
+      <span class="result-tag" style="background:rgba(99,102,241,0.15);color:var(--accent);font-size:12px;">${sign}${fmtNum(val)} kcal</span>
+      ${prot ? `<span class="result-tag" style="background:rgba(52,211,153,0.1);color:#3dd68c;font-size:12px;">P ${prot}g</span>` : ''}
+      ${gluc ? `<span class="result-tag" style="background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;">G ${gluc}g</span>` : ''}
+      ${lip ? `<span class="result-tag" style="background:rgba(249,115,22,0.1);color:#f97316;font-size:12px;">L ${lip}g</span>` : ''}
+    </div>
+    ${note ? `<div class="entry-detail-note">${note.replace(/\|/g, '
+')}</div>` : ''}
+    <button class="btn-primary" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open');editEntry(${id})">✎ Modifier</button>
+    <button class="btn-cancel" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open')">Fermer</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+  document.body.classList.add('modal-open');
+}
 
 let _copyMealSourceCat = null;
 function openCopyMealModal(cat) {
@@ -6199,6 +6286,7 @@ function openAIModal() {
   aiCurrentCat = currentCat;
   _aiGlobalMode = false;
   aiChatHistory = [];
+  _aiLastFoodNote = '';
   document.getElementById('ai-chat-log').innerHTML = '';
   document.getElementById('ai-input').value = '';
   document.getElementById('ai-result').style.display = 'none';
@@ -6220,6 +6308,7 @@ function openAIModal() {
 
 let _aiGlobalMode = false;
 let _aiVoiceResponse = false;
+let _aiLastFoodNote = '';
 
 function _openAIModalCore() {
   aiChatHistory = [];
@@ -6349,7 +6438,7 @@ Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_
 TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"liste chaque element : NomXXg=YYYkcal (ZZZkcal/100g), ex: Raclette200g=570kcal(285/100g), Bleu100g=350kcal(350/100g)"}
+REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":PROT_TOTAL_PAR_100G,"gluc_per_100g":GLUC_TOTAL_PAR_100G,"lip_per_100g":LIP_TOTAL_PAR_100G,"note":"Detail complet : Ingredient1 Xg → YYkcal (Prot:Xg Gluc:Xg Lip:Xg) | Ingredient2 Xg → YYkcal | ... | TOTAL: XXXkcal Prot:Xg Gluc:Xg Lip:Xg"}
 Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
@@ -6505,6 +6594,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       recalcAI();
     } else {
       const _noteF = p.note || 'Voici :'; addChatMessage('ai', _noteF); speakIfEnabled(_noteF);
+      _aiLastFoodNote = p.note || '';
       const noteEl2 = document.getElementById('ai-note-text'); if (noteEl2) noteEl2.textContent = p.note || '';
       document.getElementById('ai-label-qty').textContent = 'Quantité (g)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
@@ -6598,7 +6688,7 @@ async function askAIWithPhoto(input) {
   const sysText = `Tu es un assistant nutritionnel expert. ${userProfile}
 Analyse cette photo de repas et estime les valeurs nutritionnelles.
 Reponds TOUJOURS en JSON pur, sans texte autour.
-REPAS SIMPLE : {"type":"food","food":"description","qty_g":0,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"detail"}
+REPAS SIMPLE : {"type":"food","food":"description courte","qty_g":0,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"detail nutritionnel : source des valeurs et composition si pertinent"}
 REPAS COMPOSE : calcule le total en un seul JSON avec qty_g = poids total.
 Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
   const contents = [{
@@ -6736,7 +6826,8 @@ async function addAIEntry() {
   } else if (isSport) {
     desc = `${label} (${q}${unit})`;
   } else {
-    desc = `${label} (${q}${unit})`;
+    const aiNote = _aiLastFoodNote || '';
+    desc = aiNote ? `${label} (${q}${unit})||${aiNote}` : `${label} (${q}${unit})`;
   }
   await sb.from('entries').insert([{
     user_id: user.id,
