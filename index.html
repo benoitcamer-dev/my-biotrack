@@ -5597,8 +5597,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       ${gluc ? `<span class="result-tag" style="background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;">G ${gluc}g</span>` : ''}
       ${lip ? `<span class="result-tag" style="background:rgba(249,115,22,0.1);color:#f97316;font-size:12px;">L ${lip}g</span>` : ''}
     </div>
-    ${note ? `<div class="entry-detail-note">${note.replace(/\|/g, '
-')}</div>` : ''}
+    ${note ? `<div class="entry-detail-note">${note.split('|').join('<br>')}</div>` : ''}
     <button class="btn-primary" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open');editEntry(${id})">✎ Modifier</button>
     <button class="btn-cancel" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open')">Fermer</button>
   `;
