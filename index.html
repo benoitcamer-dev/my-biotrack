@@ -1231,53 +1231,15 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; top: var(--scr
   color: #4f46e5;
 }
 
-/* Swipe left sur les entrées */
+/* Actions via popup de détail */
 .entry-item-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 9px 11px;
   gap: 8px;
-  background: var(--surface);
-  position: relative;
-  z-index: 1;
-  transition: transform 0.2s ease;
-  will-change: transform;
 }
-.entry-swipe-actions {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: stretch;
-  z-index: 0;
-}
-.entry-swipe-edit {
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  width: 52px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-}
-.entry-swipe-delete {
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  width: 52px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-  border-radius: 0 10px 10px 0;
-}
+.entry-swipe-actions { display: none; }
 
 /* Menu contextuel repas */
 .meal-ctx-menu {
@@ -1310,17 +1272,7 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; top: var(--scr
 .meal-ctx-item.danger { color: var(--danger); }
 .meal-ctx-item + .meal-ctx-item { border-top: 1px solid var(--border); }
 
-/* Swipe actions visibles au hover sur PC */
-@media (hover: hover) {
-  .entry-swipe-actions {
-    opacity: 0;
-    transition: opacity 0.15s;
-    z-index: 2;
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    flex-shrink: 0;
-  }
+
   .entry-item:hover .entry-swipe-actions { opacity: 1; }
   .entry-swipe-edit, .entry-swipe-delete {
     border-radius: 8px;
@@ -5444,15 +5396,11 @@ html += `<div class="entry-group" data-cat="${cat}">
 </div>
 ${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
 <div class="entry-group-items">${items.length ? items.map(e => {
-const raw = e.desc || '';
+const raw = (e.desc || '').split('||')[0];
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
 return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="_onEntryTap(this)">
-<div class="entry-swipe-actions">
-  <button class="entry-swipe-edit" onclick="editEntry(${e.id});closeSwipeEntry()">✎</button>
-  <button class="entry-swipe-delete" onclick="del(${e.id});closeSwipeEntry()">✕</button>
-</div>
 <div class="entry-item-inner">
 <div class="entry-main">
 <div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${main}</span>` : main}</div>
@@ -5510,73 +5458,7 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
   setTimeout(() => document.addEventListener('click', closeMealCtxMenu, { once: true }), 10);
 }
 
-// ── Swipe gauche sur les entrées ──────────────────────────────────────────────
-let _swipedEntry = null;
-const SWIPE_THRESHOLD = 60;
-const ACTION_WIDTH = 104; // largeur des deux boutons d'action (52+52)
-
-function closeSwipeEntry() {
-  if (_swipedEntry) {
-    const inner = _swipedEntry.querySelector('.entry-item-inner');
-    if (inner) { inner.style.transition = 'transform 0.2s ease'; inner.style.transform = ''; }
-    _swipedEntry = null;
-  }
-}
-
-document.addEventListener('touchstart', e => {
-  const item = e.target.closest('.entry-item');
-  if (!item) { closeSwipeEntry(); return; }
-  // Fermer l'entrée précédente si différente
-  if (_swipedEntry && _swipedEntry !== item) closeSwipeEntry();
-  const inner = item.querySelector('.entry-item-inner');
-  if (!inner) return;
-  const startX = e.touches[0].clientX;
-  const startY = e.touches[0].clientY;
-  let moved = false;
-  let isHorizontal = null;
-
-  function onMove(ev) {
-    const dx = ev.touches[0].clientX - startX;
-    const dy = ev.touches[0].clientY - startY;
-    if (isHorizontal === null) {
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-      isHorizontal = Math.abs(dx) > Math.abs(dy);
-    }
-    if (!isHorizontal) { cleanup(); return; }
-    ev.preventDefault();
-    moved = true;
-    const clamped = Math.max(-ACTION_WIDTH, Math.min(0, dx));
-    inner.style.transition = 'none';
-    inner.style.transform = `translateX(${clamped}px)`;
-  }
-
-  function onEnd(ev) {
-    cleanup();
-    if (!moved || !isHorizontal) return;
-    const dx = ev.changedTouches[0].clientX - startX;
-    inner.style.transition = 'transform 0.2s ease';
-    if (dx < -SWIPE_THRESHOLD) {
-      inner.style.transform = `translateX(-${ACTION_WIDTH}px)`;
-      _swipedEntry = item;
-    } else {
-      inner.style.transform = '';
-      _swipedEntry = null;
-    }
-  }
-
-  function cleanup() {
-    item.removeEventListener('touchmove', onMove);
-    item.removeEventListener('touchend', onEnd);
-  }
-
-  item.addEventListener('touchmove', onMove, { passive: false });
-  item.addEventListener('touchend', onEnd, { once: true });
-}, { passive: true });
-
-// Fermer le swipe si on tape ailleurs
-document.addEventListener('click', e => {
-  if (!e.target.closest('.entry-item')) closeSwipeEntry();
-});
+// Swipe supprimé — actions via popup de détail
 
 // ── Popup détail entrée ──────────────────────────────────────────────────────
 function _onEntryTap(el) {
