@@ -2099,6 +2099,11 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </select>
 </div>
 <div class="setting-row">
+<label>📅 Google Calendar (Client ID OAuth)</label>
+<input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
+<div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
+</div>
+<div class="setting-row">
 <label>🤖 Clé API Gemini (IA)</label>
 <input id="s-gemini" type="text" placeholder="AIzaSy..." style="font-size:11px;">
 <button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;">🔍 Lister les modèles disponibles</button>
@@ -3332,6 +3337,8 @@ document.getElementById('s-height').value = userHeight;
 document.getElementById('s-age').value = userAge;
 document.getElementById('s-sexe').value = userSexe;
 document.getElementById('s-gemini').value = localStorage.getItem('gemini_api_key') || '';
+const gcalEl = document.getElementById('s-gcal-client-id');
+if (gcalEl) gcalEl.value = GCAL_CLIENT_ID;
 document.getElementById('theme-toggle-btn').textContent = localStorage.getItem('theme') === 'light' ? 'ON' : 'OFF';
 updateBMRLive();
 document.getElementById('modal-settings').classList.add('open');
@@ -3354,6 +3361,9 @@ userWeight = parseFloat(document.getElementById('s-weight').value) || 75;
 userHeight = parseInt(document.getElementById('s-height').value) || 175;
 userAge = parseInt(document.getElementById('s-age').value) || 30;
 userSexe = document.getElementById('s-sexe').value;
+const gcalClientId = (document.getElementById('s-gcal-client-id')?.value || '').trim();
+if (gcalClientId) { GCAL_CLIENT_ID = gcalClientId; localStorage.setItem('gcal_client_id', gcalClientId); }
+else if (gcalClientId === '') { GCAL_CLIENT_ID = ''; localStorage.removeItem('gcal_client_id'); }
 const geminiKey = document.getElementById('s-gemini').value.trim();
 if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
 else localStorage.removeItem('gemini_api_key');
@@ -5433,12 +5443,7 @@ ${sub2 ? `<div class="entry-sub">${sub2}</div>` : ''}
 </div>
 <div class="entry-right">
 ${(e.desc || '').startsWith('📚') ? '' : `<span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val}</span>`}
-${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
-  const rawName = (e.desc||'').replace(/\s*\(.*$/,'').trim().toLowerCase();
-  const matchedFood = customFoods.find(f => f.name.toLowerCase() === rawName);
-  const isFav = matchedFood && favoriteIds.includes(matchedFood.id);
-  return `<button class="entry-action" data-fav-entry="${e.id}" onclick="toggleEntryFavorite(${e.id},this)" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" style="color:var(--gold);font-size:14px;">${isFav ? '⭐' : '☆'}</button>`;
-})() : ''}
+
 </div>
 </div>`;
 }).join('') : ''}</div>
@@ -5500,13 +5505,18 @@ function _onEntryTap(el) {
 }
 
 function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
-  // Supprimer popup existant
   document.querySelectorAll('.entry-detail-popup, .entry-detail-overlay').forEach(e => e.remove());
 
   const parts = descRaw.split('||');
   const mainDesc = parts[0];
   const note = parts[1] || '';
   const sign = type === 'burn' ? '−' : '+';
+  // Vérifier si l'aliment est favori
+  const rawName = mainDesc.replace(/\s*\(.*$/, '').trim().toLowerCase();
+  const matchedFood = customFoods.find(f => f.name.toLowerCase() === rawName);
+  const isFav = matchedFood && favoriteIds.includes(matchedFood.id);
+  const favLabel = isFav ? '★ Retirer des favoris' : '☆ Ajouter aux favoris';
+  const favColor = isFav ? 'linear-gradient(135deg,#b45309,#d97706)' : 'linear-gradient(135deg,#374151,#4b5563)';
 
   const overlay = document.createElement('div');
   overlay.className = 'entry-detail-overlay';
@@ -5549,6 +5559,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
     </div>
+    ${matchedFood ? `<button class="btn-primary" style="font-size:13px;padding:12px;background:${favColor};margin-bottom:8px;" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favLabel}</button>` : ''}
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#dc2626,#ef4444);margin-bottom:8px;" onclick="_closeDetailPopup();del(${id})">🗑️ Supprimer</button>
     <button class="btn-cancel" onclick="_closeDetailPopup()">Fermer</button>
@@ -5557,9 +5568,48 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
   document.body.appendChild(overlay);
   document.body.appendChild(popup);
   document.body.classList.add('modal-open');
+
+  // Swipe vers le bas pour fermer
+  let _pStartY = 0, _pDragging = false;
+  popup.addEventListener('touchstart', e => {
+    if (e.target.tagName.toLowerCase() === 'button') return;
+    _pStartY = e.touches[0].clientY; _pDragging = true;
+    popup.style.transition = 'none';
+  }, { passive: true });
+  popup.addEventListener('touchmove', e => {
+    if (!_pDragging) return;
+    const dy = Math.max(0, e.touches[0].clientY - _pStartY);
+    popup.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  popup.addEventListener('touchend', e => {
+    if (!_pDragging) return;
+    _pDragging = false;
+    const dy = e.changedTouches[0].clientY - _pStartY;
+    popup.style.transition = 'transform 0.28s ease';
+    if (dy > 80) {
+      popup.style.transform = `translateY(${popup.offsetHeight + 60}px)`;
+      setTimeout(() => _closeDetailPopup(), 260);
+    } else {
+      popup.style.transform = '';
+    }
+  });
 }
 
 // ── Helper fermeture popup ───────────────────────────────────────────────────
+async function _toggleFavFromPopup(foodId, entryId) {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  if (favoriteIds.includes(foodId)) {
+    await sb.from('favorites').delete().eq('user_id', user.id).eq('food_id', foodId);
+    favoriteIds = favoriteIds.filter(x => x !== foodId);
+  } else {
+    await sb.from('favorites').insert([{ user_id: user.id, food_id: foodId }]);
+    favoriteIds.push(foodId);
+  }
+  _closeDetailPopup();
+  loadData();
+}
+
 function _closeDetailPopup() {
   document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
   document.body.classList.remove('modal-open');
