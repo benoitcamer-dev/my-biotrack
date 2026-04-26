@@ -5682,6 +5682,7 @@ async function _confirmAIEdit() {
   document.getElementById('ai-add-btn').textContent = '✓ Confirmer et ajouter';
   document.getElementById('ai-add-btn').onclick = () => addAIEntry();
   haptic(10);
+  _closeDetailPopup();
 closeAIModal();
   loadData();
 }
@@ -6919,6 +6920,7 @@ async function addAIEntry() {
     lip: isSport ? 0 : round1(l * factor),
     date: selectedDate
   }]);
+  _closeDetailPopup();
   closeAIModal();
   closeModal();
   loadData();
