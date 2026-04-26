@@ -1842,12 +1842,10 @@ margin-left: 4px;
 }
 </style>
 <script>
-// Service Worker désactivé temporairement
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
-  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 </script>
 </head>
