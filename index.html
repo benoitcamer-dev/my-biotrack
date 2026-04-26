@@ -4330,7 +4330,8 @@ if (currentCat === 'Sport' && desc === 'vélo') { return calcBikeKcalH(raw); }
 return raw;
 }
 function editEntry(id) {
-const entry = currentEntries.find(e => e.id === id);
+id = parseInt(id) || id; // Supabase retourne des numbers, dataset retourne des strings
+const entry = currentEntries.find(e => e.id === id || String(e.id) === String(id));
 if (!entry) return;
 editingId = entry.id;
 currentCat = entry.category;
@@ -5400,7 +5401,7 @@ const raw = (e.desc || '').split('||')[0];
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
-return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="_onEntryTap(this)">
+return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();_onEntryTap(this)">
 <div class="entry-item-inner">
 <div class="entry-main">
 <div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${main}</span>` : main}</div>
@@ -5462,9 +5463,8 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
 
 // ── Popup détail entrée ──────────────────────────────────────────────────────
 function _onEntryTap(el) {
-  // Ne pas ouvrir si swipe en cours
-  const inner = el.querySelector('.entry-item-inner');
-  if (inner && inner.style.transform && inner.style.transform !== 'translateX(0px)' && inner.style.transform !== '') return;
+  // Ne pas ouvrir pour les entrées recette titre (📚)
+  if ((el.dataset.desc || '').startsWith('📚')) return;
   const id = el.dataset.id;
   const desc = el.dataset.desc;
   const val = parseFloat(el.dataset.val) || 0;
@@ -5711,7 +5711,7 @@ async function confirmCopyMeal() {
   setTimeout(() => toast.remove(), 3000);
 }
 
-async function del(id) { haptic(6); await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
+async function del(id) { haptic(6); id = parseInt(id) || id; await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
 async function clearMealEntries(cat) {
 if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
 const { data: { user } } = await sb.auth.getUser();
