@@ -3600,7 +3600,7 @@ document.body.classList.add('modal-open');
 function closeModal() {
   document.getElementById('modal-add').classList.remove('open');
   document.body.classList.remove('modal-open');
-  window.scrollTo(0, _savedScrollY); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
+  editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
 function cancelEdit() { editingId = null; document.getElementById('cancel-edit-btn').style.display = 'none'; document.getElementById('submit-btn').textContent = 'Valider'; closeModal(); }
 function onSearchInput() {
 clearTimeout(searchDebounceTimer);
@@ -4364,6 +4364,7 @@ if (currentCat === 'Sport' && desc === 'vélo') { return calcBikeKcalH(raw); }
 return raw;
 }
 function editEntry(id) {
+// _savedScrollY déjà sauvegardé dans showEntryDetail ou openModal
 id = parseInt(id) || id; // Supabase retourne des numbers, dataset retourne des strings
 const entry = currentEntries.find(e => e.id === id || String(e.id) === String(id));
 if (!entry) return;
@@ -5453,7 +5454,7 @@ ${(e.desc || '').startsWith('📚') ? '' : `<span class="entry-kcal ${e.type}">$
 document.getElementById('daily-list').innerHTML = html;
 } catch (e) { console.error('loadData:', e); } finally {
 if (_journal) _journal.classList.remove('data-loading');
-if (currentPage === 'journal') requestAnimationFrame(() => window.scrollTo(0, _scrollBefore));
+if (currentPage === 'journal') requestAnimationFrame(() => { window.scrollTo(0, _savedScrollY || _scrollBefore); _savedScrollY = 0; });
 }
 }
 // ── Menu contextuel repas ────────────────────────────────────────────────────
@@ -5505,15 +5506,20 @@ function _onEntryTap(el) {
 }
 
 function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
+  _savedScrollY = window.scrollY; // Sauvegarder avant modal-open
   document.querySelectorAll('.entry-detail-popup, .entry-detail-overlay').forEach(e => e.remove());
 
   const parts = descRaw.split('||');
   const mainDesc = parts[0];
   const note = parts[1] || '';
   const sign = type === 'burn' ? '−' : '+';
-  // Vérifier si l'aliment est favori
-  const rawName = mainDesc.replace(/\s*\(.*$/, '').trim().toLowerCase();
-  const matchedFood = customFoods.find(f => f.name.toLowerCase() === rawName);
+  // Extraire la quantité depuis le nom (ex: "Sardines (125g)" → 125)
+  const qtyMatch = mainDesc.match(/(\d+(?:[.,]\d+)?)\s*(?:g|ml|cl)/i);
+  const qty = qtyMatch ? parseFloat(qtyMatch[1]) : 100;
+  // Vérifier si l'aliment est favori (customFoods ou DRINK_DB)
+  const rawName = mainDesc.replace(/\s*[·(].*$/, '').trim().toLowerCase();
+  const matchedFood = customFoods.find(f => f.name.toLowerCase() === rawName)
+    || customFoods.find(f => rawName.includes(f.name.toLowerCase()));
   const isFav = matchedFood && favoriteIds.includes(matchedFood.id);
   const favLabel = isFav ? '★ Retirer des favoris' : '☆ Ajouter aux favoris';
   const favColor = isFav ? 'linear-gradient(135deg,#b45309,#d97706)' : 'linear-gradient(135deg,#374151,#4b5563)';
@@ -5559,6 +5565,15 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
     </div>
+    ${(type === 'food' && !matchedFood) ? (() => {
+      const k100 = qty > 0 ? Math.round(val/qty*100) : 0;
+      const p100 = qty > 0 ? Math.round(prot/qty*100*10)/10 : prot;
+      const g100 = qty > 0 ? Math.round(gluc/qty*100*10)/10 : gluc;
+      const l100 = qty > 0 ? Math.round(lip/qty*100*10)/10 : lip;
+      const cleanName = mainDesc.replace(/\s*\(.*$/, '').trim().replace(/"/g,'&quot;');
+      const sqty = qty || 100;
+      return `<button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#059669,#10b981);margin-bottom:8px;" data-sname="${cleanName}" data-sk="${k100}" data-sp="${p100}" data-sg="${g100}" data-sl="${l100}" data-sqty="${sqty}" onclick="_saveToBaseBtn(this)">📦 Sauvegarder dans ma base</button>`;
+    })() : ''}
     ${matchedFood ? `<button class="btn-primary" style="font-size:13px;padding:12px;background:${favColor};margin-bottom:8px;" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favLabel}</button>` : ''}
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#dc2626,#ef4444);margin-bottom:8px;" onclick="_closeDetailPopup();del(${id})">🗑️ Supprimer</button>
@@ -5608,6 +5623,23 @@ async function _toggleFavFromPopup(foodId, entryId) {
   }
   _closeDetailPopup();
   loadData();
+}
+
+function _saveToBaseBtn(btn) {
+  _saveToBase(btn.dataset.sname, btn.dataset.sk, btn.dataset.sp, btn.dataset.sg, btn.dataset.sl, btn.dataset.sqty);
+}
+
+function _saveToBase(name, kcal100, prot100, gluc100, lip100, defaultQty) {
+  _closeDetailPopup();
+  openCustomFoodModal('');
+  setTimeout(() => {
+    document.getElementById('cf-name').value = name.replace(/\s*\(.*$/, '').trim();
+    document.getElementById('cf-kcal').value = kcal100;
+    document.getElementById('cf-p').value = prot100;
+    document.getElementById('cf-g').value = gluc100;
+    document.getElementById('cf-l').value = lip100;
+    if (defaultQty) document.getElementById('cf-default-qty').value = defaultQty;
+  }, 50);
 }
 
 function _closeDetailPopup() {
