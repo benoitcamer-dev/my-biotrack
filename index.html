@@ -1842,10 +1842,12 @@ margin-left: 4px;
 }
 </style>
 <script>
+// Service Worker désactivé temporairement
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
   });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 </script>
 </head>
@@ -5362,12 +5364,12 @@ function toggleMealCollapse(cat) {
 
 async function loadData() {
 const _scrollBefore = window.scrollY;
-_loadCollapseState(journalDateStr());
 const _journal = document.getElementById('page-journal');
 if (_journal) _journal.classList.add('data-loading');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
+_loadCollapseState(journalDateStr());
 const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', journalDateStr());
 let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
 const entries = (data || []).sort((a, b) => a.id - b.id);
@@ -5488,7 +5490,7 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
 document.getElementById('daily-list').innerHTML = html;
 } catch (e) { console.error('loadData:', e); } finally {
 if (_journal) _journal.classList.remove('data-loading');
-requestAnimationFrame(() => window.scrollTo(0, _scrollBefore));
+if (currentPage === 'journal') requestAnimationFrame(() => window.scrollTo(0, _scrollBefore));
 }
 }
 // ── Menu contextuel repas ────────────────────────────────────────────────────
