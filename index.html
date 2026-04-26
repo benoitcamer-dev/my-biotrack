@@ -4541,7 +4541,7 @@ if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmit
 haptic(10);
 const _expandCat = currentCat;
 _mealCollapsed[_expandCat] = false;
-_saveCollapseState(journalDateStr());
+try { _saveCollapseState(journalDateStr()); } catch(_e) {}
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
@@ -5367,7 +5367,7 @@ if (_journal) _journal.classList.add('data-loading');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
-_loadCollapseState(journalDateStr());
+try { _loadCollapseState(journalDateStr()); } catch(_e) {}
 const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', journalDateStr());
 let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
 const entries = (data || []).sort((a, b) => a.id - b.id);
@@ -5793,7 +5793,7 @@ async function _confirmAIEdit() {
   document.getElementById('ai-add-btn').textContent = '✓ Confirmer et ajouter';
   document.getElementById('ai-add-btn').onclick = () => addAIEntry();
   haptic(10);
-  if (_editCat) { _mealCollapsed[_editCat] = false; _saveCollapseState(journalDateStr()); }
+  if (_editCat) { _mealCollapsed[_editCat] = false; try { _saveCollapseState(journalDateStr()); } catch(_e) {} }
   closeAIModal();
   loadData();
 }
@@ -7031,7 +7031,7 @@ async function addAIEntry() {
     lip: isSport ? 0 : round1(l * factor),
     date: selectedDate
   }]);
-  _mealCollapsed[selectedCat] = false; _saveCollapseState(journalDateStr());
+  _mealCollapsed[selectedCat] = false; try { _saveCollapseState(journalDateStr()); } catch(_e) {}
   closeAIModal();
   closeModal();
   loadData();
