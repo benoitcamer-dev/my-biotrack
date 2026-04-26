@@ -1166,12 +1166,13 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   background: var(--surface2);
   border: 1px solid var(--border2);
   border-radius: 24px 24px 0 0;
-  padding: 20px 20px 36px;
+  padding: 20px 20px 40px;
   z-index: 300;
   box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
   animation: slideUp 0.22s cubic-bezier(0.32,1.2,0.64,1);
-  max-height: 70vh;
+  max-height: 85vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .entry-detail-popup .detail-handle {
   width: 40px; height: 4px;
@@ -1188,9 +1189,12 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
 }
 .entry-detail-note {
   font-size: 13px; color: var(--muted);
-  line-height: 1.6; white-space: pre-wrap;
+  line-height: 1.6;
   background: var(--surface); border-radius: 12px;
   padding: 12px 14px; margin-bottom: 14px;
+  max-height: 200px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .entry-detail-overlay {
   position: fixed; inset: 0; z-index: 299;
@@ -5598,13 +5602,157 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       ${lip ? `<span class="result-tag" style="background:rgba(249,115,22,0.1);color:#f97316;font-size:12px;">L ${lip}g</span>` : ''}
     </div>
     ${note ? `<div class="entry-detail-note">${note.split('|').join('<br>')}</div>` : ''}
-    <button class="btn-primary" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open');editEntry(${id})">✎ Modifier</button>
-    <button class="btn-cancel" onclick="document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e=>e.remove());document.body.classList.remove('modal-open')">Fermer</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
+      <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" onclick="_editViaAI(${id},'${mainDesc.replace(/'/g,"\'")}',${val},${prot},${gluc},${lip},'${note.replace(/'/g,"\'")}')">🤖 Via IA</button>
+    </div>
+    <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
+    <button class="btn-cancel" onclick="_closeDetailPopup()">Fermer</button>
   `;
 
   document.body.appendChild(overlay);
   document.body.appendChild(popup);
   document.body.classList.add('modal-open');
+}
+
+// ── Helper fermeture popup ───────────────────────────────────────────────────
+function _closeDetailPopup() {
+  document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
+  document.body.classList.remove('modal-open');
+}
+
+// ── Déplacer une entrée ───────────────────────────────────────────────────────
+let _moveEntryId = null;
+function _moveEntry(id) {
+  _closeDetailPopup();
+  _moveEntryId = id;
+  const entry = currentEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  // Créer un mini popup de déplacement
+  const overlay = document.createElement('div');
+  overlay.className = 'entry-detail-overlay';
+  overlay.onclick = () => { overlay.remove(); popup.remove(); document.body.classList.remove('modal-open'); };
+
+  const popup = document.createElement('div');
+  popup.className = 'entry-detail-popup';
+  popup.innerHTML = `
+    <div class="detail-handle"></div>
+    <div class="entry-detail-title" style="margin-bottom:16px;">📦 Déplacer l'entrée</div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
+      <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
+        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
+        <option value="Déjeuner">🍽️ Déjeuner</option>
+        <option value="Dîner">🌙 Dîner</option>
+        <option value="Snack">🍎 Snack</option>
+        <option value="Boissons">🥤 Boissons</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
+      <input type="date" id="move-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+    </div>
+    <button class="btn-primary" onclick="_confirmMoveEntry()">✓ Confirmer le déplacement</button>
+    <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+  document.body.classList.add('modal-open');
+
+  // Pré-remplir avec les valeurs actuelles
+  document.getElementById('move-cat').value = entry.category;
+  document.getElementById('move-date').value = entry.date || journalDateStr();
+}
+
+async function _confirmMoveEntry() {
+  const cat = document.getElementById('move-cat').value;
+  const date = document.getElementById('move-date').value;
+  if (!_moveEntryId || !cat || !date) return;
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('entries').update({ category: cat, date }).eq('id', _moveEntryId).eq('user_id', user.id);
+  _closeDetailPopup();
+  document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
+  document.body.classList.remove('modal-open');
+  haptic(10);
+  loadData();
+}
+
+// ── Modifier via IA ───────────────────────────────────────────────────────────
+let _editingEntryId = null;
+function _editViaAI(id, mainDesc, val, prot, gluc, lip, note) {
+  _closeDetailPopup();
+  _editingEntryId = id;
+
+  // Ouvrir le modal IA en mode édition
+  aiCurrentCat = ''; _aiGlobalMode = true; _aiLastFoodNote = '';
+  const fab = document.getElementById('fab-btn');
+  if (fab) fab.style.display = 'none';
+
+  // Init modal
+  aiChatHistory = []; _aiLastFoodNote = '';
+  document.getElementById('ai-chat-log').innerHTML = '';
+  document.getElementById('ai-input').value = '';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-loading').style.display = 'none';
+  document.getElementById('ai-error').style.display = 'none';
+  const dEl = document.getElementById('ai-target-date');
+  if (dEl) { const entry = currentEntries.find(e=>e.id===id); dEl.value = entry?.date || journalDateStr(); dEl.style.color='var(--text)'; }
+  const catEl = document.getElementById('ai-target-cat');
+  if (catEl) { const entry = currentEntries.find(e=>e.id===id); catEl.value = entry?.category || ''; }
+
+  document.getElementById('modal-ai').classList.add('open');
+  document.body.classList.add('modal-open');
+
+  // Message système pour indiquer le mode édition
+  const entryCtx = `Tu modifies une entrée existante. Détails actuels :
+Nom : ${mainDesc}
+Valeur : ${val} kcal | Prot : ${prot}g | Gluc : ${gluc}g | Lip : ${lip}g
+${note ? 'Composition : ' + note.replace(/\|/g, ' | ') : ''}
+L'utilisateur va te demander de modifier cette entrée. Recalcule tout et réponds avec le JSON mis à jour.`;
+
+  // Injecter dans le chat comme contexte
+  addChatMessage('ai', `Je vais modifier "${mainDesc}" (${val} kcal). Que veux-tu changer ?`);
+  aiChatHistory.push({ role: 'user', parts: [{ text: entryCtx }] });
+  aiChatHistory.push({ role: 'model', parts: [{ text: `Compris. Je vais modifier "${mainDesc}". Que souhaites-tu changer ?` }] });
+
+  // Override du bouton Confirmer pour mettre à jour au lieu d'insérer
+  document.getElementById('ai-add-btn').textContent = '✓ Mettre à jour';
+  document.getElementById('ai-add-btn').onclick = () => _confirmAIEdit();
+
+  setTimeout(() => document.getElementById('ai-input').focus(), 180);
+}
+
+async function _confirmAIEdit() {
+  if (!_editingEntryId) { addAIEntry(); return; }
+  const q = parseFloat(document.getElementById('ai-qty').value) || 100;
+  const k = parseFloat(document.getElementById('ai-kcal').value) || 0;
+  const p = parseFloat(document.getElementById('ai-p').value) || 0;
+  const g = parseFloat(document.getElementById('ai-g').value) || 0;
+  const l = parseFloat(document.getElementById('ai-l').value) || 0;
+  const isSport = document.getElementById('ai-label-qty').textContent === 'Durée (min)';
+  const factor = isSport ? q / 60 : q / 100;
+  const val = Math.round(k * factor);
+  const label = document.getElementById('ai-calc-sub').textContent || '';
+  const aiNote = _aiLastFoodNote || '';
+  const desc = aiNote ? `${label} (${q}${isSport?'min':'g'})||${aiNote}` : `${label} (${q}${isSport?'min':'g'})`;
+
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('entries').update({
+    desc,
+    val,
+    prot: isSport ? 0 : Math.round(p * factor * 10) / 10,
+    gluc: isSport ? 0 : Math.round(g * factor * 10) / 10,
+    lip: isSport ? 0 : Math.round(l * factor * 10) / 10,
+  }).eq('id', _editingEntryId).eq('user_id', user.id);
+
+  _editingEntryId = null;
+  document.getElementById('ai-add-btn').textContent = '✓ Confirmer et ajouter';
+  document.getElementById('ai-add-btn').onclick = () => addAIEntry();
+  haptic(10);
+  closeAIModal();
+  loadData();
 }
 
 let _copyMealSourceCat = null;
