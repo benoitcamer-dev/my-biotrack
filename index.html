@@ -3585,7 +3585,7 @@ document.getElementById('in-entry-date').value = journalDateStr();
 document.getElementById('in-entry-date').style.color = 'var(--muted)';
 document.getElementById('modal-add').classList.add('open');
 document.body.classList.add('modal-open');
-setTimeout(() => document.getElementById('in-desc').focus(), 180);
+// Pas d'autofocus — évite l'ouverture automatique du clavier sur mobile
 }
 function closeModal() {
   document.getElementById('modal-add').classList.remove('open');
@@ -3636,14 +3636,38 @@ if (isRecipe) {
 function showAllSports() {
 const div = document.getElementById('search-results');
 div.style.display = 'block';
-div.innerHTML = `<div class="result-item" onclick="selectWalkMode()">
-<div class="result-name">🚶 Marche</div>
-<div class="result-kcal burn">Calcul précis ou simple</div>
-</div>
-<div class="result-item" onclick="selectBikeMode()">
-<div class="result-name">🚴 Vélo</div>
-<div class="result-kcal burn">Calcul avec ton profil</div>
+// Favoris en premier, puis modes Marche/Vélo en bas
+const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
+let favsHtml = '';
+if (hasWalk) {
+  favsHtml += `<div class="sport-fav-section" style="padding:6px 4px 2px;">
+    <div class="sport-fav-title">🚶 Trajets marche favoris</div>
+    ${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
+      <div class="sport-fav-name">⭐ ${f.name}</div>
+      <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
+    </div>`).join('')}
+  </div>`;
+}
+if (hasBike) {
+  favsHtml += `<div class="sport-fav-section" style="padding:6px 4px 2px;">
+    <div class="sport-fav-title">🚴 Sorties vélo favorites</div>
+    ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
+      <div class="sport-fav-name">⭐ ${f.name}</div>
+      <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
+    </div>`).join('')}
+  </div>`;
+}
+const modesHtml = `<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
+  <div class="result-item" onclick="selectWalkMode()">
+    <div class="result-name">🚶 Marche</div>
+    <div class="result-kcal burn">Calcul précis ou simple</div>
+  </div>
+  <div class="result-item" onclick="selectBikeMode()">
+    <div class="result-name">🚴 Vélo</div>
+    <div class="result-kcal burn">Calcul avec ton profil</div>
+  </div>
 </div>`;
+div.innerHTML = favsHtml + modesHtml;
 renderSportFavsQuick();
 }
 function renderSportFavsQuick() {
@@ -5418,7 +5442,7 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
 </div>
 </div>`;
 }).join('') : ''}</div>
-<button class="entry-add-bottom" onclick="openModal('${cat}')">＋ Ajouter à ${cat}</button>
+<button class="entry-add-bottom" onclick="event.stopPropagation();openModal('${cat}')">＋ Ajouter à ${cat}</button>
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
