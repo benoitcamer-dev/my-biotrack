@@ -1158,7 +1158,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   #fab-menu { gap: 10px !important; }
 }
 /* Scroll lock quand un modal est ouvert */
-body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+body.modal-open { overflow: hidden; position: fixed; width: 100%; top: var(--scroll-y, 0); }
 /* Popup détail entrée */
 .entry-detail-popup {
   position: fixed;
@@ -2696,6 +2696,7 @@ let currentCat = "";
 let userGoal = 2300, userWeight = 75, userHeight = 175, userAge = 30, userSexe = "H";
 let userProtGoal = 0; // 0 = pas fixé
 let editingId = null, currentEntries = [], currentPage = "journal";
+let _savedScrollY = 0;
 let _currentFoodUnit = null; // { unit, unitG, label } when a custom-unit food is selected
 let _currentDrinkUnit = 'ml'; // 'cl' for beers, 'ml' for others
 let savedRecipes = [], recipeBuilder = [], editingRecipeId = null;
@@ -3619,13 +3620,17 @@ if (isSport) showAllSports();
 else if (isDrink) showDrinkSuggestions();
 else showCustomFoodsSuggestions();
 recalc();
+_savedScrollY = window.scrollY;
 document.getElementById('in-entry-date').value = journalDateStr();
 document.getElementById('in-entry-date').style.color = 'var(--muted)';
 document.getElementById('modal-add').classList.add('open');
 document.body.classList.add('modal-open');
 setTimeout(() => document.getElementById('in-desc').focus(), 180);
 }
-function closeModal() { document.getElementById('modal-add').classList.remove('open'); document.body.classList.remove('modal-open'); document.body.classList.remove('modal-open'); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
+function closeModal() {
+  document.getElementById('modal-add').classList.remove('open');
+  document.body.classList.remove('modal-open');
+  window.scrollTo(0, _savedScrollY); editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
 function cancelEdit() { editingId = null; document.getElementById('cancel-edit-btn').style.display = 'none'; document.getElementById('submit-btn').textContent = 'Valider'; closeModal(); }
 function onSearchInput() {
 clearTimeout(searchDebounceTimer);
@@ -4534,6 +4539,9 @@ if (editingId) { const res = await sb.from('entries').update(payload).eq('id', e
 else { const res = await sb.from('entries').insert([payload]); error = res.error; }
 if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmitting = false; return; }
 haptic(10);
+const _expandCat = currentCat;
+_mealCollapsed[_expandCat] = false;
+_saveCollapseState(journalDateStr());
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
@@ -5334,7 +5342,27 @@ el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-i
 <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
 </div>`).join('');
 }
+// ── Collapse des groupes repas ───────────────────────────────────────────────
+const _mealCollapsed = {}; // { cat: true/false }
+
+function toggleMealCollapse(cat) {
+  _mealCollapsed[cat] = !_mealCollapsed[cat];
+  // Mettre à jour sans recharger tout
+  const group = document.querySelector(`.entry-group[data-cat="${cat}"]`);
+  if (!group) return;
+  const items = group.querySelector('.entry-group-items');
+  const addBtn = group.querySelector('.entry-add-bottom');
+  const chevron = group.querySelector('.meal-chevron');
+  const isCollapsed = _mealCollapsed[cat];
+  if (items) items.style.display = isCollapsed ? 'none' : 'flex';
+  if (addBtn) addBtn.style.display = isCollapsed ? 'none' : 'flex';
+  if (chevron) chevron.textContent = isCollapsed ? '▶' : '▼';
+}
+
+
 async function loadData() {
+const _scrollBefore = window.scrollY;
+_loadCollapseState(journalDateStr());
 const _journal = document.getElementById('page-journal');
 if (_journal) _journal.classList.add('data-loading');
 try {
@@ -5417,17 +5445,18 @@ const mG = items.filter(e => e.type==='food').reduce((s,e) => s+(e.gluc||0), 0);
 const mL = items.filter(e => e.type==='food').reduce((s,e) => s+(e.lip||0), 0);
 const hasMacros = !isSport && items.filter(e=>e.type==='food').length > 0;
 html += `<div class="entry-group" data-cat="${cat}">
-<div class="entry-group-header">
+<div class="entry-group-header" onclick="toggleMealCollapse('${cat}')" style="cursor:pointer;">
 <div class="entry-group-left">
+  <span class="meal-chevron" style="font-size:10px;color:var(--muted);margin-right:4px;transition:all 0.2s;">▶</span>
   <span>${ICONS[cat]}</span>
-  <span class="entry-group-title" style="cursor:pointer;" onclick="showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
+  <span class="entry-group-title" onclick="event.stopPropagation();showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="cursor:pointer;">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
 </div>
 <div class="entry-group-actions">
   <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
-${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
-<div class="entry-group-items">${items.length ? items.map(e => {
+${hasMacros ? `<div class="meal-macros-row" style="display:none;"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
+<div class="entry-group-items" style="display:none;">${items.length ? items.map(e => {
 const raw = e.desc || '';
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
@@ -5451,15 +5480,15 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
   return `<button class="entry-action" data-fav-entry="${e.id}" onclick="toggleEntryFavorite(${e.id},this)" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" style="color:var(--gold);font-size:14px;">${isFav ? '⭐' : '☆'}</button>`;
 })() : ''}
 </div>
-</div>
 </div>`;
 }).join('') : ''}</div>
-<button class="entry-add-bottom" onclick="openModal('${cat}')">＋ Ajouter à ${cat}</button>
+<button class="entry-add-bottom" onclick="openModal('${cat}')" style="display:none;">＋ Ajouter à ${cat}</button>
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
 } catch (e) { console.error('loadData:', e); } finally {
 if (_journal) _journal.classList.remove('data-loading');
+requestAnimationFrame(() => window.scrollTo(0, _scrollBefore));
 }
 }
 // ── Menu contextuel repas ────────────────────────────────────────────────────
@@ -5604,9 +5633,10 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
     ${note ? `<div class="entry-detail-note">${note.split('|').join('<br>')}</div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
-      <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" onclick="_editViaAI(${id},'${mainDesc.replace(/'/g,"\'")}',${val},${prot},${gluc},${lip},'${note.replace(/'/g,"\'")}')">🤖 Via IA</button>
+      <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
     </div>
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
+    <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#dc2626,#ef4444);margin-bottom:8px;" onclick="_closeDetailPopup();del(${id})">🗑️ Supprimer</button>
     <button class="btn-cancel" onclick="_closeDetailPopup()">Fermer</button>
   `;
 
@@ -5681,6 +5711,17 @@ async function _confirmMoveEntry() {
 
 // ── Modifier via IA ───────────────────────────────────────────────────────────
 let _editingEntryId = null;
+function _editViaAIBtn(btn) {
+  const id = parseInt(btn.dataset.entryId);
+  const mainDesc = btn.dataset.mainDesc;
+  const val = parseFloat(btn.dataset.val) || 0;
+  const prot = parseFloat(btn.dataset.prot) || 0;
+  const gluc = parseFloat(btn.dataset.gluc) || 0;
+  const lip = parseFloat(btn.dataset.lip) || 0;
+  const note = btn.dataset.note || '';
+  _editViaAI(id, mainDesc, val, prot, gluc, lip, note);
+}
+
 function _editViaAI(id, mainDesc, val, prot, gluc, lip, note) {
   _closeDetailPopup();
   _editingEntryId = id;
@@ -5747,13 +5788,16 @@ async function _confirmAIEdit() {
     lip: isSport ? 0 : Math.round(l * factor * 10) / 10,
   }).eq('id', _editingEntryId).eq('user_id', user.id);
 
+  const _editCat = document.getElementById('ai-target-cat')?.value || '';
   _editingEntryId = null;
   document.getElementById('ai-add-btn').textContent = '✓ Confirmer et ajouter';
   document.getElementById('ai-add-btn').onclick = () => addAIEntry();
   haptic(10);
+  if (_editCat) { _mealCollapsed[_editCat] = false; _saveCollapseState(journalDateStr()); }
   closeAIModal();
   loadData();
 }
+
 
 let _copyMealSourceCat = null;
 function openCopyMealModal(cat) {
@@ -6987,6 +7031,7 @@ async function addAIEntry() {
     lip: isSport ? 0 : round1(l * factor),
     date: selectedDate
   }]);
+  _mealCollapsed[selectedCat] = false; _saveCollapseState(journalDateStr());
   closeAIModal();
   closeModal();
   loadData();
