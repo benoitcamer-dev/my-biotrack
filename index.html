@@ -5499,7 +5499,28 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       ${gluc ? `<span class="result-tag" style="background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;">G ${gluc}g</span>` : ''}
       ${lip ? `<span class="result-tag" style="background:rgba(249,115,22,0.1);color:#f97316;font-size:12px;">L ${lip}g</span>` : ''}
     </div>
-    ${note ? `<div class="entry-detail-note">${note.split('|').join('<br>')}</div>` : ''}
+    ${note ? `<div class="entry-detail-note">${note.split('|').map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return '';
+      const arrowIdx = trimmed.indexOf('→');
+      if (arrowIdx > -1) {
+        const ingredient = trimmed.substring(0, arrowIdx).trim();
+        const rest = trimmed.substring(arrowIdx + 1).trim();
+        // Séparer kcal dose · kcal/100g
+        const dotIdx = rest.indexOf('·');
+        if (dotIdx > -1) {
+          const kcalDose = rest.substring(0, dotIdx).trim();
+          const kcal100 = rest.substring(dotIdx + 1).trim();
+          return '<b>' + ingredient + '</b> → <b style="color:var(--accent)">' + kcalDose + '</b> <span style="color:var(--muted);font-size:11px;">· ' + kcal100 + '</span>';
+        }
+        return '<b>' + ingredient + '</b> → <b style="color:var(--accent)">' + rest + '</b>';
+      }
+      // Ligne TOTAL
+      if (trimmed.toUpperCase().startsWith('TOTAL')) {
+        return '<b style="border-top:1px solid var(--border);display:block;padding-top:6px;margin-top:4px;">' + trimmed + '</b>';
+      }
+      return trimmed;
+    }).filter(Boolean).join('<br>')}</div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
@@ -6496,7 +6517,7 @@ Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_
 TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":PROT_TOTAL_PAR_100G,"gluc_per_100g":GLUC_TOTAL_PAR_100G,"lip_per_100g":LIP_TOTAL_PAR_100G,"note":"Detail complet : Ingredient1 Xg → YYkcal (Prot:Xg Gluc:Xg Lip:Xg) | Ingredient2 Xg → YYkcal | ... | TOTAL: XXXkcal Prot:Xg Gluc:Xg Lip:Xg"}
+REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":PROT_TOTAL_PAR_100G,"gluc_per_100g":GLUC_TOTAL_PAR_100G,"lip_per_100g":LIP_TOTAL_PAR_100G,"note":"Detail : Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
 Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
