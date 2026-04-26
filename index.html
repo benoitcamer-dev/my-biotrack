@@ -3051,6 +3051,14 @@ async function pushSettingsRemote() {
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
+// Sécurité : lire les données existantes avant d'écraser
+// pour ne jamais écraser un tableau non-vide avec un tableau vide
+const { data: existing } = await sb.from('user_settings').select('recipes,walk_favorites,bike_favorites,saved_places').eq('user_id', user.id).maybeSingle();
+const safeMerge = (local, remote) => {
+  if (local && local.length > 0) return local;
+  if (remote) { const r = typeof remote === 'string' ? JSON.parse(remote) : remote; return Array.isArray(r) && r.length > 0 ? r : local; }
+  return local;
+};
 const ts = new Date().toISOString();
 _lastPushTs = ts;
 await sb.from('user_settings').upsert({
@@ -3060,10 +3068,10 @@ weight: userWeight,
 height: userHeight,
 age: userAge,
 sexe: userSexe,
-recipes: savedRecipes,
-walk_favorites: walkFavorites,
-bike_favorites: bikeFavorites,
-saved_places: savedPlaces,
+recipes: safeMerge(savedRecipes, existing?.recipes),
+walk_favorites: safeMerge(walkFavorites, existing?.walk_favorites),
+bike_favorites: safeMerge(bikeFavorites, existing?.bike_favorites),
+saved_places: safeMerge(savedPlaces, existing?.saved_places),
 updated_at: ts
 }, { onConflict: 'user_id' });
 } catch (e) { console.error('pushSettingsRemote:', e); }
@@ -4539,9 +4547,6 @@ if (editingId) { const res = await sb.from('entries').update(payload).eq('id', e
 else { const res = await sb.from('entries').insert([payload]); error = res.error; }
 if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmitting = false; return; }
 haptic(10);
-const _expandCat = currentCat;
-_mealCollapsed[_expandCat] = false;
-try { _saveCollapseState(journalDateStr()); } catch(_e) {}
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
@@ -5342,22 +5347,6 @@ el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-i
 <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
 </div>`).join('');
 }
-// ── Collapse des groupes repas ───────────────────────────────────────────────
-const _mealCollapsed = {}; // { cat: true/false }
-
-function toggleMealCollapse(cat) {
-  _mealCollapsed[cat] = !_mealCollapsed[cat];
-  // Mettre à jour sans recharger tout
-  const group = document.querySelector(`.entry-group[data-cat="${cat}"]`);
-  if (!group) return;
-  const items = group.querySelector('.entry-group-items');
-  const addBtn = group.querySelector('.entry-add-bottom');
-  const chevron = group.querySelector('.meal-chevron');
-  const isCollapsed = _mealCollapsed[cat];
-  if (items) items.style.display = isCollapsed ? 'none' : 'flex';
-  if (addBtn) addBtn.style.display = isCollapsed ? 'none' : 'flex';
-  if (chevron) chevron.textContent = isCollapsed ? '▶' : '▼';
-}
 
 
 async function loadData() {
@@ -5367,7 +5356,6 @@ if (_journal) _journal.classList.add('data-loading');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
-try { _loadCollapseState(journalDateStr()); } catch(_e) {}
 const { data } = await sb.from('entries').select('*').eq('user_id', user.id).eq('date', journalDateStr());
 let tIn = 0, tSport = 0, tP = 0, tG = 0, tL = 0;
 const entries = (data || []).sort((a, b) => a.id - b.id);
@@ -5445,18 +5433,17 @@ const mG = items.filter(e => e.type==='food').reduce((s,e) => s+(e.gluc||0), 0);
 const mL = items.filter(e => e.type==='food').reduce((s,e) => s+(e.lip||0), 0);
 const hasMacros = !isSport && items.filter(e=>e.type==='food').length > 0;
 html += `<div class="entry-group" data-cat="${cat}">
-<div class="entry-group-header" onclick="toggleMealCollapse('${cat}')" style="cursor:pointer;">
+<div class="entry-group-header">
 <div class="entry-group-left">
-  <span class="meal-chevron" style="font-size:10px;color:var(--muted);margin-right:4px;transition:all 0.2s;">▶</span>
   <span>${ICONS[cat]}</span>
-  <span class="entry-group-title" onclick="event.stopPropagation();showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="cursor:pointer;">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
+  <span class="entry-group-title" onclick="showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="cursor:pointer;">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
 </div>
 <div class="entry-group-actions">
   <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
 </div>
 </div>
-${hasMacros ? `<div class="meal-macros-row" style="display:none;"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
-<div class="entry-group-items" style="display:none;">${items.length ? items.map(e => {
+${hasMacros ? `<div class="meal-macros-row"><span class="meal-macro p">P&nbsp;${Math.round(mP)}g</span><span class="meal-macro g">G&nbsp;${Math.round(mG)}g</span><span class="meal-macro l">L&nbsp;${Math.round(mL)}g</span></div>` : ''}
+<div class="entry-group-items">${items.length ? items.map(e => {
 const raw = e.desc || '';
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
@@ -5482,7 +5469,7 @@ ${e.type === 'food' && !(e.desc || '').startsWith('📚') ? (function(){
 </div>
 </div>`;
 }).join('') : ''}</div>
-<button class="entry-add-bottom" onclick="openModal('${cat}')" style="display:none;">＋ Ajouter à ${cat}</button>
+<button class="entry-add-bottom" onclick="openModal('${cat}')">＋ Ajouter à ${cat}</button>
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
@@ -5788,13 +5775,11 @@ async function _confirmAIEdit() {
     lip: isSport ? 0 : Math.round(l * factor * 10) / 10,
   }).eq('id', _editingEntryId).eq('user_id', user.id);
 
-  const _editCat = document.getElementById('ai-target-cat')?.value || '';
-  _editingEntryId = null;
+    _editingEntryId = null;
   document.getElementById('ai-add-btn').textContent = '✓ Confirmer et ajouter';
   document.getElementById('ai-add-btn').onclick = () => addAIEntry();
   haptic(10);
-  if (_editCat) { _mealCollapsed[_editCat] = false; try { _saveCollapseState(journalDateStr()); } catch(_e) {} }
-  closeAIModal();
+closeAIModal();
   loadData();
 }
 
@@ -7031,7 +7016,6 @@ async function addAIEntry() {
     lip: isSport ? 0 : round1(l * factor),
     date: selectedDate
   }]);
-  _mealCollapsed[selectedCat] = false; try { _saveCollapseState(journalDateStr()); } catch(_e) {}
   closeAIModal();
   closeModal();
   loadData();
