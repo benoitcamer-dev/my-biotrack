@@ -2722,13 +2722,23 @@ async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
     });
     const start = new Date(dateObj); start.setSeconds(0,0);
     const end = new Date(start.getTime() + durationMin * 60000);
-    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    const gcalResp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ summary: `🚴 ${favName}`, description: `${durationMin} min · ${kcal} kcal`, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() }, colorId: '4' })
     });
+    if (gcalResp.ok) {
+      const gcalEvent = await gcalResp.json();
+      // Stocker l'event ID dans le desc de l'entrée Supabase
+      if (gcalEvent.id && _lastBikeEntryId) {
+        const newDesc = _lastBikeEntryDesc + '|||gcal:' + gcalEvent.id;
+        await sb.from('entries').update({ desc: newDesc }).eq('id', _lastBikeEntryId);
+      }
+    }
   } catch(e) { console.warn('Google Calendar:', e); }
 }
+let _lastBikeEntryId = null;
+let _lastBikeEntryDesc = '';
 let _savedScrollY = 0;
 let _currentFoodUnit = null; // { unit, unitG, label } when a custom-unit food is selected
 let _currentDrinkUnit = 'ml'; // 'cl' for beers, 'ml' for others
@@ -5934,6 +5944,20 @@ async function confirmCopyMeal() {
 async function del(id) {
   id = parseInt(id) || id;
   const entry = currentEntries.find(e => e.id === id);
+  // Supprimer l'événement Google Calendar si présent
+  if (entry?.desc?.includes('|||gcal:')) {
+    const gcalId = entry.desc.split('|||gcal:')[1];
+    if (gcalId && gcalIsConfigured()) {
+      try {
+        // Pré-auth si token expiré (depuis ce clic utilisateur)
+        if (!_gcalToken || Date.now() >= _gcalTokenExpiry) await gcalPreAuth();
+        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${_gcalToken}` }
+        });
+      } catch(e) { console.warn('gcal delete:', e); }
+    }
+  }
   haptic(6);
   await sb.from('entries').delete().eq('id', id);
   loadData();
@@ -6357,17 +6381,20 @@ const spd = fav.speed;
 const kcal = calcBikeKcal(spd, dur);
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
-await sb.from('entries').insert([{
+const bikeDesc = `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`;
+const { data: bikeInserted } = await sb.from('entries').insert([{
 user_id: user.id,
 type: 'burn',
 category: 'Sport',
-desc: `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`,
+desc: bikeDesc,
 val: kcal,
 prot: 0,
 gluc: 0,
 lip: 0,
 date: dateToStr(selectedDate)
-}]);
+}]).select('id').single();
+_lastBikeEntryId = bikeInserted?.id || null;
+_lastBikeEntryDesc = bikeDesc;
 addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
 loadData();
 }
