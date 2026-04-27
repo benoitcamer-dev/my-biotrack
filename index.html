@@ -2700,26 +2700,44 @@ let editingId = null, currentEntries = [], currentPage = "journal";
 let GCAL_CLIENT_ID = localStorage.getItem('gcal_client_id') || '';
 let _gcalToken = null, _gcalTokenExpiry = 0;
 function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
-async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
-  if (!gcalIsConfigured()) return;
-  try {
-    // Charger GSI dynamiquement si pas encore disponible
-    if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://accounts.google.com/gsi/client';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
+
+async function _loadGSI() {
+  if (typeof google !== 'undefined' && google?.accounts?.oauth2) return;
+  return new Promise((resolve, reject) => {
+    if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+      const check = setInterval(() => { if (typeof google !== 'undefined' && google?.accounts?.oauth2) { clearInterval(check); resolve(); } }, 100);
+      setTimeout(() => { clearInterval(check); reject('GSI timeout'); }, 10000);
+    } else {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
     }
-    const token = await new Promise((resolve, reject) => {
-      if (_gcalToken && Date.now() < _gcalTokenExpiry) { resolve(_gcalToken); return; }
-      google.accounts.oauth2.initTokenClient({
-        client_id: GCAL_CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/calendar.events',
-        callback: (r) => { if (r.error) { reject(r.error); return; } _gcalToken = r.access_token; _gcalTokenExpiry = Date.now() + (r.expires_in - 60) * 1000; resolve(r.access_token); }
-      }).requestAccessToken({ prompt: '' });
-    });
+  });
+}
+
+async function gcalPreAuth() {
+  if (!gcalIsConfigured()) return;
+  await _loadGSI();
+  if (_gcalToken && Date.now() < _gcalTokenExpiry) return;
+  return new Promise((resolve, reject) => {
+    google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: (r) => {
+        if (r.error) { reject(r.error); return; }
+        _gcalToken = r.access_token;
+        _gcalTokenExpiry = Date.now() + (r.expires_in - 60) * 1000;
+        resolve();
+      }
+    }).requestAccessToken({ prompt: '' });
+  });
+}
+
+async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
+  if (!gcalIsConfigured() || !_gcalToken || Date.now() >= _gcalTokenExpiry) return;
+  try {
+    const token = _gcalToken;
     const start = new Date(dateObj); start.setSeconds(0,0);
     const end = new Date(start.getTime() + durationMin * 60000);
     const gcalResp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
