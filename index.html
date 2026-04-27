@@ -2729,10 +2729,12 @@ async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
     });
     if (gcalResp.ok) {
       const gcalEvent = await gcalResp.json();
-      // Stocker l'event ID dans le desc de l'entrée Supabase
-      if (gcalEvent.id && _lastBikeEntryId) {
+      if (gcalEvent.id && _lastBikeEntryDesc) {
+        // Retrouver l'entrée par desc+date et stocker l'event ID Google
         const newDesc = _lastBikeEntryDesc + '|||gcal:' + gcalEvent.id;
-        await sb.from('entries').update({ desc: newDesc }).eq('id', _lastBikeEntryId);
+        await sb.from('entries').update({ desc: newDesc })
+          .eq('desc', _lastBikeEntryDesc)
+          .eq('type', 'burn');
       }
     }
   } catch(e) { console.warn('Google Calendar:', e); }
@@ -4619,6 +4621,13 @@ if (editingId) { const res = await sb.from('entries').update(payload).eq('id', e
 else { const res = await sb.from('entries').insert([payload]); error = res.error; }
 if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmitting = false; return; }
 haptic(10);
+// Naviguer vers la date de l'entrée si différente du jour affiché
+const _entryDate = document.getElementById('in-entry-date').value;
+if (_entryDate && _entryDate !== journalDateStr()) {
+  journalDate = strToDate(_entryDate);
+  localStorage.setItem('bt_journal_date', _entryDate);
+  updateJournalDateUI();
+}
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
@@ -6382,7 +6391,9 @@ const kcal = calcBikeKcal(spd, dur);
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const bikeDesc = `🚴 ${fav.name} (${dur}min · ${round1(spd * (dur / 60))}km · ${spd}km/h)`;
-const { data: bikeInserted } = await sb.from('entries').insert([{
+// Générer un ID côté client pour pouvoir stocker l'event Google après l'insert
+const bikeClientId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+await sb.from('entries').insert([{
 user_id: user.id,
 type: 'burn',
 category: 'Sport',
@@ -6392,8 +6403,7 @@ prot: 0,
 gluc: 0,
 lip: 0,
 date: dateToStr(selectedDate)
-}]).select('id').single();
-_lastBikeEntryId = bikeInserted?.id || null;
+}]);
 _lastBikeEntryDesc = bikeDesc;
 addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
 loadData();
@@ -7182,6 +7192,12 @@ async function addAIEntry() {
     lip: isSport ? 0 : round1(l * factor),
     date: selectedDate
   }]);
+  // Naviguer vers la date IA si différente
+  if (selectedDate && selectedDate !== journalDateStr()) {
+    journalDate = strToDate(selectedDate);
+    localStorage.setItem('bt_journal_date', selectedDate);
+    updateJournalDateUI();
+  }
   _closeDetailPopup();
   closeAIModal();
   closeModal();
