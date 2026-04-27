@@ -1200,6 +1200,49 @@ body.modal-open { overflow: hidden; }
   position: fixed; inset: 0; z-index: 299;
   background: rgba(0,0,0,0.4);
 }
+/* Mini popup contextuel pour actions sur éléments de liste */
+.ctx-popup {
+  position: fixed;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  z-index: 500;
+  overflow: hidden;
+  min-width: 180px;
+  animation: fadeUp 0.15s ease;
+}
+.ctx-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  color: var(--text);
+  text-align: left;
+  touch-action: manipulation;
+  transition: background 0.12s;
+}
+.ctx-popup-item:hover { background: var(--surface); }
+.ctx-popup-item.danger { color: var(--danger); }
+.ctx-popup-item + .ctx-popup-item { border-top: 1px solid var(--border); }
+
+/* Hover PC sur éléments de liste */
+@media (hover: hover) {
+  .food-item:hover .food-item-actions,
+  .builder-item:hover .builder-item-hover-actions,
+  .sport-fav-item:hover .sport-fav-hover-actions { opacity: 1; }
+  .food-item-actions, .builder-item-hover-actions, .sport-fav-hover-actions {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+}
+
 /* Bouton + ajouter en bas du groupe repas */
 .entry-add-bottom {
   display: flex;
@@ -1971,7 +2014,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;"></div>
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
-<button id="saved-meal-link" class="saved-link-btn" onclick="openRecipePickerToAdd()">📚 Ajouter une recette</button>
+<button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">📚 Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
 <button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
@@ -3235,9 +3278,8 @@ return `<div class="food-item">
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="toggleFavFromAliments('${f.id}')">${isFav ? '⭐' : '☆'}</button>
-<button class="food-btn" onclick="closeAlimentsModal();openCustomFoodModal('','${f.id}')">✎</button>
-<button class="food-btn danger" onclick="deleteCustomFood('${f.id}')">✕</button>
+<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')">${isFav ? '⭐' : '☆'}</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();closeAlimentsModal();openCustomFoodModal(\'\',\'${f.id}\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteCustomFood(\'${f.id}\')',danger:true}])">⋯</button>
 </div>
 </div>`;
 }
@@ -3414,8 +3456,7 @@ function renderPlacesList() {
 ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
 <div class="food-item-actions" style="flex-shrink:0;">
-<button class="food-btn" onclick="openEditPlaceForm(${i})">✎</button>
-<button class="food-btn danger" onclick="deletePlace(${i})">✕</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();openEditPlaceForm(${i})'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deletePlace(${i})',danger:true}])">⋯</button>
 </div>
 </div>`).join('');
   // Drag & drop
@@ -4784,14 +4825,10 @@ const t = recipeTotals(recipeBuilder);
 el.innerHTML = `${recipeBuilder.map(i => {
   // Strip qty from desc to avoid double display e.g. "Ail (15g)"
   const cleanDesc = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl|min)\)/gi, '').trim();
-  return `<div class="builder-item">
+  return `<div class="builder-item" style="cursor:pointer;" onclick="showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();editRecipeIngredient(${i.id})'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();removeBuilderItem(${i.id})',danger:true}])">
 <div class="builder-main">
-<div class="builder-title">${cleanDesc} <span style="color:var(--muted);font-size:12px;font-weight:500;">${i.qty}&nbsp;g</span></div>
+<div class="builder-title">${cleanDesc} <span style="color:var(--accent);font-size:12px;font-weight:600;">${i.qty}&nbsp;g</span></div>
 <div class="builder-sub">${i.val} kcal · ${round1(i.prot)}&nbsp;g P · ${round1(i.gluc)}&nbsp;g G · ${round1(i.lip)}&nbsp;g L</div>
-</div>
-<div class="food-item-actions">
-<button class="food-btn" onclick="editRecipeIngredient(${i.id})">✎</button>
-<button class="food-btn danger" onclick="removeBuilderItem(${i.id})">✕</button>
 </div>
 </div>`;
 }).join('')}
@@ -5642,6 +5679,28 @@ function _saveToBase(name, kcal100, prot100, gluc100, lip100, defaultQty) {
   }, 50);
 }
 
+// ── Mini popup contextuel ──────────────────────────────────────────────────
+let _ctxPopup = null;
+function closeCtxPopup() {
+  if (_ctxPopup) { _ctxPopup.remove(); _ctxPopup = null; }
+}
+function showCtxPopup(e, actions) {
+  e.stopPropagation();
+  closeCtxPopup();
+  const popup = document.createElement('div');
+  popup.className = 'ctx-popup';
+  popup.innerHTML = actions.map(a =>
+    `<button class="ctx-popup-item${a.danger ? ' danger' : ''}" onclick="${a.fn}">${a.icon} ${a.label}</button>`
+  ).join('');
+  // Positionner près du tap
+  const x = Math.min(e.clientX || e.touches?.[0]?.clientX || 100, window.innerWidth - 200);
+  const y = Math.min(e.clientY || e.touches?.[0]?.clientY || 100, window.innerHeight - actions.length * 50 - 20);
+  popup.style.cssText = `left:${x}px;top:${y}px;`;
+  document.body.appendChild(popup);
+  _ctxPopup = popup;
+  setTimeout(() => document.addEventListener('click', closeCtxPopup, { once: true }), 10);
+}
+
 function _closeDetailPopup() {
   document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
   document.body.classList.remove('modal-open');
@@ -5955,8 +6014,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
 <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" onclick="event.stopPropagation();renderSportFavsContent(${i},'walk')">✎</button>
-<button class="food-btn danger" onclick="event.stopPropagation();deleteWalkFav(${i})">✕</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'walk\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteWalkFav(${i})',danger:true}])">⋯</button>
 </div>
 </div>`;
 }).join('');
@@ -5986,8 +6044,7 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" onclick="event.stopPropagation();renderSportFavsContent(${i},'bike')">✎</button>
-<button class="food-btn danger" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'bike\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteBikeFav(${i})',danger:true}])">⋯</button>
 </div>
 </div>`;
 }).join('');
@@ -7821,7 +7878,7 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
 document.addEventListener('touchmove', (e) => {
   // Si un modal est ouvert, bloquer le touchmove sauf à l'intérieur d'un scroll autorisé
   if (!document.body.classList.contains('modal-open')) return;
-  const scrollable = e.target.closest('.modal-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list');
+  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list, #recipe-builder-list, #sport-favs-content, #places-list');
   if (!scrollable) {
     e.preventDefault();
     return;
