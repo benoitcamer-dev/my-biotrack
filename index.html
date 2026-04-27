@@ -432,8 +432,8 @@ min-width: 0; flex: 1; overflow: hidden;
 }
 .entry-group-title {
 font-family: 'Inter', sans-serif;
-font-size: 15px;
-font-weight: 700;
+font-size: 18px;
+font-weight: 800;
 color: var(--text);
 cursor: pointer;
 white-space: nowrap;
@@ -5532,7 +5532,7 @@ html += `<div class="entry-group" data-cat="${cat}">
 <div class="entry-group-header">
 <div class="entry-group-left">
   <span>${ICONS[cat]}</span>
-  <span class="entry-group-title">${cat}</span><button onclick="event.stopPropagation();showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;touch-action:manipulation;line-height:1;">⋯</button>
+  <span class="entry-group-title" onclick="event.stopPropagation();showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="cursor:pointer;">${cat} <span style="color:var(--muted);font-size:13px;">⋯</span></span>
 </div>
 <div class="entry-group-actions">
   <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
