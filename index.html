@@ -1878,7 +1878,9 @@ if ('serviceWorker' in navigator) {
 <div class="date-nav-center" onclick="toggleCalendar()">
 <div class="date-nav-label" id="journal-date-label">Aujourd'hui</div>
 <div class="date-nav-sub" id="journal-date-sub"></div>
-<button id="today-btn" onclick="goToToday()" style="display:none;margin-top:5px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
+<div style="display:flex;justify-content:center;">
+  <button id="today-btn" onclick="goToToday()" style="display:none;margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 22px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
+</div>
 <div class="cal-dropdown" id="cal-dropdown" onclick="event.stopPropagation()">
 <div class="cal-header">
 <button class="cal-nav" onclick="calNav(-1)">←</button>
@@ -8066,6 +8068,15 @@ document.addEventListener('touchmove', (e) => {
     'modal-aliments': () => closeAlimentsModal(),
     'modal-custom-food': () => closeCustomFoodModal(),
     'modal-settings': () => closeSettings(),
+    'modal-recipes': () => closeRecipesModal(),
+    'modal-places': () => closePlacesModal(),
+    'modal-weight': () => closeWeightModal(),
+    'modal-sport-favs': () => closeSportFavsModal(),
+    'modal-sport-fav-date': () => closeSportFavDateModal(),
+    'modal-copy-meal': () => closeCopyMealModal(),
+    'modal-recipe-link': () => closeRecipeLinkModal(),
+    'modal-favs-quick': () => closeFavsQuickModal(),
+    'modal-recipe-picker': () => closeRecipePickerModal(),
   };
 
   function initSwipe(sheet, closeFn) {
