@@ -2696,6 +2696,29 @@ let currentCat = "";
 let userGoal = 2300, userWeight = 75, userHeight = 175, userAge = 30, userSexe = "H";
 let userProtGoal = 0; // 0 = pas fixé
 let editingId = null, currentEntries = [], currentPage = "journal";
+let GCAL_CLIENT_ID = localStorage.getItem('gcal_client_id') || '';
+let _gcalToken = null, _gcalTokenExpiry = 0;
+function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
+async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
+  if (!gcalIsConfigured() || typeof google === 'undefined') return;
+  try {
+    const token = await new Promise((resolve, reject) => {
+      if (_gcalToken && Date.now() < _gcalTokenExpiry) { resolve(_gcalToken); return; }
+      google.accounts.oauth2.initTokenClient({
+        client_id: GCAL_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/calendar.events',
+        callback: (r) => { if (r.error) { reject(r.error); return; } _gcalToken = r.access_token; _gcalTokenExpiry = Date.now() + (r.expires_in - 60) * 1000; resolve(r.access_token); }
+      }).requestAccessToken({ prompt: '' });
+    });
+    const start = new Date(dateObj); start.setSeconds(0,0);
+    const end = new Date(start.getTime() + durationMin * 60000);
+    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ summary: `🚴 ${favName}`, description: `${durationMin} min · ${kcal} kcal`, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() }, colorId: '4' })
+    });
+  } catch(e) { console.warn('Google Calendar:', e); }
+}
 let _savedScrollY = 0;
 let _currentFoodUnit = null; // { unit, unitG, label } when a custom-unit food is selected
 let _currentDrinkUnit = 'ml'; // 'cl' for beers, 'ml' for others
@@ -6297,6 +6320,7 @@ gluc: 0,
 lip: 0,
 date: dateToStr(selectedDate)
 }]);
+addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
 loadData();
 }
 }
