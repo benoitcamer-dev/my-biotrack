@@ -9,10 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="LeGrosBarbu">
 <meta name="theme-color" content="#08080F">
 <meta name="description" content="Suivi nutritionnel quotidien">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="shortcut icon" href="favicon.ico">
+<!-- Icônes PWA à ajouter si besoin -->
 <title>LeGrosBarbu</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1877,6 +1874,7 @@ if ('serviceWorker' in navigator) {
 <div class="date-nav-center" onclick="toggleCalendar()">
 <div class="date-nav-label" id="journal-date-label">Aujourd'hui</div>
 <div class="date-nav-sub" id="journal-date-sub"></div>
+<button id="today-btn" onclick="goToToday()" style="display:none;margin-top:5px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
 <div class="cal-dropdown" id="cal-dropdown" onclick="event.stopPropagation()">
 <div class="cal-header">
 <button class="cal-nav" onclick="calNav(-1)">←</button>
@@ -1886,7 +1884,6 @@ if ('serviceWorker' in navigator) {
 <div class="cal-grid" id="cal-grid"></div>
 </div>
 </div>
-<button class="date-nav-today" onclick="goToToday()" id="today-btn" style="display:none;">Aujourd'hui</button>
 <button class="date-nav-btn" onclick="moveJournalDay(1)">→</button>
 </div>
 <div class="kcal-card">
@@ -6480,6 +6477,7 @@ document.getElementById('loading-screen').classList.add('hidden');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (user) {
+sb.removeAllChannels();
 sb.channel('realtime-sync')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${user.id}` }, () => {
     loadData();
