@@ -5532,7 +5532,7 @@ html += `<div class="entry-group" data-cat="${cat}">
 <div class="entry-group-header">
 <div class="entry-group-left">
   <span>${ICONS[cat]}</span>
-  <span class="entry-group-title" onclick="showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="cursor:pointer;">${cat} <span style="font-size:10px;opacity:0.5;vertical-align:middle;">▾</span></span>
+  <span class="entry-group-title">${cat}</span><button onclick="event.stopPropagation();showMealCtxMenu(event,'${cat}',${items.length > 0},${!isSport})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;touch-action:manipulation;line-height:1;">⋯</button>
 </div>
 <div class="entry-group-actions">
   <span class="entry-group-total ${isSport ? 'sport' : ''}" style="${sub === 0 ? 'opacity:0.25;' : ''}">${isSport ? '−' : '+'}${sub} kcal</span>
