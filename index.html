@@ -6405,7 +6405,8 @@ lip: 0,
 date: dateToStr(selectedDate)
 }]);
 _lastBikeEntryDesc = bikeDesc;
-addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
+console.log('[gcal debug] bikeDesc set:', bikeDesc);
+await addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
 loadData();
 }
 }
