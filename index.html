@@ -502,6 +502,7 @@ position: relative;
 overflow: hidden;
 }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 .entry-main { flex: 1; min-width: 0; }
 .entry-desc {
 font-size: 12px;
@@ -5921,7 +5922,41 @@ async function confirmCopyMeal() {
   setTimeout(() => toast.remove(), 3000);
 }
 
-async function del(id) { haptic(6); id = parseInt(id) || id; await sb.from('entries').delete().eq('id', id); loadData(); if (currentPage === 'bilan') loadBilan(); }
+async function del(id) {
+  id = parseInt(id) || id;
+  const entry = currentEntries.find(e => e.id === id);
+  haptic(6);
+  await sb.from('entries').delete().eq('id', id);
+  loadData();
+  if (currentPage === 'bilan') loadBilan();
+  // Toast undo
+  if (entry) {
+    document.querySelectorAll('.undo-toast').forEach(t => t.remove());
+    const toast = document.createElement('div');
+    toast.className = 'undo-toast';
+    toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);white-space:nowrap;animation:fadeUp 0.2s ease;';
+    const entryJson = JSON.stringify(entry).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    toast.innerHTML = `Supprimé <button class="undo-btn" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;" onclick="undoDel(this)">Annuler</button>`;
+    toast.querySelector('.undo-btn').dataset.entry = JSON.stringify(entry);
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+  }
+}
+
+async function undoDel(btn) {
+  const toast = btn.closest('.undo-toast');
+  if (toast) toast.remove();
+  try {
+    const entry = JSON.parse(btn.dataset.entry);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { id, ...rest } = entry;
+    await sb.from('entries').insert([{ ...rest, user_id: user.id }]);
+    haptic(10);
+    loadData();
+    if (currentPage === 'bilan') loadBilan();
+  } catch(e) { console.error('undoDel:', e); }
+}
 async function clearMealEntries(cat) {
 if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
 const { data: { user } } = await sb.auth.getUser();
@@ -6634,6 +6669,7 @@ async function askAI() {
   // En mode global (catégorie auto), Gemini peut répondre sport OU nourriture
   const isSport = aiCurrentCat === 'Sport' || document.getElementById('ai-target-cat')?.value === 'Sport';
   document.getElementById('ai-loading').style.display = 'block';
+document.getElementById('ai-loading').innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></div> Analyse en cours…</div>';
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
   const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
