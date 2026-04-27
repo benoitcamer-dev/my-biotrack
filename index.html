@@ -1251,7 +1251,7 @@ body.modal-open { overflow: hidden; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 10px 0 4px;
+  margin: 10px 0 18px;
   padding: 14px 20px;
   border: 2px dashed rgba(124,111,255,0.45);
   border-radius: 18px;
@@ -5598,6 +5598,35 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
 }
 
 // Swipe supprimé — actions via popup de détail
+
+// ── Swipe gauche/droite sur le journal pour changer de jour ──────────────────
+(function() {
+  let _jStartX = 0, _jStartY = 0, _jSwiping = false;
+  const THRESHOLD = 60;
+
+  document.addEventListener('touchstart', e => {
+    // Ignorer si on est dans un modal ou popup
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup')) return;
+    if (currentPage !== 'journal') return;
+    _jStartX = e.touches[0].clientX;
+    _jStartY = e.touches[0].clientY;
+    _jSwiping = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!_jSwiping) return;
+    _jSwiping = false;
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup')) return;
+    if (currentPage !== 'journal') return;
+    const dx = e.changedTouches[0].clientX - _jStartX;
+    const dy = e.changedTouches[0].clientY - _jStartY;
+    // Ignorer si geste plus vertical qu'horizontal
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    if (Math.abs(dx) < THRESHOLD) return;
+    if (dx < 0) moveJournalDay(1);  // swipe gauche → jour suivant
+    else moveJournalDay(-1);         // swipe droit → jour précédent
+  }, { passive: true });
+})();
 
 // ── Popup détail entrée ──────────────────────────────────────────────────────
 function _onEntryTap(el) {
