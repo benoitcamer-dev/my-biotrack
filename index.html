@@ -2701,8 +2701,17 @@ let GCAL_CLIENT_ID = localStorage.getItem('gcal_client_id') || '';
 let _gcalToken = null, _gcalTokenExpiry = 0;
 function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
 async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
-  if (!gcalIsConfigured() || typeof google === 'undefined') return;
+  if (!gcalIsConfigured()) return;
   try {
+    // Charger GSI dynamiquement si pas encore disponible
+    if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://accounts.google.com/gsi/client';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
     const token = await new Promise((resolve, reject) => {
       if (_gcalToken && Date.now() < _gcalTokenExpiry) { resolve(_gcalToken); return; }
       google.accounts.oauth2.initTokenClient({
@@ -6309,6 +6318,10 @@ closeSportFavDateCalendar();
 async function useSportFavOnDate() {
 const rid = document.getElementById('sport-fav-date-rid').value;
 const type = document.getElementById('sport-fav-date-type').value;
+// Pré-autoriser Google Calendar depuis ce clic direct (avant tout await)
+if (type === 'bike' && gcalIsConfigured()) {
+  try { await gcalPreAuth(); } catch(e) { console.warn('gcal pre-auth:', e); }
+}
 const date = document.getElementById('sport-fav-date-date').value;
 const selectedDate = strToDate(date);
 journalDate = selectedDate;
@@ -6568,7 +6581,6 @@ function confirmBarcodeProduct() {
 }
 function openCustomFoodFromBarcode() { closeBarcodeScanner(); openCustomFoodModal('', null, true); }
 // ─── FIN BARCODE SCANNER ───────────────────────────────────────────────────
-init();
 
 // ── GEMINI AI ────────────────────────────────────────────────────────────────
 let GEMINI_KEY = localStorage.getItem("gemini_api_key") || "";
