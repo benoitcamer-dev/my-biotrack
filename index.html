@@ -3903,12 +3903,13 @@ try {
 if (_searchAbortCtrl) { try { _searchAbortCtrl.abort(); } catch(_){} }
 _searchAbortCtrl = new AbortController();
 const ctrl = _searchAbortCtrl, t = setTimeout(() => ctrl.abort(), 8000);
-// Try v2 API first (better CORS support), fallback to v0
 let res;
 try {
-  res = await fetch(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text&cc=fr&lc=fr`, { signal: ctrl.signal });
+  // .net domain has proper CORS headers for web apps
+  res = await fetch(`https://world.openfoodfacts.net/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments&cc=fr&lc=fr`, { signal: ctrl.signal });
+  if (!res.ok) throw new Error('net failed');
 } catch(e) {
-  res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(v)}&json=1&page_size=40&action=process&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text`, { signal: ctrl.signal });
+  res = await fetch(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments`, { signal: ctrl.signal });
 }
 clearTimeout(t);
 const d = await res.json();
