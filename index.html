@@ -6882,7 +6882,9 @@ Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kc
 Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":6,"note":"detail"}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
-REPAS COMPOSE : estime chaque ingredient separement (kcal totales pour la portion), puis calcule kcal_per_100g = SOMME_KCAL / qty_g * 100. {"type":"food","food":"description courte","qty_g":POIDS_TOTAL,"kcal_per_100g":CALCULE,"prot_per_100g":CALCULE,"gluc_per_100g":CALCULE,"lip_per_100g":CALCULE,"note":"Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
+REPAS COMPOSE : estime chaque ingredient separement (kcal totales pour la portion), puis calcule kcal_per_100g = SOMME_KCAL / qty_g * 100.
+Portions realistes : une sauce d accompagnement (curry, blanche, algerienne, mayo...) = 30-50g par sauce, pas 200ml. Une portion de frites = 150-200g. Un naan = 150-200g. Une portion de viande kebab = 150-200g.
+{"type":"food","food":"description courte","qty_g":POIDS_TOTAL,"kcal_per_100g":CALCULE,"prot_per_100g":CALCULE,"gluc_per_100g":CALCULE,"lip_per_100g":CALCULE,"note":"Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
   const contents = [
