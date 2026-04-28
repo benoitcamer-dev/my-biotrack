@@ -2771,6 +2771,7 @@ let _lastBikeEntryDesc = '';
 let _savedScrollY = 0;
 let _currentFoodUnit = null; // { unit, unitG, label } when a custom-unit food is selected
 let _currentDrinkUnit = 'ml'; // 'cl' for beers, 'ml' for others
+let _drinkPortionQty = null;
 let savedRecipes = [], recipeBuilder = [], editingRecipeId = null;
 let recipePickerTargetCategory = null, bilanRange = "week", bilanCursor = new Date();
 let customFoods = [], favoriteIds = [], editingCustomFoodId = null;
@@ -3901,8 +3902,14 @@ while (att < 2 && !ok) {
 try {
 if (_searchAbortCtrl) { try { _searchAbortCtrl.abort(); } catch(_){} }
 _searchAbortCtrl = new AbortController();
-const ctrl = _searchAbortCtrl, t = setTimeout(() => ctrl.abort(), 6000);
-const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(v)}&json=1&page_size=40&action=process&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text`, { signal: ctrl.signal });
+const ctrl = _searchAbortCtrl, t = setTimeout(() => ctrl.abort(), 8000);
+// Try v2 API first (better CORS support), fallback to v0
+let res;
+try {
+  res = await fetch(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text&cc=fr&lc=fr`, { signal: ctrl.signal });
+} catch(e) {
+  res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(v)}&json=1&page_size=40&action=process&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments,ingredients_text`, { signal: ctrl.signal });
+}
 clearTimeout(t);
 const d = await res.json();
 ok = true;
