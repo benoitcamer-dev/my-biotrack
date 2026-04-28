@@ -6574,12 +6574,6 @@ async function migrateEntryQty() {
 }
 
 async function init() {
-  // Pré-autoriser Google Calendar silencieusement au démarrage
-  if (gcalIsConfigured()) {
-    setTimeout(async () => {
-      try { await gcalPreAuth(true); } catch(e) { /* silencieux — token récupéré si session Google active */ }
-    }, 2000); // Attendre que la page soit chargée
-  }
 document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 loadSettingsLocal();
 try {
