@@ -5739,7 +5739,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
 let _entryIngredients = [];
 
 function _parseNoteIngredients(note) {
-  return note.replace(/~/g, '').split('|').map(l => l.trim()).filter(l => l && l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL')).map((line, i) => {
+  return note.replace(/~/g, '').split('|').map(l => l.trim()).filter(l => l && l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL')).map((line) => {
     const arrowIdx = line.indexOf('→');
     const namePart = line.substring(0, arrowIdx).trim();
     const rest = line.substring(arrowIdx + 1).trim();
@@ -5749,8 +5749,9 @@ function _parseNoteIngredients(note) {
     const qtyMatch = namePart.match(/(\d+)\s*g\s*$/i);
     const qty = qtyMatch ? parseInt(qtyMatch[1]) : 100;
     const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
-    const kcalTotal = parseInt(kcalTotalStr.replace(/[^\d]/g, '')) || 0;
-    const kcal100 = parseInt(kcal100Str.replace(/[^\d]/g, '')) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
+    // Extract first number only (ignore macro annotations like "(15P,35G,11L)/100g")
+    const kcalTotal = parseInt((kcalTotalStr.match(/(\d+)/) || [])[1]) || 0;
+    const kcal100 = parseInt((kcal100Str.match(/(\d+)/) || [])[1]) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
     return { name, qty, kcal100, kcalTotal };
   });
 }
@@ -6839,27 +6840,9 @@ function renderAINoteIngredients(note) {
   const el = document.getElementById('ai-result-text');
   if (!el) return;
   if (!note) { el.innerHTML = ''; el.style.display = 'none'; _aiIngredients = []; return; }
-  const lines = note.replace(/~/g, '').split('|').map(l => l.trim()).filter(Boolean);
-  const ingredientLines = lines.filter(l => l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL'));
-  if (ingredientLines.length === 0) { el.innerHTML = ''; el.style.display = 'none'; _aiIngredients = []; return; }
-
-  // Parse ingredients
-  _aiIngredients = ingredientLines.map((line, i) => {
-    const arrowIdx = line.indexOf('→');
-    const namePart = line.substring(0, arrowIdx).trim();
-    const rest = line.substring(arrowIdx + 1).trim();
-    const dotIdx = rest.indexOf('·');
-    const kcalTotalStr = dotIdx > -1 ? rest.substring(0, dotIdx).trim() : rest;
-    const kcal100Str = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
-    // Extract name and qty from namePart e.g. "Naan au fromage 200g"
-    const qtyMatch = namePart.match(/(\d+)\s*g\s*$/i);
-    const qty = qtyMatch ? parseInt(qtyMatch[1]) : 100;
-    const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
-    const kcalTotal = parseInt(kcalTotalStr.replace(/[^\d]/g, '')) || 0;
-    const kcal100 = parseInt(kcal100Str.replace(/[^\d]/g, '')) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
-    return { name, qty, kcal100, kcalTotal, idx: i };
-  });
-
+  const parsed = _parseNoteIngredients(note);
+  if (parsed.length === 0) { el.innerHTML = ''; el.style.display = 'none'; _aiIngredients = []; return; }
+  _aiIngredients = parsed.map((ing, i) => ({ ...ing, idx: i }));
   _rebuildIngredientTable();
   el.style.display = 'block';
 }
@@ -7163,25 +7146,13 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
       document.getElementById('ai-macro-fields').style.display = 'grid';
       const aiQtyG = p.qty_g || 100;
-      // Recalculate kcal_per_100g from note ingredients (most reliable source)
+      // Recalculate kcal_per_100g from parsed ingredients (handles all Gemini format variations)
       let aiKcal100 = p.kcal_per_100g || 0;
       if (p.note && aiQtyG > 0) {
-        // Sum kcal from note lines: "Ingredient Xg → YYYkcal · ZZZkcal/100g"
-        let sumKcal = 0, found = false;
-        const totalMatch = p.note.match(/TOTAL\s*:\s*~?([\d]+)\s*kcal/i);
-        if (totalMatch) {
-          sumKcal = parseInt(totalMatch[1]);
-          found = true;
-        } else {
-          // Sum individual ingredient kcal (before the ·)
-          const ingLines = p.note.split('|');
-          for (const line of ingLines) {
-            const m = line.match(/→\s*~?([\d]+)\s*kcal/i);
-            if (m) { sumKcal += parseInt(m[1]); found = true; }
-          }
-        }
-        if (found && sumKcal > 0) {
-          aiKcal100 = Math.round(sumKcal / aiQtyG * 100);
+        const parsed = _parseNoteIngredients(p.note);
+        if (parsed.length > 0) {
+          const sumKcal = parsed.reduce((s, ing) => s + ing.kcalTotal, 0);
+          if (sumKcal > 0) aiKcal100 = Math.round(sumKcal / aiQtyG * 100);
         }
       }
       let aiP = p.prot_per_100g || 0, aiG = p.gluc_per_100g || 0, aiL = p.lip_per_100g || 0;
