@@ -2021,7 +2021,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">📚 Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
-<button id="ai-btn" class="fav-link-btn" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
+<button id="ai-btn" class="fav-link-btn" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
 </div>
 <!-- SPORT FAVS (marche + vélo) -->
 <div id="sport-favs-section" style="display:none;">
@@ -3847,7 +3847,18 @@ openSportFavDateModal(i, 'bike');
 function showDrinkSuggestions() {
 const div = document.getElementById('search-results');
 div.style.display = 'block';
-div.innerHTML = DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
+const quickBtns = `<div style="display:flex;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+  <div class="result-item" onclick="openAIModal()" style="flex:1;min-width:120px;background:rgba(124,92,250,0.08);">
+    <div class="result-name" style="color:#a78bfa;">🤖 Assistant IA</div>
+  </div>
+  <div class="result-item" onclick="openRecipePickerToAdd()" style="flex:1;min-width:120px;background:rgba(124,111,255,0.08);">
+    <div class="result-name" style="color:var(--accent);">📚 Recettes</div>
+  </div>
+  <div class="result-item" onclick="openAlimentsFromAdd()" style="flex:1;min-width:120px;background:rgba(255,193,7,0.08);">
+    <div class="result-name" style="color:#fbbf24;">⭐ Aliments</div>
+  </div>
+</div>`;
+div.innerHTML = quickBtns + DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${a.name}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
