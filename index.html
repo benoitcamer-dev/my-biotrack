@@ -6771,7 +6771,7 @@ function renderAINoteIngredients(note) {
   const el = document.getElementById('ai-result-text');
   if (!el) return;
   if (!note) { el.innerHTML = ''; el.style.display = 'none'; return; }
-  const lines = note.split('|').map(l => l.trim()).filter(Boolean);
+  const lines = note.replace(/~/g, '').split('|').map(l => l.trim()).filter(Boolean);
   const ingredientLines = lines.filter(l => l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL'));
   const totalLine = lines.find(l => l.toUpperCase().startsWith('TOTAL'));
   if (ingredientLines.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
@@ -6876,16 +6876,13 @@ ${qLine}`
 ${recipesCtx ? recipesCtx + '.' : ''}
 ${customCtx ? customCtx + '.' : ''}
 Si l utilisateur mentionne une recette enregistree, reponds avec : {"type":"recipe","recipe_name":"nom exact","qty_g":POIDS_TOTAL,"note":"detail"}
-${sportFavCtx ? 'Activites favorites enregistrees : ' + sportFavCtx + '. Si l utilisateur mentionne un favori ou son nom, utilise exactement ses valeurs.' : ''}
-Si l utilisateur parle d une activite physique ou sportive (velo, marche, course, natation, musculation...) :
-Calcul kcal/heure selon poids ${userWeight}kg : velo leger=poids*4, velo modere=poids*6, velo soutenu=poids*8, velo intense=poids*10, course lente=poids*7, course rapide=poids*10, natation=poids*7, muscu=poids*4, autre=poids*5.
-Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kcal_per_hour":KCAL_H_CALCULE,"total_kcal":TOTAL,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
+${sportFavCtx ? 'Activites favorites : ' + sportFavCtx + '.' : ''}
+Si activite sportive : calcul kcal/heure selon poids ${userWeight}kg : velo leger=poids*4, modere=poids*6, soutenu=poids*8, intense=poids*10, course lente=poids*7, rapide=poids*10, natation=poids*7, muscu=poids*4, autre=poids*5.
+Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
 Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":6,"note":"detail"}
-TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
-REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":KCAL_100G,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE : calcule chaque ingredient, puis combine en un JSON. IMPORTANT : kcal_per_100g = ARRONDI(SOMME_KCAL_TOUS_INGREDIENTS / qty_g * 100), de meme pour prot/gluc/lip. {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"prot_per_100g":PROT_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"gluc_per_100g":GLUC_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"lip_per_100g":LIP_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"note":"Detail : Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
-Si question indispensable : {"type":"question","message":"question courte"}
+REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
+REPAS COMPOSE : estime chaque ingredient separement (kcal totales pour la portion), puis calcule kcal_per_100g = SOMME_KCAL / qty_g * 100. {"type":"food","food":"description courte","qty_g":POIDS_TOTAL,"kcal_per_100g":CALCULE,"prot_per_100g":CALCULE,"gluc_per_100g":CALCULE,"lip_per_100g":CALCULE,"note":"Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
   const contents = [
@@ -7053,7 +7050,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       if (p.note && aiQtyG > 0) {
         // Sum kcal from note lines: "Ingredient Xg → YYYkcal · ZZZkcal/100g"
         let sumKcal = 0, found = false;
-        const totalMatch = p.note.match(/TOTAL\s*:\s*([\d]+)\s*kcal/i);
+        const totalMatch = p.note.match(/TOTAL\s*:\s*~?([\d]+)\s*kcal/i);
         if (totalMatch) {
           sumKcal = parseInt(totalMatch[1]);
           found = true;
@@ -7061,7 +7058,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
           // Sum individual ingredient kcal (before the ·)
           const ingLines = p.note.split('|');
           for (const line of ingLines) {
-            const m = line.match(/→\s*([\d]+)\s*kcal/i);
+            const m = line.match(/→\s*~?([\d]+)\s*kcal/i);
             if (m) { sumKcal += parseInt(m[1]); found = true; }
           }
         }
