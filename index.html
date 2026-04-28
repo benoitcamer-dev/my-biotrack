@@ -1878,9 +1878,6 @@ if ('serviceWorker' in navigator) {
 <div class="date-nav-center" onclick="toggleCalendar()">
 <div class="date-nav-label" id="journal-date-label">Aujourd'hui</div>
 <div class="date-nav-sub" id="journal-date-sub"></div>
-<div style="display:flex;justify-content:center;">
-  <button id="today-btn" onclick="event.stopPropagation();goToToday()" style="display:none;margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 22px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
-</div>
 <div class="cal-dropdown" id="cal-dropdown" onclick="event.stopPropagation()">
 <div class="cal-header">
 <button class="cal-nav" onclick="calNav(-1)">←</button>
@@ -1891,6 +1888,9 @@ if ('serviceWorker' in navigator) {
 </div>
 </div>
 <button class="date-nav-btn" onclick="moveJournalDay(1)">→</button>
+</div>
+<div style="display:flex;justify-content:center;margin-top:6px;">
+  <button id="today-btn" onclick="goToToday()" style="display:none;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 22px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
 </div>
 <div class="kcal-card">
 <div class="kcal-hero">
