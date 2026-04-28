@@ -3818,11 +3818,15 @@ ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQ
 </div>`).join('')}
 </div>`;
 }
-document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? html.split('<div class="sport-fav-section"><div class="sport-fav-title">🚴')[0] : '';
-document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 if (hasWalk) {
 document.getElementById('walk-favs-quick-list').innerHTML = `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>`;
 }
+// Always show Marche/Vélo mode buttons at the bottom
+document.getElementById('bike-favs-quick-list').innerHTML = (hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '')
+  + `<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
+  <div class="result-item" onclick="selectWalkMode()"><div class="result-name">🚶 Marche</div><div class="result-kcal burn">Calcul précis ou simple</div></div>
+  <div class="result-item" onclick="selectBikeMode()"><div class="result-name">🚴 Vélo</div><div class="result-kcal burn">Calcul avec ton profil</div></div>
+</div>`;
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
