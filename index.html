@@ -5679,32 +5679,12 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       ${gluc ? `<span class="result-tag" style="background:rgba(251,191,36,0.1);color:#fbbf24;font-size:12px;">G ${gluc}g</span>` : ''}
       ${lip ? `<span class="result-tag" style="background:rgba(249,115,22,0.1);color:#f97316;font-size:12px;">L ${lip}g</span>` : ''}
     </div>
-    ${note ? `<div class="entry-detail-note">${note.split('|').map(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return '';
-      const arrowIdx = trimmed.indexOf('→');
-      if (arrowIdx > -1) {
-        const ingredient = trimmed.substring(0, arrowIdx).trim();
-        const rest = trimmed.substring(arrowIdx + 1).trim();
-        // Séparer kcal dose · kcal/100g
-        const dotIdx = rest.indexOf('·');
-        if (dotIdx > -1) {
-          const kcalDose = rest.substring(0, dotIdx).trim();
-          const kcal100 = rest.substring(dotIdx + 1).trim();
-          return '<b>' + ingredient + '</b> → <b style="color:var(--accent)">' + kcalDose + '</b> <span style="color:var(--muted);font-size:11px;">· ' + kcal100 + '</span>';
-        }
-        return '<b>' + ingredient + '</b> → <b style="color:var(--accent)">' + rest + '</b>';
-      }
-      // Ligne TOTAL
-      if (trimmed.toUpperCase().startsWith('TOTAL')) {
-        return '<b style="border-top:1px solid var(--border);display:block;padding-top:6px;margin-top:4px;">' + trimmed + '</b>';
-      }
-      return trimmed;
-    }).filter(Boolean).join('<br>')}</div>` : ''}
+    ${note ? `<div id="entry-ing-table-${id}" class="entry-detail-note"></div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
       <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
     </div>
+    ${note && note.indexOf('→') > -1 ? `<button id="entry-ing-save-${id}" class="btn-primary" style="font-size:13px;padding:10px;margin-bottom:8px;width:100%;display:none;background:linear-gradient(135deg,#7c3aed,#5b7fff);" onclick="_saveIngEdits(${id},${val},${prot},${gluc},${lip})">💾 Enregistrer les modifications</button>` : ''}
     ${(type === 'food' && !matchedFood) ? (() => {
       const k100 = qty > 0 ? Math.round(val/qty*100) : 0;
       const p100 = qty > 0 ? Math.round(prot/qty*100*10)/10 : prot;
@@ -5723,6 +5703,11 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
   document.body.appendChild(overlay);
   document.body.appendChild(popup);
   document.body.classList.add('modal-open');
+
+  // Render editable ingredient table if note has ingredients
+  if (note && note.indexOf('→') > -1) {
+    _renderEntryIngTable(id, note);
+  }
 
   // Swipe vers le bas pour fermer
   let _pStartY = 0, _pDragging = false;
@@ -5748,6 +5733,86 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       popup.style.transform = '';
     }
   });
+}
+
+// ── Ingredient table éditable dans le popup journal ─────────────────────────
+let _entryIngredients = [];
+
+function _parseNoteIngredients(note) {
+  return note.replace(/~/g, '').split('|').map(l => l.trim()).filter(l => l && l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL')).map((line, i) => {
+    const arrowIdx = line.indexOf('→');
+    const namePart = line.substring(0, arrowIdx).trim();
+    const rest = line.substring(arrowIdx + 1).trim();
+    const dotIdx = rest.indexOf('·');
+    const kcalTotalStr = dotIdx > -1 ? rest.substring(0, dotIdx).trim() : rest;
+    const kcal100Str = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
+    const qtyMatch = namePart.match(/(\d+)\s*g\s*$/i);
+    const qty = qtyMatch ? parseInt(qtyMatch[1]) : 100;
+    const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
+    const kcalTotal = parseInt(kcalTotalStr.replace(/[^\d]/g, '')) || 0;
+    const kcal100 = parseInt(kcal100Str.replace(/[^\d]/g, '')) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
+    return { name, qty, kcal100, kcalTotal };
+  });
+}
+
+function _renderEntryIngTable(entryId, note) {
+  _entryIngredients = _parseNoteIngredients(note);
+  _rebuildEntryIngTable(entryId);
+}
+
+function _rebuildEntryIngTable(entryId) {
+  const el = document.getElementById(`entry-ing-table-${entryId}`);
+  if (!el) return;
+  const inputStyle = 'width:48px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
+  const rows = _entryIngredients.map((ing, i) => `
+    <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name}</span>
+      <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="g">
+      <span style="font-size:10px;color:var(--muted);">g</span>
+      <input type="number" style="${inputStyle}" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
+      <span style="font-size:10px;color:var(--muted);">k/100</span>
+      <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
+      <span style="font-size:10px;color:var(--muted);">kcal</span>
+    </div>`).join('');
+  const total = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
+  el.innerHTML = rows + `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;"><span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span><span style="font-size:13px;font-weight:800;color:var(--accent);">${total} kcal</span></div>`;
+}
+
+function _entryIngChange(entryId, idx, field, rawVal) {
+  const val = parseFloat(rawVal) || 0;
+  const ing = _entryIngredients[idx];
+  if (field === 'qty') { ing.qty = val; ing.kcalTotal = Math.round(ing.kcal100 * val / 100); }
+  else if (field === 'kcal100') { ing.kcal100 = val; ing.kcalTotal = Math.round(val * ing.qty / 100); }
+  else if (field === 'kcalTotal') { ing.kcalTotal = val; ing.kcal100 = ing.qty > 0 ? Math.round(val / ing.qty * 100) : 0; }
+  _rebuildEntryIngTable(entryId);
+  // Show save button
+  const saveBtn = document.getElementById(`entry-ing-save-${entryId}`);
+  if (saveBtn) saveBtn.style.display = 'block';
+}
+
+async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const totalKcal = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
+  const totalQty = _entryIngredients.reduce((s, i) => s + i.qty, 0);
+  // Rebuild note string
+  const newNote = _entryIngredients.map(i => `${i.name} ${i.qty}g → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100g`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
+  // Get current entry to update desc
+  const { data: entry } = await sb.from('entries').select('desc,prot,gluc,lip').eq('id', entryId).single();
+  if (!entry) return;
+  // Replace note in desc (format: "name (qty)||note")
+  const descParts = entry.desc.split('||');
+  const newDesc = descParts[0] + '||' + newNote;
+  // Scale macros proportionally
+  const ratio = origVal > 0 ? totalKcal / origVal : 1;
+  const newProt = Math.round(origProt * ratio * 10) / 10;
+  const newGluc = Math.round(origGluc * ratio * 10) / 10;
+  const newLip = Math.round(origLip * ratio * 10) / 10;
+  const btn = document.getElementById(`entry-ing-save-${entryId}`);
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  await sb.from('entries').update({ val: totalKcal, prot: newProt, gluc: newGluc, lip: newLip, desc: newDesc }).eq('id', entryId).eq('user_id', user.id);
+  _closeDetailPopup();
+  loadData();
 }
 
 // ── Helper fermeture popup ───────────────────────────────────────────────────
@@ -6767,36 +6832,85 @@ function closeAIModal() {
   if (fab && currentPage === 'journal') fab.style.display = 'flex';
 }
 
+// Parsed ingredient data for editing
+let _aiIngredients = []; // [{name, qty, kcal100, kcalTotal}, ...]
+
 function renderAINoteIngredients(note) {
   const el = document.getElementById('ai-result-text');
   if (!el) return;
-  if (!note) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  if (!note) { el.innerHTML = ''; el.style.display = 'none'; _aiIngredients = []; return; }
   const lines = note.replace(/~/g, '').split('|').map(l => l.trim()).filter(Boolean);
   const ingredientLines = lines.filter(l => l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL'));
-  const totalLine = lines.find(l => l.toUpperCase().startsWith('TOTAL'));
-  if (ingredientLines.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
-  const rows = ingredientLines.map(line => {
+  if (ingredientLines.length === 0) { el.innerHTML = ''; el.style.display = 'none'; _aiIngredients = []; return; }
+
+  // Parse ingredients
+  _aiIngredients = ingredientLines.map((line, i) => {
     const arrowIdx = line.indexOf('→');
-    const name = line.substring(0, arrowIdx).trim();
+    const namePart = line.substring(0, arrowIdx).trim();
     const rest = line.substring(arrowIdx + 1).trim();
-    // Extract kcal total (before ·) and kcal/100g (after ·)
     const dotIdx = rest.indexOf('·');
-    const kcalTotal = dotIdx > -1 ? rest.substring(0, dotIdx).trim() : rest;
-    const kcal100 = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;margin-right:8px;">${name}</span>
-      <span style="font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;">${kcalTotal}</span>
-      ${kcal100 ? `<span style="font-size:10px;color:var(--muted);margin-left:5px;white-space:nowrap;">${kcal100}</span>` : ''}
-    </div>`;
-  }).join('');
-  const totalHTML = totalLine
-    ? `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0 0;">
-        <span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span>
-        <span style="font-size:14px;font-weight:800;color:var(--accent);">${totalLine.replace(/TOTAL\s*:/i,'').trim()}</span>
-       </div>`
-    : '';
-  el.innerHTML = rows + totalHTML;
+    const kcalTotalStr = dotIdx > -1 ? rest.substring(0, dotIdx).trim() : rest;
+    const kcal100Str = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
+    // Extract name and qty from namePart e.g. "Naan au fromage 200g"
+    const qtyMatch = namePart.match(/(\d+)\s*g\s*$/i);
+    const qty = qtyMatch ? parseInt(qtyMatch[1]) : 100;
+    const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
+    const kcalTotal = parseInt(kcalTotalStr.replace(/[^\d]/g, '')) || 0;
+    const kcal100 = parseInt(kcal100Str.replace(/[^\d]/g, '')) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
+    return { name, qty, kcal100, kcalTotal, idx: i };
+  });
+
+  _rebuildIngredientTable();
   el.style.display = 'block';
+}
+
+function _rebuildIngredientTable() {
+  const el = document.getElementById('ai-result-text');
+  if (!el) return;
+  const inputStyle = 'width:52px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
+  const rows = _aiIngredients.map((ing, i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name}</span>
+      <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
+        onchange="_ingChange(${i},'qty',this.value)" title="Grammes">
+      <span style="font-size:10px;color:var(--muted);">g</span>
+      <input type="number" style="${inputStyle}" value="${ing.kcal100}" min="0" step="1"
+        onchange="_ingChange(${i},'kcal100',this.value)" title="kcal/100g">
+      <span style="font-size:10px;color:var(--muted);">k/100</span>
+      <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
+        onchange="_ingChange(${i},'kcalTotal',this.value)" title="kcal total">
+      <span style="font-size:10px;color:var(--muted);">kcal</span>
+    </div>`).join('');
+  const total = _aiIngredients.reduce((s, ing) => s + ing.kcalTotal, 0);
+  const totalQty = _aiIngredients.reduce((s, ing) => s + ing.qty, 0);
+  el.innerHTML = rows + `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;">
+      <span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span>
+      <span id="ai-ing-total" style="font-size:14px;font-weight:800;color:var(--accent);">${total} kcal</span>
+    </div>`;
+}
+
+function _ingChange(idx, field, rawVal) {
+  const val = parseFloat(rawVal) || 0;
+  const ing = _aiIngredients[idx];
+  if (field === 'qty') {
+    ing.qty = val;
+    ing.kcalTotal = Math.round(ing.kcal100 * val / 100);
+  } else if (field === 'kcal100') {
+    ing.kcal100 = val;
+    ing.kcalTotal = Math.round(val * ing.qty / 100);
+  } else if (field === 'kcalTotal') {
+    ing.kcalTotal = val;
+    ing.kcal100 = ing.qty > 0 ? Math.round(val / ing.qty * 100) : 0;
+  }
+  _rebuildIngredientTable();
+  // Update main qty/kcal fields
+  const totalQty = _aiIngredients.reduce((s, i) => s + i.qty, 0);
+  const totalKcal = _aiIngredients.reduce((s, i) => s + i.kcalTotal, 0);
+  const kcal100Global = totalQty > 0 ? Math.round(totalKcal / totalQty * 100) : 0;
+  document.getElementById('ai-qty').value = totalQty;
+  document.getElementById('ai-kcal').value = kcal100Global;
+  recalcAI();
 }
 
 async function askAI() {
@@ -6815,6 +6929,7 @@ document.getElementById('ai-loading').innerHTML = '<div style="display:flex;alig
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
   const rtEl = document.getElementById('ai-result-text'); if (rtEl) { rtEl.innerHTML = ''; rtEl.style.display = 'none'; }
+  _aiIngredients = [];
   const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
   const questionsAlways = aiQMode === 'always';
   const userProfile = `Profil : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
