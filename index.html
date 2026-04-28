@@ -6767,6 +6767,38 @@ function closeAIModal() {
   if (fab && currentPage === 'journal') fab.style.display = 'flex';
 }
 
+function renderAINoteIngredients(note) {
+  const el = document.getElementById('ai-result-text');
+  if (!el) return;
+  if (!note) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const lines = note.split('|').map(l => l.trim()).filter(Boolean);
+  const ingredientLines = lines.filter(l => l.indexOf('→') > -1 && !l.toUpperCase().startsWith('TOTAL'));
+  const totalLine = lines.find(l => l.toUpperCase().startsWith('TOTAL'));
+  if (ingredientLines.length === 0) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const rows = ingredientLines.map(line => {
+    const arrowIdx = line.indexOf('→');
+    const name = line.substring(0, arrowIdx).trim();
+    const rest = line.substring(arrowIdx + 1).trim();
+    // Extract kcal total (before ·) and kcal/100g (after ·)
+    const dotIdx = rest.indexOf('·');
+    const kcalTotal = dotIdx > -1 ? rest.substring(0, dotIdx).trim() : rest;
+    const kcal100 = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;margin-right:8px;">${name}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;">${kcalTotal}</span>
+      ${kcal100 ? `<span style="font-size:10px;color:var(--muted);margin-left:5px;white-space:nowrap;">${kcal100}</span>` : ''}
+    </div>`;
+  }).join('');
+  const totalHTML = totalLine
+    ? `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0 0;">
+        <span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span>
+        <span style="font-size:14px;font-weight:800;color:var(--accent);">${totalLine.replace(/TOTAL\s*:/i,'').trim()}</span>
+       </div>`
+    : '';
+  el.innerHTML = rows + totalHTML;
+  el.style.display = 'block';
+}
+
 async function askAI() {
   GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
   if (!GEMINI_KEY) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
@@ -6782,6 +6814,7 @@ async function askAI() {
 document.getElementById('ai-loading').innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></div> Analyse en cours…</div>';
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
+  const rtEl = document.getElementById('ai-result-text'); if (rtEl) { rtEl.innerHTML = ''; rtEl.style.display = 'none'; }
   const aiQMode = document.querySelector('input[name="ai-questions"]:checked')?.value || 'needed';
   const questionsAlways = aiQMode === 'always';
   const userProfile = `Profil : ${userWeight}kg, ${userHeight}cm, ${userAge} ans, sexe: ${userSexe === 'H' ? 'homme' : 'femme'}.`;
@@ -7009,25 +7042,15 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       const _noteF = p.note || 'Voici :'; addChatMessage('ai', _noteF); speakIfEnabled(_noteF);
       _aiLastFoodNote = p.note || '';
       const noteEl2 = document.getElementById('ai-note-text'); if (noteEl2) noteEl2.textContent = p.note || '';
+      // Render ingredient breakdown in result-text
+      renderAINoteIngredients(p.note || '');
       document.getElementById('ai-label-qty').textContent = 'Quantité (g)';
       document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
       document.getElementById('ai-macro-fields').style.display = 'grid';
       const aiQtyG = p.qty_g || 100;
-      // Recalculate kcal_per_100g from total if available, for consistency
+      // Use kcal_per_100g directly from AI — it already accounts for the total meal composition
       let aiKcal100 = p.kcal_per_100g || 0;
-      if (p.total_kcal && aiQtyG > 0) {
-        const recalc100 = Math.round(p.total_kcal / aiQtyG * 100);
-        // Use recalculated value if it differs significantly from provided value
-        if (Math.abs(recalc100 - aiKcal100) > 5) aiKcal100 = recalc100;
-      }
-      // Also recalculate macros proportionally if total provided
       let aiP = p.prot_per_100g || 0, aiG = p.gluc_per_100g || 0, aiL = p.lip_per_100g || 0;
-      if (p.total_kcal && aiQtyG > 0 && aiKcal100 > 0 && p.kcal_per_100g && Math.abs(aiKcal100 - p.kcal_per_100g) > 5) {
-        const ratio = aiKcal100 / p.kcal_per_100g;
-        aiP = Math.round(aiP * ratio * 10) / 10;
-        aiG = Math.round(aiG * ratio * 10) / 10;
-        aiL = Math.round(aiL * ratio * 10) / 10;
-      }
       document.getElementById('ai-qty').value = aiQtyG;
       document.getElementById('ai-kcal').value = aiKcal100;
       document.getElementById('ai-p').value = aiP;
