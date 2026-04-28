@@ -2738,9 +2738,11 @@ async function gcalPreAuth(silent = false) {
   });
 }
 
-async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
-  if (!gcalIsConfigured() || !_gcalToken || Date.now() >= _gcalTokenExpiry) return;
+async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj, entryId) {
+  if (!gcalIsConfigured()) return;
   try {
+    if (!_gcalToken || Date.now() >= _gcalTokenExpiry) await gcalPreAuth();
+    if (!_gcalToken) return;
     const token = _gcalToken;
     const start = new Date(dateObj); start.setSeconds(0,0);
     const end = new Date(start.getTime() + durationMin * 60000);
@@ -2751,13 +2753,18 @@ async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj) {
     });
     if (gcalResp.ok) {
       const gcalEvent = await gcalResp.json();
-      if (gcalEvent.id && _lastBikeEntryDesc) {
-        // Retrouver l'entrée par desc+date et stocker l'event ID Google
-        const newDesc = _lastBikeEntryDesc + '|||gcal:' + gcalEvent.id;
-        await sb.from('entries').update({ desc: newDesc })
-          .eq('desc', _lastBikeEntryDesc)
-          .eq('type', 'burn');
+      if (gcalEvent.id) {
+        if (entryId) {
+          // Reliable: update by primary key
+          const { data: entry } = await sb.from('entries').select('desc').eq('id', entryId).single();
+          if (entry) await sb.from('entries').update({ desc: entry.desc + '|||gcal:' + gcalEvent.id }).eq('id', entryId);
+        } else if (_lastBikeEntryDesc) {
+          const newDesc = _lastBikeEntryDesc + '|||gcal:' + gcalEvent.id;
+          await sb.from('entries').update({ desc: newDesc }).eq('desc', _lastBikeEntryDesc).eq('type', 'burn');
+        }
       }
+    }
+  } catch(e) { console.warn('gcal add:', e); }
     }
   } catch(e) { console.warn('Google Calendar:', e); }
 }
@@ -6100,12 +6107,13 @@ async function del(id) {
     const gcalId = entry.desc.split('|||gcal:')[1];
     if (gcalId && gcalIsConfigured()) {
       try {
-        // Pré-auth si token expiré (depuis ce clic utilisateur)
         if (!_gcalToken || Date.now() >= _gcalTokenExpiry) await gcalPreAuth();
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${_gcalToken}` }
-        });
+        if (_gcalToken) {
+          await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gcalId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${_gcalToken}` }
+          });
+        }
       } catch(e) { console.warn('gcal delete:', e); }
     }
   }
@@ -6547,8 +6555,10 @@ lip: 0,
 date: dateToStr(selectedDate)
 }]);
 _lastBikeEntryDesc = bikeDesc;
-console.log('[gcal debug] bikeDesc set:', bikeDesc);
-await addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate);
+// Get the inserted entry id to store gcal event id reliably
+const { data: inserted } = await sb.from('entries').select('id').eq('desc', bikeDesc).eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single();
+const insertedId = inserted?.id;
+await addBikeToGoogleCalendar(fav.name, dur, kcal, selectedDate, insertedId);
 loadData();
 }
 }
