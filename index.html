@@ -1525,7 +1525,7 @@ font-weight: 700;
 font-size: 12px;
 cursor: pointer;
 }
-.weight-chart-wrap {
+body.modal-open #fab-btn { display: none !important; }
 background: var(--surface);
 border: 1px solid var(--border);
 border-radius: 14px;
@@ -3709,13 +3709,11 @@ document.getElementById('in-entry-date').value = journalDateStr();
 document.getElementById('in-entry-date').style.color = 'var(--muted)';
 document.getElementById('modal-add').classList.add('open');
 document.body.classList.add('modal-open');
-const fab = document.getElementById('fab-btn'); if (fab) fab.style.display = 'none';
 // Pas d'autofocus — évite l'ouverture automatique du clavier sur mobile
 }
 function closeModal() {
   document.getElementById('modal-add').classList.remove('open');
   document.body.classList.remove('modal-open');
-  const fab = document.getElementById('fab-btn'); if (fab) fab.style.display = 'flex';
   editingId = null; _currentFoodUnit = null; _currentDrinkUnit = 'ml'; _drinkPortionQty = null; const pr = document.getElementById('drink-portions-row'); if (pr) pr.style.display = 'none'; }
 function cancelEdit() { editingId = null; document.getElementById('cancel-edit-btn').style.display = 'none'; document.getElementById('submit-btn').textContent = 'Valider'; closeModal(); }
 function onSearchInput() {
