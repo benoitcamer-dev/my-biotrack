@@ -6484,6 +6484,12 @@ async function migrateEntryQty() {
 }
 
 async function init() {
+  // Pré-autoriser Google Calendar silencieusement au démarrage
+  if (gcalIsConfigured()) {
+    setTimeout(async () => {
+      try { await gcalPreAuth(); } catch(e) { /* silencieux */ }
+    }, 2000); // Attendre que la page soit chargée
+  }
 document.getElementById('header-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 loadSettingsLocal();
 try {
@@ -6512,7 +6518,8 @@ document.getElementById('loading-screen').classList.add('hidden');
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (user) {
-sb.removeAllChannels();
+if (!window._realtimeInitialized) {
+window._realtimeInitialized = true;
 sb.channel('realtime-sync')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `user_id=eq.${user.id}` }, () => {
     loadData();
@@ -6532,6 +6539,7 @@ sb.channel('realtime-sync')
     loadCustomFoods();
   })
   .subscribe();
+}
 }
 } catch(e) { console.warn('Realtime:', e); }
 }
