@@ -5424,12 +5424,13 @@ const dots = weightEntries.map(function(e, i) {
   const anchor = cx > W - 80 ? 'end' : 'start';
   return '<g style="cursor:pointer">'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/>'
-    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 8) + '" text-anchor="' + anchor + '" fill="#f0f2f8" font-size="12" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
+    + '<rect id="wlbl-bg' + i + '" x="' + (tx - 4) + '" y="' + (cy - 22) + '" width="120" height="16" rx="4" fill="rgba(20,22,35,0.75)" opacity="0" pointer-events="none"/>'
+    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 10) + '" text-anchor="' + anchor + '" fill="#ffffff" font-size="11" font-weight="600" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent"'
-    + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
-    + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
-    + ' ontouchstart="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
-    + ' ontouchend="setTimeout(function(){document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)},1500)"/>'
+    + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
+    + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
+    + ' ontouchstart="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
+    + ' ontouchend="setTimeout(function(){document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)},1500)"/>'
     + '</g>';
 }).join('');
 // Linear regression for trend line
