@@ -369,7 +369,7 @@ letter-spacing: -0.5px;
 .stat-box.depense .s-val { color: var(--green); }
 .stat-box.bmr .s-val { color: var(--muted); }
 .stat-box.sport .s-val { color: var(--orange); }
-.stat-box.bilan .s-val { color: var(--text); font-size: 16px; }
+.stat-box.bilan .s-val { color: var(--text); font-size: 22px; }
 .macro-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
 .macro-pill {
 background: rgba(255,255,255,0.03);
@@ -1913,7 +1913,7 @@ if ('serviceWorker' in navigator) {
 <div id="prot-goal-bar-wrap" style="display:none;margin-top:14px;margin-bottom:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px 14px;">
 <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
 <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">💪 Protéines</span>
-<span id="prot-goal-label" style="font-size:20px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text);font-variant-numeric:tabular-nums;">0 / 0 g</span>
+<span id="prot-goal-label" style="font-size:15px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text);font-variant-numeric:tabular-nums;">0 / 0 g</span>
 </div>
 <div class="progress-bar-bg">
 <div id="prot-goal-fill" class="progress-bar-fill" style="width:0%;"></div>
@@ -1921,8 +1921,8 @@ if ('serviceWorker' in navigator) {
 </div>
 <div class="macro-grid" style="margin-top:10px;" id="macro-grid-main">
 <div class="macro-pill prot" id="prot-macro-pill"><div class="label">Protéines</div><div class="val" id="total-p">0 g</div></div>
-<div class="macro-pill gluc"><div class="label">Glucides</div><div class="val" id="total-g">0 g</div></div>
-<div class="macro-pill lip"><div class="label">Lipides</div><div class="val" id="total-l">0 g</div></div>
+<div class="macro-pill gluc" id="gluc-macro-pill"><div class="label">Glucides</div><div class="val" id="total-g">0 g</div></div>
+<div class="macro-pill lip" id="lip-macro-pill"><div class="label">Lipides</div><div class="val" id="total-l">0 g</div></div>
 </div>
 </div>
 <div class="daily-section">
@@ -5485,16 +5485,20 @@ const protPill = document.getElementById('prot-macro-pill');
 if (userProtGoal > 0 && protWrap) {
   protWrap.style.display = 'block';
   if (protPill) protPill.style.display = 'none';
+  const macroGrid = document.getElementById('macro-grid-main');
+  if (macroGrid) macroGrid.style.gridTemplateColumns = 'repeat(2,1fr)';
   const protPct = Math.min(100, Math.round((tP / userProtGoal) * 100));
   document.getElementById('prot-goal-fill').style.width = protPct + '%';
   const protRounded = Math.round(tP);
   const protOver = protRounded > userProtGoal;
   document.getElementById('prot-goal-label').textContent = protRounded + ' / ' + userProtGoal + ' g' + (protOver ? ' (+' + (protRounded - userProtGoal) + ')' : '');
   document.getElementById('prot-goal-fill').style.background = tP >= userProtGoal ? 'linear-gradient(90deg,#00C896,#00E8B0)' : 'linear-gradient(90deg,#00C896,#00A87E)';
-document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? '0 0 12px rgba(0,200,150,0.5)' : '0 0 8px rgba(0,200,150,0.3)';
+  document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? '0 0 12px rgba(0,200,150,0.5)' : '0 0 8px rgba(0,200,150,0.3)';
 } else if (protWrap) {
   protWrap.style.display = 'none';
   if (protPill) protPill.style.display = '';
+  const macroGrid = document.getElementById('macro-grid-main');
+  if (macroGrid) macroGrid.style.gridTemplateColumns = 'repeat(3,1fr)';
 }
 document.getElementById('total-g').innerHTML = Math.round(tG) + ' <span class="unit-g">g</span>';
 document.getElementById('total-l').innerHTML = Math.round(tL) + ' <span class="unit-g">g</span>';
