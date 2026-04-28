@@ -5766,10 +5766,10 @@ function _rebuildEntryIngTable(entryId) {
   const inputStyle = 'width:48px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
   const rows = _entryIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name}</span>
+      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
       <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="g">
       <span style="font-size:10px;color:var(--muted);">g</span>
-      <input type="number" style="${inputStyle}" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
+      <input type="number" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
       <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
@@ -6870,11 +6870,11 @@ function _rebuildIngredientTable() {
   const inputStyle = 'width:52px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
   const rows = _aiIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name}</span>
+      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
       <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
         onchange="_ingChange(${i},'qty',this.value)" title="Grammes">
       <span style="font-size:10px;color:var(--muted);">g</span>
-      <input type="number" style="${inputStyle}" value="${ing.kcal100}" min="0" step="1"
+      <input type="number" style="width:58px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1"
         onchange="_ingChange(${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
       <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
@@ -6999,6 +6999,7 @@ REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
 REPAS COMPOSE : estime chaque ingredient separement (kcal totales pour la portion), puis calcule kcal_per_100g = SOMME_KCAL / qty_g * 100.
 Portions realistes : une sauce d accompagnement (curry, blanche, algerienne, mayo...) = 30-50g par sauce, pas 200ml. Une portion de frites = 150-200g. Un naan = 150-200g. Une portion de viande kebab = 150-200g.
+Valeur calorique du naan fromage kebab (pain naan + fromage type Vache Qui Rit) : 290-310 kcal/100g, pas plus.
 {"type":"food","food":"description courte","qty_g":POIDS_TOTAL,"kcal_per_100g":CALCULE,"prot_per_100g":CALCULE,"gluc_per_100g":CALCULE,"lip_per_100g":CALCULE,"note":"Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
