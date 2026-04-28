@@ -6840,7 +6840,7 @@ document.getElementById('ai-loading').innerHTML = '<div style="display:flex;alig
     : '';
   const qLine = questionsAlways
     ? "- Pose une question de clarification si la demande n est pas claire."
-    : "- Pose une question seulement si une info vraiment CRITIQUE manque et que tu ne peux absolument pas estimer.";
+    : "- REGLE ESTIMATION : pour tout repas/aliment, TOUJOURS estimer avec des portions standard francaises, ne jamais poser de question sur les quantites. Ne pose une question QUE si une activite sportive n a aucune duree et qu il est impossible d estimer (jamais pour la nourriture).";
   const isGlobal = !aiCurrentCat && document.getElementById('ai-target-cat')?.value === '';
   const sysP = (!isGlobal && isSport)
     ? `Tu es un assistant sport et nutrition. ${userProfile} ${catHint}
@@ -6883,8 +6883,8 @@ Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kc
 Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":6,"note":"detail"}
 TOUJOURS calculer kcal_per_hour et total_kcal, ne jamais laisser a 0.
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
-REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
-REPAS COMPOSE : total combine en un JSON : {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS,"prot_per_100g":PROT_TOTAL_PAR_100G,"gluc_per_100g":GLUC_TOTAL_PAR_100G,"lip_per_100g":LIP_TOTAL_PAR_100G,"note":"Detail : Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
+REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":100,"kcal_per_100g":KCAL_100G,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"courte"}
+REPAS COMPOSE : calcule chaque ingredient, puis combine en un JSON. IMPORTANT : kcal_per_100g = ARRONDI(SOMME_KCAL_TOUS_INGREDIENTS / qty_g * 100), de meme pour prot/gluc/lip. {"type":"food","food":"description courte du plat","qty_g":POIDS_TOTAL,"kcal_per_100g":KCAL_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"prot_per_100g":PROT_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"gluc_per_100g":GLUC_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"lip_per_100g":LIP_TOTAL_DIVISE_PAR_POIDS_FOIS_100,"note":"Detail : Ingredient1 Xg → YYkcal · ZZZkcal/100g | Ingredient2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
 Si question indispensable : {"type":"question","message":"question courte"}
 ${qLine}
 Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
@@ -7048,8 +7048,27 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-label-kcal').textContent = 'Kcal / 100g';
       document.getElementById('ai-macro-fields').style.display = 'grid';
       const aiQtyG = p.qty_g || 100;
-      // Use kcal_per_100g directly from AI — it already accounts for the total meal composition
+      // Recalculate kcal_per_100g from note ingredients (most reliable source)
       let aiKcal100 = p.kcal_per_100g || 0;
+      if (p.note && aiQtyG > 0) {
+        // Sum kcal from note lines: "Ingredient Xg → YYYkcal · ZZZkcal/100g"
+        let sumKcal = 0, found = false;
+        const totalMatch = p.note.match(/TOTAL\s*:\s*([\d]+)\s*kcal/i);
+        if (totalMatch) {
+          sumKcal = parseInt(totalMatch[1]);
+          found = true;
+        } else {
+          // Sum individual ingredient kcal (before the ·)
+          const ingLines = p.note.split('|');
+          for (const line of ingLines) {
+            const m = line.match(/→\s*([\d]+)\s*kcal/i);
+            if (m) { sumKcal += parseInt(m[1]); found = true; }
+          }
+        }
+        if (found && sumKcal > 0) {
+          aiKcal100 = Math.round(sumKcal / aiQtyG * 100);
+        }
+      }
       let aiP = p.prot_per_100g || 0, aiG = p.gluc_per_100g || 0, aiL = p.lip_per_100g || 0;
       document.getElementById('ai-qty').value = aiQtyG;
       document.getElementById('ai-kcal').value = aiKcal100;
