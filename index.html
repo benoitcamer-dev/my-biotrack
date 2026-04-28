@@ -1251,7 +1251,7 @@ body.modal-open { overflow: hidden; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 10px 0 18px;
+  margin: 10px 0 28px;
   padding: 14px 20px;
   border: 2px dashed rgba(124,111,255,0.45);
   border-radius: 18px;
@@ -1879,7 +1879,7 @@ if ('serviceWorker' in navigator) {
 <div class="date-nav-label" id="journal-date-label">Aujourd'hui</div>
 <div class="date-nav-sub" id="journal-date-sub"></div>
 <div style="display:flex;justify-content:center;">
-  <button id="today-btn" onclick="goToToday()" style="display:none;margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 22px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
+  <button id="today-btn" onclick="event.stopPropagation();goToToday()" style="display:none;margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 22px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;letter-spacing:0.3px;">↩ Aujourd'hui</button>
 </div>
 <div class="cal-dropdown" id="cal-dropdown" onclick="event.stopPropagation()">
 <div class="cal-header">
