@@ -3903,33 +3903,36 @@ try {
 if (_searchAbortCtrl) { try { _searchAbortCtrl.abort(); } catch(_){} }
 _searchAbortCtrl = new AbortController();
 const ctrl = _searchAbortCtrl, t = setTimeout(() => ctrl.abort(), 8000);
+const offUrl = `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments&cc=fr&lc=fr`;
 let res;
 try {
-  // .net domain has proper CORS headers for web apps
-  res = await fetch(`https://world.openfoodfacts.net/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments&cc=fr&lc=fr`, { signal: ctrl.signal });
-  if (!res.ok) throw new Error('net failed');
-} catch(e) {
-  res = await fetch(`https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(v)}&page_size=40&sort_by=unique_scans_n&fields=product_name,product_name_fr,brands,nutriments`, { signal: ctrl.signal });
-}
-clearTimeout(t);
-const d = await res.json();
-ok = true;
-oH = (d.products || []).map(p => ({ p, s: scoreProduct(p) })).sort((a, b) => b.s - a.s).slice(0, 12).map(({ p }) => {
-const n = (p.product_name_fr || p.product_name || '').trim();
-if (!n) return '';
-const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
-if (k <= 0) return '';
-const pr = p.nutriments?.proteins_100g || 0, gl = p.nutriments?.carbohydrates_100g || 0, lp = p.nutriments?.fat_100g || 0;
-const fillFn = isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`;
-return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:8px;">
+  res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(offUrl)}`, { signal: ctrl.signal });
+  if (!res.ok) throw new Error('proxy failed');
+  const wrapper = await res.json();
+  const d = JSON.parse(wrapper.contents);
+  clearTimeout(t);
+  ok = true;
+  oH = (d.products || []).map(p => ({ p, s: scoreProduct(p) })).sort((a, b) => b.s - a.s).slice(0, 12).map(({ p }) => {
+    const n = (p.product_name_fr || p.product_name || '').trim();
+    if (!n) return '';
+    const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
+    if (k <= 0) return '';
+    const pr = p.nutriments?.proteins_100g || 0, gl = p.nutriments?.carbohydrates_100g || 0, lp = p.nutriments?.fat_100g || 0;
+    const fillFn = isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`;
+    return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:8px;">
 <div style="flex:1;cursor:pointer;" onclick="event.stopPropagation();${fillFn}">
 <div class="result-name">${n}</div>
 <div class="result-kcal">${k} kcal/100g</div>
 </div>
 ${!isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : ''}
 </div>`;
-}).filter(Boolean).join('');
-} catch (e) { att++; if (att < 2) await new Promise(r => setTimeout(r, 800)); }
+  }).filter(Boolean).join('');
+  att = 2; // skip retry loop
+} catch(eProxy) {
+  // proxy failed, skip
+  att++;
+  if (att < 2) await new Promise(r => setTimeout(r, 800));
+}
 }
 // Si une nouvelle recherche a été lancée entre temps, ignorer ces résultats
 if (token !== _searchToken) return;
