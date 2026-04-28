@@ -3933,6 +3933,7 @@ ${!isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k
   att++;
   if (att < 2) await new Promise(r => setTimeout(r, 800));
 }
+} catch(eOuter) { att++; if (att < 2) await new Promise(r => setTimeout(r, 800)); }
 }
 // Si une nouvelle recherche a été lancée entre temps, ignorer ces résultats
 if (token !== _searchToken) return;
