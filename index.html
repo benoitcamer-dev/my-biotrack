@@ -4271,7 +4271,8 @@ async function geocodeAddress(query) {
   // If query starts with a number, try Nominatim first (better at street numbers)
   if (hasNumber) {
     try {
-      const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr&addressdetails=1`, {
+      const queryWithLyon = query.toLowerCase().includes('lyon') ? query : query + ' Lyon';
+      const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryWithLyon)}&format=json&limit=1&countrycodes=fr&addressdetails=1&viewbox=4.77,45.82,4.90,45.70&bounded=1`, {
         headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
       });
       const nd = await nr.json();
