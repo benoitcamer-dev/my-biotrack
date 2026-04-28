@@ -1,4 +1,4 @@
-const CACHE = 'bt-v2';
+const CACHE = 'bt-v3';
 const CORE = ['/'];
 
 self.addEventListener('install', e => {
@@ -15,7 +15,6 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Network first pour HTML — toujours la version fraîche du serveur
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
@@ -24,7 +23,10 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request)
         .then(response => {
-          if (response.ok) caches.open(CACHE).then(c => c.put(e.request, response.clone()));
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
           return response;
         })
         .catch(() => caches.match(e.request))
