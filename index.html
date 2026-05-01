@@ -2240,7 +2240,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <button class="btn-primary" onclick="addIngredientToRecipeBuilder()">Ajouter cet ingrédient</button>
 <div class="section-label" style="margin-top:16px;">Ingrédients</div>
-<div id="recipe-builder-list" class="builder-list" style="touch-action:pan-y;"></div>
+<div id="recipe-builder-list" class="builder-list" style="max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;"></div>
 <button class="btn-primary" style="margin-top:16px;" onclick="saveRecipeFromBuilder()">Enregistrer la recette</button>
 <button class="btn-cancel" onclick="closeRecipeEditor()">Fermer</button>
 </div>
