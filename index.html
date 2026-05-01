@@ -4997,7 +4997,14 @@ await loadData();
 const { data: { user: _u } } = await sb.auth.getUser();
 if (_u) _currentUserId = _u.id;
 // Sync Google Fit silently in background
-setTimeout(() => syncGoogleFit(true), 3000);
+const _gfitParam = new URLSearchParams(window.location.search).get('gfit');
+if (_gfitParam === 'connected') {
+  // Just authorized — sync immediately (non-silent)
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => syncGoogleFit(false), 1000);
+} else {
+  setTimeout(() => syncGoogleFit(true), 3000);
+}
 }
 function appendCategoryToRecipe(rid) {
 const r = savedRecipes.find(r => r.id === rid), items = getMealEntries(recipePickerTargetCategory);
