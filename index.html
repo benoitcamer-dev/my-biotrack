@@ -3959,7 +3959,15 @@ try {
     const offLoaderId = `off-loader-${token}`;
     currentDiv.insertAdjacentHTML('beforeend', `<div class="result-item" id="${offLoaderId}" style="opacity:0.5;"><div class="result-name" style="color:var(--muted);font-size:11px;">🌐 Open Food Facts…</div></div>`);
     try {
-      const { data: offData, error: offErr } = await sb.functions.invoke('search-off', { body: { q: v } });
+      const { data: offData, error: offErr } = await (async () => {
+        const r = await fetch('https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/hyper-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: v })
+        });
+        if (!r.ok) return { data: null, error: true };
+        return { data: await r.json(), error: null };
+      })();
       if (token !== _searchToken) return;
       const offLoaderEl = document.getElementById(offLoaderId);
       if (!offErr && offData?.products?.length) {
