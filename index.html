@@ -3881,7 +3881,7 @@ let _searchAbortCtrl = null;
 async function searchFood(v, target = 'main') {
 const isR = target === 'recipe', div = isR ? document.getElementById('re-search-results') : document.getElementById('search-results');
 div.style.display = 'block';
-const token = ++_searchToken; // unique token for this search
+const token = ++_searchToken;
 const lv = normalize(v);
 // ── Résultats locaux immédiats ───────────────────────────────────────────────
 const cH = customFoods.filter(f => matchWords(f.name, lv)).map(f => buildCustomItem(f, isR)).join('');
@@ -3902,64 +3902,76 @@ return `<div class="result-item" onclick="event.stopPropagation();${clickFn}">
 }).join('');
 const cb = !isR ? `<button class="create-food-btn" onclick="openCustomFoodModal('${esc(v)}')">+ Créer "${v}"</button>` : '';
 const localCombined = cH + localH + lH;
-// Afficher immédiatement les résultats locaux + indicateur réseau
-const netLoader = `<div class="result-item" id="net-loader-${token}" style="opacity:0.5;"><div class="result-name" style="color:var(--muted);font-size:11px;">🌐 Recherche en ligne…</div></div>`;
+// Afficher immédiatement les résultats locaux + indicateur Ciqual
+const netLoader = `<div class="result-item" id="net-loader-${token}" style="opacity:0.5;"><div class="result-name" style="color:var(--muted);font-size:11px;">🔍 Recherche Ciqual…</div></div>`;
 div.innerHTML = localCombined ? (localCombined + netLoader + cb) : (netLoader + cb);
-// ── Résultats réseau en arrière-plan ────────────────────────────────────────
-let oH = '', att = 0, ok = false;
-while (att < 2 && !ok) {
+// ── Recherche Ciqual via Supabase ────────────────────────────────────────────
+if (token !== _searchToken) return;
 try {
-if (_searchAbortCtrl) { try { _searchAbortCtrl.abort(); } catch(_){} }
-_searchAbortCtrl = new AbortController();
-const ctrl = _searchAbortCtrl;
-const t = setTimeout(() => ctrl.abort(), 6000);
-// v0 API — plus rapide pour recherche textuelle, sans sort_by (trop lourd), sans lc (trop restrictif)
-const res = await fetch(
-  `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(v)}&json=1&page_size=24&action=process&fields=product_name,product_name_fr,brands,nutriments`,
-  { signal: ctrl.signal }
-);
-clearTimeout(t);
-if (!res.ok) throw new Error('off ' + res.status);
-const d = await res.json();
-ok = true;
-oH = (d.products || []).map(p => {
-  // Priorité product_name_fr, fallback product_name
-  const n = (p.product_name_fr || p.product_name || '').trim();
-  if (!n) return '';
-  const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
-  if (k <= 0) return '';
-  const pr = p.nutriments?.proteins_100g || 0, gl = p.nutriments?.carbohydrates_100g || 0, lp = p.nutriments?.fat_100g || 0;
-  const fillFn = isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`;
-  return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:8px;">
-<div style="flex:1;cursor:pointer;" onclick="event.stopPropagation();${fillFn}">
+  // Récupérer les aliments cachés par l'utilisateur
+  const { data: { user } } = await sb.auth.getUser();
+  let hiddenIds = new Set();
+  if (user) {
+    const { data: hidden } = await sb.from('ciqual_hidden').select('ciqual_id').eq('user_id', user.id);
+    if (hidden) hidden.forEach(h => hiddenIds.add(h.ciqual_id));
+  }
+  // Recherche Ciqual — aliments moyens en premier, puis le reste
+  const q = v.replace(/[%_]/g, '').trim();
+  const { data: ciqualResults } = await sb.from('ciqual_foods')
+    .select('id, name, kcal_100, prot_100, gluc_100, lip_100, is_average')
+    .ilike('name', `%${q}%`)
+    .order('is_average', { ascending: false })
+    .order('name')
+    .limit(30);
+  if (token !== _searchToken) return;
+  const localNames = new Set([
+    ...customFoods.map(f => normalize(f.name)),
+    ...localMatches.map(a => normalize(a.name))
+  ]);
+  const ciqH = (ciqualResults || [])
+    .filter(f => !hiddenIds.has(f.id) && !localNames.has(normalize(f.name)))
+    .map(f => {
+      const n = f.name, k = Math.round(f.kcal_100), pr = f.prot_100 || 0, gl = f.gluc_100 || 0, lp = f.lip_100 || 0;
+      const fillFn = isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`;
+      const badge = f.is_average
+        ? `<span class="result-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa;">Ciqual ★</span>`
+        : `<span class="result-tag" style="background:rgba(59,130,246,0.08);color:#93c5fd;">Ciqual</span>`;
+      const hideBtn = !isR ? `<button onclick="event.stopPropagation();hideCiqualFood(${f.id},this)" title="Masquer" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;">🗑️</button>` : '';
+      const saveBtn = !isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : '';
+      return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:6px;">
+<div style="flex:1;cursor:pointer;min-width:0;" onclick="event.stopPropagation();${fillFn}">
+<div>${badge}</div>
 <div class="result-name">${n}</div>
 <div class="result-kcal">${k} kcal/100g</div>
-</div>
-${!isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : ''}
-</div>`;
-}).filter(Boolean).join('');
-} catch(e) { att++; if (att < 2) await new Promise(r => setTimeout(r, 600)); }
-}
-// Si une nouvelle recherche a été lancée entre temps, ignorer ces résultats
-if (token !== _searchToken) return;
-// Remplacer le loader par les résultats réseau
-const loader = document.getElementById(`net-loader-${token}`);
-if (loader) {
-if (oH) { loader.outerHTML = oH; }
-else { loader.remove(); }
-}
-// Si rien du tout
-if (!localCombined && !oH) {
-div.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
+</div>${saveBtn}${hideBtn}</div>`;
+    }).join('');
+  const loader = document.getElementById(`net-loader-${token}`);
+  if (loader) {
+    if (ciqH) loader.outerHTML = ciqH;
+    else loader.remove();
+  }
+  if (!localCombined && !ciqH) {
+    div.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
+  }
+} catch(e) {
+  const loader = document.getElementById(`net-loader-${token}`);
+  if (loader) loader.remove();
+  if (!localCombined) div.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
 }
 }
 function selectLocalFoodItem(idx, isRecipe) {
   _pickLocalFood(idx, isRecipe);
 }
-async function saveOPFToBase(name, kcal_100, prot_100, gluc_100, lip_100, btn) {
+async function hideCiqualFood(ciqualId, btn) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
-  const existing = customFoods.find(f => f.name.toLowerCase() === name.toLowerCase());
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  await sb.from('ciqual_hidden').upsert({ user_id: user.id, ciqual_id: ciqualId });
+  btn.closest('.result-item').remove();
+}
+async function saveOPFToBase(name, kcal_100, prot_100, gluc_100, lip_100, btn) {
+  const { data: { user } } = await sb.auth.getUser();
   if (existing) {
     // Already in base → toggle remove
     if (!confirm(`Retirer "${name}" de la base ?`)) return;
