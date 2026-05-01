@@ -2327,16 +2327,21 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 
 <div style="position:relative;margin-bottom:8px;">
-<input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="renderAlimentsList()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:32px;">
+<input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="const ciqualVisible=document.getElementById('ciqual-list')?.style.display!=='none';ciqualVisible?renderCiqualList():renderAlimentsList()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:32px;">
 <button onclick="document.getElementById('aliments-search').value='';renderAlimentsList();" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;" id="aliments-search-clear">✕</button>
 <div id="aliments-search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;display:none;background:var(--surface);border:1px solid var(--border2);border-radius:16px;max-height:260px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.5);"></div>
 </div>
-<div style="display:flex;gap:8px;margin-bottom:10px;" id="aliments-actions">
-<button class="btn-primary" style="flex:1;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
-<button class="btn-primary" style="flex:0 0 auto;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);font-size:13px;padding:10px 16px;" onclick="openAIFromBase()">🤖 IA</button>
-<button class="btn-primary" style="flex:0 0 auto;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="aliments-actions">
+<button class="btn-primary" style="font-size:13px;padding:10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
+<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openAIFromBase()">🤖 IA</button>
+<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
+</div>
+<div style="display:flex;gap:6px;margin-bottom:12px;">
+<button id="alim-tab-base" onclick="switchAlimTab('base')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⭐ Ma base</button>
+<button id="alim-tab-ciqual" onclick="switchAlimTab('ciqual')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;">🇫🇷 Ciqual</button>
 </div>
 <div id="aliments-list"></div>
+<div id="ciqual-list" style="display:none;"></div>
 </div>
 </div>
 <!-- MODAL FAVORIS RAPIDE -->
@@ -3281,8 +3286,57 @@ function openAlimentsModal(tab = 'all') {
   currentAlimentsTab = tab;
   const inp = document.getElementById('aliments-search');
   if (inp) inp.value = '';
-  renderAlimentsList();
+  switchAlimTab('base');
   document.getElementById('modal-aliments').classList.add('open');
+}
+function switchAlimTab(tab) {
+  const baseList = document.getElementById('aliments-list');
+  const ciqualList = document.getElementById('ciqual-list');
+  const baseBtn = document.getElementById('alim-tab-base');
+  const ciqualBtn = document.getElementById('alim-tab-ciqual');
+  if (tab === 'base') {
+    baseList.style.display = 'block';
+    ciqualList.style.display = 'none';
+    if (baseBtn) { baseBtn.style.background = 'var(--accent)'; baseBtn.style.color = '#fff'; }
+    if (ciqualBtn) { ciqualBtn.style.background = 'var(--surface2)'; ciqualBtn.style.color = 'var(--muted)'; }
+    renderAlimentsList();
+  } else {
+    baseList.style.display = 'none';
+    ciqualList.style.display = 'block';
+    if (ciqualBtn) { ciqualBtn.style.background = 'var(--accent)'; ciqualBtn.style.color = '#fff'; }
+    if (baseBtn) { baseBtn.style.background = 'var(--surface2)'; baseBtn.style.color = 'var(--muted)'; }
+    renderCiqualList();
+  }
+}
+async function renderCiqualList() {
+  const div = document.getElementById('ciqual-list');
+  if (!div) return;
+  const q = (document.getElementById('aliments-search')?.value || '').trim();
+  div.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">⏳ Chargement…</div>';
+  const { data: { user } } = await sb.auth.getUser();
+  let hiddenIds = new Set();
+  if (user) {
+    const { data: hidden } = await sb.from('ciqual_hidden').select('ciqual_id').eq('user_id', user.id);
+    if (hidden) hidden.forEach(h => hiddenIds.add(h.ciqual_id));
+  }
+  let query = sb.from('ciqual_foods').select('id,name,kcal_100,prot_100,gluc_100,lip_100,is_average');
+  if (q) query = query.ilike('name', `%${q}%`);
+  else query = query.eq('is_average', true); // Par défaut, aliments moyens uniquement
+  const { data: foods } = await query.order('is_average', { ascending: false }).order('name').limit(100);
+  if (!foods?.length) { div.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">Aucun résultat</div>'; return; }
+  div.innerHTML = (q ? '' : '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-align:center;">Aliments moyens — recherchez pour voir toute la base</div>') +
+    foods.filter(f => !hiddenIds.has(f.id)).map(f => {
+      const k = Math.round(f.kcal_100);
+      const badge = f.is_average ? '★ ' : '';
+      return `<div class="food-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="flex:1;cursor:pointer;min-width:0;" onclick="fillFood('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0});closeAlimentsModal()">
+          <div class="food-name">${badge}${f.name}</div>
+          <div class="food-meta">${k} kcal/100g</div>
+        </div>
+        <button onclick="saveOPFToBase('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">📦</button>
+        <button onclick="deleteCiqualFood(${f.id},'${esc(f.name)}',this)" title="Supprimer définitivement" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">🗑️</button>
+      </div>`;
+    }).join('');
 }
 function closeAlimentsModal() { document.getElementById('modal-aliments').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function switchAlimentsTab(t) {
@@ -4006,6 +4060,13 @@ try {
 }
 function selectLocalFoodItem(idx, isRecipe) {
   _pickLocalFood(idx, isRecipe);
+}
+async function deleteCiqualFood(id, name, btn) {
+  if (!confirm(`Supprimer définitivement "${name}" de la base Ciqual ?`)) return;
+  btn.textContent = '⏳'; btn.disabled = true;
+  const { error } = await sb.from('ciqual_foods').delete().eq('id', id);
+  if (error) { btn.textContent = '🗑️'; btn.disabled = false; alert('Erreur : ' + error.message); return; }
+  btn.closest('.food-item').remove();
 }
 async function hideCiqualFood(ciqualId, btn) {
   const { data: { user } } = await sb.auth.getUser();
