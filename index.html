@@ -808,7 +808,7 @@ overflow-y: auto;
 animation: slideUp 0.28s cubic-bezier(0.32,1.2,0.64,1);
 box-shadow: 0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
 }
-.settings-sheet { padding-bottom: 48px; max-height: 90dvh; -webkit-overflow-scrolling: touch; }
+.settings-sheet { padding-bottom: 48px; max-height: 90dvh; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
 .unit-g { font-family: 'Georgia', serif; font-style: italic; font-size: 0.9em; }
 .modal-handle {
@@ -2240,7 +2240,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <button class="btn-primary" onclick="addIngredientToRecipeBuilder()">Ajouter cet ingrédient</button>
 <div class="section-label" style="margin-top:16px;">Ingrédients</div>
-<div id="recipe-builder-list" class="builder-list"></div>
+<div id="recipe-builder-list" class="builder-list" style="touch-action:pan-y;"></div>
 <button class="btn-primary" style="margin-top:16px;" onclick="saveRecipeFromBuilder()">Enregistrer la recette</button>
 <button class="btn-cancel" onclick="closeRecipeEditor()">Fermer</button>
 </div>
