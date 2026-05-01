@@ -2148,6 +2148,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="setting-row">
 <label>📅 Google Calendar (Client ID OAuth)</label>
 <input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
+<button onclick="syncGoogleFit(false)" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;">🏃 Synchroniser Google Fit (marche)</button>
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
 </div>
 <div class="setting-row">
@@ -2730,11 +2731,11 @@ async function gfitPreAuth(silent = false) {
   });
 }
 
-async function syncGoogleFit() {
-  if (!gcalIsConfigured() || _gfitSyncDone) return;
+async function syncGoogleFit(silent = true) {
+  if (!gcalIsConfigured() || (_gfitSyncDone && silent)) return;
   try {
-    await gfitPreAuth(true); // silent — no popup
-    if (!_gfitToken) return;
+    await gfitPreAuth(silent);
+    if (!_gfitToken) { if (!silent) alert('Impossible d\'obtenir l\'accès Google Fit'); return; }
     _gfitSyncDone = true;
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
