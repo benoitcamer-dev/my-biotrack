@@ -2713,13 +2713,15 @@ let _gfitSyncDone = false;
 let _currentUserId = null;
 function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
 
-function gfitAuthorize() {
-  // Redirect OAuth flow — pas de popup, évite le COOP
+async function gfitAuthorize() {
   const clientId = GCAL_CLIENT_ID;
   if (!clientId) { alert('Configure d\'abord ton Client ID Google dans les paramètres'); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { alert('Tu dois être connecté'); return; }
   const redirectUri = 'https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-callback';
   const scope = 'https://www.googleapis.com/auth/fitness.activity.read';
-  const state = encodeURIComponent(JSON.stringify({ user_id: _currentUserId, return_url: window.location.href }));
+  const returnUrl = window.location.href.split('?')[0];
+  const state = encodeURIComponent(JSON.stringify({ user_id: user.id, return_url: returnUrl }));
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
   window.location.href = url;
 }
