@@ -2719,7 +2719,7 @@ async function gfitAuthorize() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { alert('Tu dois être connecté'); return; }
   const redirectUri = 'https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-callback';
-  const scope = 'https://www.googleapis.com/auth/fitness.activity.read';
+  const scope = 'https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.location.read';
   const returnUrl = window.location.href.split('?')[0];
   const state = encodeURIComponent(JSON.stringify({ user_id: user.id, return_url: returnUrl }));
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
