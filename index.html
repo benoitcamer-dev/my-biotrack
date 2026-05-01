@@ -3953,6 +3953,43 @@ try {
   if (!localCombined && !ciqH) {
     div.innerHTML = `<div class="result-item"><div class="result-name" style="color:var(--muted)">Aucun résultat</div></div>${cb}`;
   }
+  // ── Recherche OFF via Edge Function ─────────────────────────────────────────
+  const currentDiv = isR ? document.getElementById('re-search-results') : document.getElementById('search-results');
+  if (currentDiv && token === _searchToken) {
+    const offLoaderId = `off-loader-${token}`;
+    currentDiv.insertAdjacentHTML('beforeend', `<div class="result-item" id="${offLoaderId}" style="opacity:0.5;"><div class="result-name" style="color:var(--muted);font-size:11px;">🌐 Open Food Facts…</div></div>`);
+    try {
+      const { data: offData, error: offErr } = await sb.functions.invoke('search-off', { body: { q: v } });
+      if (token !== _searchToken) return;
+      const offLoaderEl = document.getElementById(offLoaderId);
+      if (!offErr && offData?.products?.length) {
+        const usedNames = new Set([
+          ...customFoods.map(f => normalize(f.name)),
+          ...(ciqualResults || []).map(f => normalize(f.name)),
+          ...localMatches.map(a => normalize(a.name))
+        ]);
+        const offH = offData.products.map(p => {
+          const n = (p.product_name_fr || p.product_name || '').trim();
+          if (!n || usedNames.has(normalize(n))) return '';
+          const k = Math.round(p.nutriments?.['energy-kcal_100g'] || (p.nutriments?.['energy-kj_100g'] / 4.184) || 0);
+          if (k <= 0) return '';
+          const pr = p.nutriments?.proteins_100g || 0, gl = p.nutriments?.carbohydrates_100g || 0, lp = p.nutriments?.fat_100g || 0;
+          const fillFn = isR ? `fillRecipeIngredient('${esc(n)}',${k},${pr},${gl},${lp})` : `fillFood('${esc(n)}',${k},${pr},${gl},${lp})`;
+          const saveBtn = !isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : '';
+          return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:6px;">
+<div style="flex:1;cursor:pointer;min-width:0;" onclick="event.stopPropagation();${fillFn}">
+<div><span class="result-tag" style="background:rgba(251,146,60,0.15);color:#fb923c;">OFF</span></div>
+<div class="result-name">${n}</div>
+<div class="result-kcal">${k} kcal/100g</div>
+</div>${saveBtn}</div>`;
+        }).filter(Boolean).join('');
+        if (offLoaderEl) { if (offH) offLoaderEl.outerHTML = offH; else offLoaderEl.remove(); }
+      } else { if (offLoaderEl) offLoaderEl.remove(); }
+    } catch(eOff) {
+      const offLoaderEl = document.getElementById(offLoaderId);
+      if (offLoaderEl) offLoaderEl.remove();
+    }
+  }
 } catch(e) {
   const loader = document.getElementById(`net-loader-${token}`);
   if (loader) loader.remove();
