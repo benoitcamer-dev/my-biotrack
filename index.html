@@ -2727,7 +2727,7 @@ async function gfitAuthorize() {
 }
 
 async function syncGoogleFit(silent = true) {
-  if (!gcalIsConfigured() || (_gfitSyncDone && silent)) return;
+  if (!gcalIsConfigured()) return;
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
