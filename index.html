@@ -2707,7 +2707,107 @@ let userProtGoal = 0; // 0 = pas fixé
 let editingId = null, currentEntries = [], currentPage = "journal";
 let GCAL_CLIENT_ID = localStorage.getItem('gcal_client_id') || '';
 let _gcalToken = null, _gcalTokenExpiry = 0;
+let _gfitToken = null, _gfitTokenExpiry = 0;
+let _gfitSyncDone = false; // sync once per session
 function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
+
+async function gfitPreAuth(silent = false) {
+  if (!gcalIsConfigured()) return;
+  await _loadGSI();
+  if (_gfitToken && Date.now() < _gfitTokenExpiry) return;
+  return new Promise((resolve, reject) => {
+    google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/fitness.activity.read',
+      callback: (r) => {
+        if (r.error) { reject(r.error); return; }
+        _gfitToken = r.access_token;
+        _gfitTokenExpiry = Date.now() + (r.expires_in - 60) * 1000;
+        resolve();
+      },
+      error_callback: (e) => reject(e)
+    }).requestAccessToken({ prompt: silent ? 'none' : '' });
+  });
+}
+
+async function syncGoogleFit() {
+  if (!gcalIsConfigured() || _gfitSyncDone) return;
+  try {
+    await gfitPreAuth(true); // silent — no popup
+    if (!_gfitToken) return;
+    _gfitSyncDone = true;
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    // Fetch walking sessions from yesterday to now
+    const now = Date.now();
+    const yesterday = now - 48 * 3600 * 1000;
+    const resp = await fetch('https://www.googleapis.com/fitness/v1/users/me/sessions?activityType=7&startTime=' + new Date(yesterday).toISOString() + '&endTime=' + new Date(now).toISOString(), {
+      headers: { Authorization: `Bearer ${_gfitToken}` }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const sessions = data.session || [];
+    if (!sessions.length) return;
+    // For each session, get distance/steps from aggregate data
+    for (const session of sessions) {
+      const startMs = parseInt(session.startTimeMillis);
+      const endMs = parseInt(session.endTimeMillis);
+      const durationMin = Math.round((endMs - startMs) / 60000);
+      if (durationMin < 2) continue;
+      const gfitId = session.id;
+      // Check if already imported
+      const { data: existing } = await sb.from('entries').select('id').ilike('desc', `%gfit:${gfitId}%`).limit(1);
+      if (existing?.length) continue;
+      // Get aggregate data (distance, steps, calories)
+      const aggResp = await fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${_gfitToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          aggregateBy: [
+            { dataTypeName: 'com.google.distance.delta' },
+            { dataTypeName: 'com.google.calories.expended' },
+            { dataTypeName: 'com.google.step_count.delta' }
+          ],
+          startTimeMillis: startMs,
+          endTimeMillis: endMs,
+          bucketByTime: { durationMillis: endMs - startMs }
+        })
+      });
+      let distKm = 0, kcal = 0, steps = 0;
+      if (aggResp.ok) {
+        const aggData = await aggResp.json();
+        for (const bucket of aggData.bucket || []) {
+          for (const ds of bucket.dataset || []) {
+            for (const pt of ds.point || []) {
+              if (ds.dataSourceId.includes('distance')) distKm += (pt.value?.[0]?.fpVal || 0) / 1000;
+              if (ds.dataSourceId.includes('calories')) kcal += pt.value?.[0]?.fpVal || 0;
+              if (ds.dataSourceId.includes('step_count')) steps += pt.value?.[0]?.intVal || 0;
+            }
+          }
+        }
+      }
+      distKm = Math.round(distKm * 100) / 100;
+      // Calcul calories basé sur le profil de l'appli (pas Google Fit)
+      // Formule marche : poids(kg) × distance(km) × 0.83 (MET moyen marche)
+      kcal = distKm > 0
+        ? Math.round(userWeight * distKm * 0.83)
+        : Math.round(durationMin * userWeight * 4 / 60); // fallback si pas de distance
+      const startDate = new Date(startMs);
+      const dateStr = startDate.toISOString().split('T')[0];
+      const desc = `Marche (Google Fit${distKm ? ', ' + distKm + 'km' : ''}${steps ? ', ' + steps + ' pas' : ''})||gfit:${gfitId}`;
+      await sb.from('entries').insert({
+        user_id: user.id,
+        date: dateStr,
+        cat: 'Sport',
+        type: 'burn',
+        desc,
+        val: kcal,
+        prot: 0, gluc: 0, lip: 0
+      });
+    }
+    loadData();
+  } catch(e) { console.warn('Google Fit sync:', e); }
+}
 
 async function _loadGSI() {
   if (typeof google !== 'undefined' && google?.accounts?.oauth2) return;
@@ -4952,6 +5052,8 @@ date: journalDateStr()
 }
 showPage(localStorage.getItem('bt_current_page') || 'journal');
 await loadData();
+// Sync Google Fit silently in background
+setTimeout(() => syncGoogleFit(), 3000);
 }
 function appendCategoryToRecipe(rid) {
 const r = savedRecipes.find(r => r.id === rid), items = getMealEntries(recipePickerTargetCategory);
