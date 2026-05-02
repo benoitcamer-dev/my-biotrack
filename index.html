@@ -8004,7 +8004,7 @@ function renderBilanNetChart(values, bmr) {
     const col = d.isEmpty ? 'var(--border2)' : d.bal >= 0 ? '#ef4444' : '#3dd68c';
     const bh = d.isEmpty ? 2 : Math.max(2, Math.abs(ys(d.bal) - midY));
     const barY = d.isEmpty ? midY - 1 : (d.bal >= 0 ? ys(d.bal) : midY);
-    // Smart label: inside bar in white if bar is tall enough, outside with stroke otherwise
+    const dayY = H - PB - 4;
     const insideBar = bh > 24;
     const lblFill = insideBar ? '#ffffff' : (d.bal >= 0 ? '#ef4444' : '#3dd68c');
     const lblStroke = insideBar ? 'none' : 'var(--bg)';
