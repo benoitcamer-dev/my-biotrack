@@ -8007,9 +8007,10 @@ function renderBilanNetChart(values, bmr) {
     const insideBar = bh > 24;
     const lblFill = insideBar ? '#ffffff' : (d.bal >= 0 ? '#ef4444' : '#3dd68c');
     const lblStroke = insideBar ? 'none' : 'var(--bg)';
-    const insideLblY = d.bal >= 0
-      ? barY + bh / 2 + 4  // center of bar going up
-      : barY + bh / 2 + 4; // center of bar going down
+    const lblY = d.bal >= 0
+      ? Math.max(chartTop + 12, barY - 4)
+      : Math.min(chartBot + LABEL_H - 2, barY + bh + 13);
+    const insideLblY = barY + bh / 2 + 4;
     const finalLblY = insideBar ? insideLblY : lblY;
     return `<rect x="${x}" y="${barY}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.2 : 0.85}" rx="2"/>
 <text x="${cx}" y="${dayY}" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="Inter">${d.label}</text>
