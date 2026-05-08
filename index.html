@@ -864,6 +864,7 @@ padding: 11px 14px;
 border-bottom: 1px solid var(--border);
 cursor: pointer;
 transition: background 0.15s;
+touch-action: pan-y;
 }
 .result-item:last-child { border-bottom: none; }
 .result-item:hover { background: rgba(124,111,255,0.07); }
@@ -2017,7 +2018,7 @@ autocomplete="off" oninput="onSearchInput()"
 onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blur();}">
 <button class="search-btn" onclick="startSearch()">↵</button>
 </div>
-<div id="search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;max-height:320px;overflow-y:auto;border-radius:16px;background:var(--surface);border:1px solid var(--border2);box-shadow:0 12px 40px rgba(0,0,0,0.4);"></div>
+<div id="search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;border-radius:16px;background:var(--surface);border:1px solid var(--border2);box-shadow:0 12px 40px rgba(0,0,0,0.4);"></div>
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
 <button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">📚 Ajouter une recette</button>
