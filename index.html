@@ -2044,14 +2044,19 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <datalist id="saved-places-list"></datalist>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;" onfocus="_activeWalkStep=0">
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;" onfocus="_activeWalkStep=1">
 <button onclick="removeWalkStep(this)" class="step-remove-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
+</div>
+<!-- Lieux enregistrés -->
+<div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
+<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📍 Lieux enregistrés</div>
+<div id="walk-saved-places-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
 <div style="display:flex;gap:7px;margin-bottom:6px;align-items:center;">
 <button onclick="addWalkStep()" style="background:rgba(91,127,255,0.12);border:1px solid rgba(91,127,255,0.3);color:var(--accent);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Étape</button>
@@ -2873,6 +2878,29 @@ let currentWalkMode = 'simple';
 let currentRouteData = null;
 let walkFavorites = [];
 let savedPlaces = []; // [{name, address}]
+let _activeWalkStep = 1; // default to Arrivée
+
+function renderSavedPlacesChips() {
+  const section = document.getElementById('walk-saved-places-section');
+  const chips = document.getElementById('walk-saved-places-chips');
+  if (!section || !chips) return;
+  if (!savedPlaces.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  const sorted = [...savedPlaces].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  chips.innerHTML = sorted.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
+    style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation;">
+    📍 ${p.name}
+  </button>`).join('');
+}
+
+function fillWalkStepFromPlace(name, address) {
+  const inputs = document.querySelectorAll('.walk-step-input');
+  const idx = Math.min(_activeWalkStep, inputs.length - 1);
+  if (inputs[idx]) {
+    inputs[idx].value = address;
+    inputs[idx].dispatchEvent(new Event('input'));
+  }
+}
 let bikeFavorites = [];
 let searchDebounceTimer = null;
 let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
@@ -4349,6 +4377,7 @@ document.getElementById('walk-simple-section').style.display = mode === 'simple'
 document.getElementById('walk-route-section').style.display = mode === 'route' ? 'block' : 'none';
 document.getElementById('speed-row').style.display = 'grid'; // always visible
 document.getElementById('sport-favs-section').style.display = 'none';
+if (mode === 'route') renderSavedPlacesChips();
 }
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
