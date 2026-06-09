@@ -6022,20 +6022,29 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
   }
 
   // Swipe vers le bas pour fermer
-  let _pStartY = 0, _pDragging = false;
+  let _pStartY = 0, _pDragging = false, _pScrollLocked = false;
   popup.addEventListener('touchstart', e => {
     if (e.target.tagName.toLowerCase() === 'button') return;
-    _pStartY = e.touches[0].clientY; _pDragging = true;
+    _pStartY = e.touches[0].clientY;
+    _pDragging = true;
+    _pScrollLocked = false;
     popup.style.transition = 'none';
   }, { passive: true });
   popup.addEventListener('touchmove', e => {
     if (!_pDragging) return;
-    const dy = Math.max(0, e.touches[0].clientY - _pStartY);
-    popup.style.transform = `translateY(${dy}px)`;
+    const dy = e.touches[0].clientY - _pStartY;
+    if (popup.scrollTop > 0 || dy < 0) {
+      _pScrollLocked = true;
+      popup.style.transform = '';
+      return;
+    }
+    if (_pScrollLocked) return;
+    popup.style.transform = `translateY(${Math.max(0, dy)}px)`;
   }, { passive: true });
   popup.addEventListener('touchend', e => {
     if (!_pDragging) return;
     _pDragging = false;
+    if (_pScrollLocked) { _pScrollLocked = false; popup.style.transform = ''; return; }
     const dy = e.changedTouches[0].clientY - _pStartY;
     popup.style.transition = 'transform 0.28s ease';
     if (dy > 80) {
@@ -8513,7 +8522,7 @@ function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
 document.addEventListener('touchmove', (e) => {
   // Si un modal est ouvert, bloquer le touchmove sauf à l'intérieur d'un scroll autorisé
   if (!document.body.classList.contains('modal-open')) return;
-  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list, #recipe-builder-list, #sport-favs-content, #places-list');
+  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list, #recipe-builder-list, #sport-favs-content, #places-list, .entry-detail-popup, .entry-detail-note');
   if (!scrollable) {
     e.preventDefault();
     return;
