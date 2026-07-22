@@ -2268,6 +2268,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <input id="recipe-picker-search" class="search-input" type="text" placeholder="🔍 Rechercher une recette…" oninput="renderRecipePicker(_recipePickerFromAdd)" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
 <button onclick="clearRecipePickerSearch()" id="recipe-picker-search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
+<button class="btn-cancel" onclick="closeRecipePicker()" style="width:100%;margin-top:4px;">Fermer</button>
 </div>
 </div>
 <!-- MODAL CUSTOM FOOD -->
@@ -6008,6 +6009,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
     })() : ''}
     ${matchedFood ? `<button class="btn-primary" style="font-size:13px;padding:12px;background:${favColor};margin-bottom:8px;" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favLabel}</button>` : ''}
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
+    <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0369a1,#38bdf8);margin-bottom:8px;" onclick="_copyEntry(${id})">📋 Copier</button>
     <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#dc2626,#ef4444);margin-bottom:8px;" onclick="_closeDetailPopup();del(${id})">🗑️ Supprimer</button>
     <button class="btn-cancel" onclick="_closeDetailPopup()">Fermer</button>
   `;
@@ -6248,6 +6250,64 @@ async function _confirmMoveEntry() {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('entries').update({ category: cat, date }).eq('id', _moveEntryId).eq('user_id', user.id);
   _closeDetailPopup();
+  document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
+  document.body.classList.remove('modal-open');
+  haptic(10);
+  loadData();
+}
+
+// ── Copier une entrée ─────────────────────────────────────────────────────────
+let _copyEntryId = null;
+function _copyEntry(id) {
+  _closeDetailPopup();
+  _copyEntryId = id;
+  const entry = currentEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'entry-detail-overlay';
+  overlay.onclick = () => { overlay.remove(); popup.remove(); document.body.classList.remove('modal-open'); };
+
+  const popup = document.createElement('div');
+  popup.className = 'entry-detail-popup';
+  popup.innerHTML = `
+    <div class="detail-handle"></div>
+    <div class="entry-detail-title" style="margin-bottom:16px;">📋 Copier l'entrée</div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
+      <select id="copy-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
+        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
+        <option value="Déjeuner">🍽️ Déjeuner</option>
+        <option value="Dîner">🌙 Dîner</option>
+        <option value="Snack">🍎 Snack</option>
+        <option value="Boissons">🥤 Boissons</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
+      <input type="date" id="copy-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+    </div>
+    <button class="btn-primary" onclick="_confirmCopyEntry()">✓ Confirmer la copie</button>
+    <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+  document.body.classList.add('modal-open');
+
+  document.getElementById('copy-cat').value = entry.category;
+  document.getElementById('copy-date').value = entry.date || journalDateStr();
+}
+
+async function _confirmCopyEntry() {
+  const cat = document.getElementById('copy-cat').value;
+  const date = document.getElementById('copy-date').value;
+  if (!_copyEntryId || !cat || !date) return;
+  const entry = currentEntries.find(e => e.id === _copyEntryId);
+  if (!entry) return;
+  const { data: { user } } = await sb.auth.getUser();
+  const { id: _omit, ...rest } = entry;
+  await sb.from('entries').insert([{ ...rest, category: cat, date, user_id: user.id }]);
   document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
   document.body.classList.remove('modal-open');
   haptic(10);
