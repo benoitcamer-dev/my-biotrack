@@ -2442,6 +2442,83 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="section-label">Historique</div>
 <div id="weight-history-list"></div>
+
+<!-- SOMMEIL -->
+<div style="margin-top:24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">🌙 Suivi du sommeil</div>
+  </div>
+
+  <!-- Stats moyennes -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Moy. 7 jours</div>
+      <div id="sleep-avg-7" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Moy. 30 jours</div>
+      <div id="sleep-avg-30" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Nuit dernière</div>
+      <div id="sleep-last" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
+    </div>
+  </div>
+
+  <!-- Graphique -->
+  <div style="background:var(--surface2);border-radius:16px;padding:14px;margin-bottom:12px;border:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">7 dernières nuits</div>
+    <svg id="sleep-chart-svg" viewBox="0 0 350 100" style="width:100%;height:100px;overflow:visible;"></svg>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--muted);">
+      <span>🟢 ≥7h</span><span>🟡 6-7h</span><span>🔴 &lt;6h</span>
+    </div>
+  </div>
+
+  <!-- Formulaire ajout -->
+  <div style="background:var(--surface2);border-radius:16px;padding:14px;margin-bottom:12px;border:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Ajouter / modifier</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Date</label>
+        <input id="sleep-date" type="date" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Durée totale (h)</label>
+        <input id="sleep-duration" type="number" step="0.25" min="0" max="24" placeholder="7.5" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepDurationInput()">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Coucher</label>
+        <input id="sleep-bedtime" type="time" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepTimeInput()">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveil</label>
+        <input id="sleep-waketime" type="time" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepTimeInput()">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (nb)</label>
+        <input id="sleep-wake-count" type="number" min="0" max="20" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (min)</label>
+        <input id="sleep-wake-min" type="number" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepWakeMinInput()">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Sieste (min)</label>
+        <input id="sleep-nap" type="number" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepNapInput()">
+      </div>
+    </div>
+    <div id="sleep-calc-preview" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:16px;"></div>
+    <button onclick="saveSleepEntry()" style="width:100%;padding:12px;border-radius:12px;background:var(--gradient-main);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+  </div>
+
+  <!-- Historique -->
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Historique</div>
+  <div id="sleep-history-list"></div>
+</div>
 </div>
 </div>
 <!-- MODAL SPORTS FAVORIS -->
@@ -2663,8 +2740,11 @@ Oui si nécessaire
 <input id="ai-input" class="search-input" type="text" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();askAI();}">
 <button class="search-btn" onclick="askAI()" style="width:50px;height:50px;font-size:20px;flex-shrink:0;">→</button>
 <button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">🎤</button>
-<label title="Envoyer une photo" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
+<label title="Prendre une photo" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
 📷<input type="file" id="ai-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="askAIWithPhoto(this)">
+</label>
+<label title="Choisir depuis la galerie" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
+🖼️<input type="file" id="ai-gallery-input" accept="image/*" style="display:none;" onchange="askAIWithPhoto(this)">
 </label>
 </div>
 <div id="ai-result" style="display:none;">
@@ -2874,6 +2954,7 @@ let recipePickerTargetCategory = null, bilanRange = "week", bilanCursor = new Da
 let customFoods = [], favoriteIds = [], editingCustomFoodId = null;
 let currentAlimentsTab = 'base'; // kept for compat
 let weightEntries = [];
+let sleepEntries = [];
 let currentWalkMode = 'simple';
 let currentRouteData = null;
 let walkFavorites = [];
@@ -5644,7 +5725,7 @@ if (bilanRange === 'week') {
 async function loadWeightEntries() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('weight_entries').select('*').eq('user_id', user.id).order('date', { ascending: true }); weightEntries = data || []; } catch (e) { console.error(e); }
 }
-function openWeightModal() { document.getElementById('w-date').value = todayStr(); renderWeightModal(); document.getElementById('modal-weight').classList.add('open'); }
+function openWeightModal() { document.getElementById('w-date').value = todayStr(); document.getElementById('sleep-date').value = todayStr(); renderWeightModal(); loadSleepData(); document.getElementById('modal-weight').classList.add('open'); }
 function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); }
 function renderWeightModal() { renderIMC(); renderWeightChart(); renderWeightHistory(); }
 async function addWeightEntry() {
@@ -5778,6 +5859,204 @@ el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-i
 </div>`).join('');
 }
 
+
+// ═══ SOMMEIL ═══════════════════════════════════════════════════════════════
+
+function fmtSleepDur(min) {
+  if (!min) return '—';
+  const h = Math.floor(min / 60), m = min % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`;
+}
+
+function calcSleepMinFromTimes(bedtime, waketime) {
+  if (!bedtime || !waketime) return null;
+  const [bh, bm] = bedtime.split(':').map(Number);
+  const [wh, wm] = waketime.split(':').map(Number);
+  let diff = (wh * 60 + wm) - (bh * 60 + bm);
+  if (diff <= 0) diff += 24 * 60; // coucher avant minuit, réveil après
+  return diff;
+}
+
+function onSleepTimeInput() {
+  const bed = document.getElementById('sleep-bedtime').value;
+  const wake = document.getElementById('sleep-waketime').value;
+  const wakeMins = parseInt(document.getElementById('sleep-wake-min').value) || 0;
+  const nap = parseInt(document.getElementById('sleep-nap').value) || 0;
+  const raw = calcSleepMinFromTimes(bed, wake);
+  if (raw !== null) {
+    const net = Math.max(0, raw - wakeMins);
+    const total = net + nap;
+    document.getElementById('sleep-duration').value = Math.round(total / 60 * 4) / 4;
+    updateSleepPreview(total, wakeMins, nap);
+  }
+}
+
+function onSleepDurationInput() {
+  const h = parseFloat(document.getElementById('sleep-duration').value) || 0;
+  const nap = parseInt(document.getElementById('sleep-nap').value) || 0;
+  const wakeMins = parseInt(document.getElementById('sleep-wake-min').value) || 0;
+  updateSleepPreview(Math.round(h * 60), wakeMins, nap);
+}
+
+function onSleepWakeMinInput() {
+  const bed = document.getElementById('sleep-bedtime').value;
+  const wake = document.getElementById('sleep-waketime').value;
+  if (bed && wake) { onSleepTimeInput(); return; }
+  onSleepDurationInput();
+}
+
+function onSleepNapInput() {
+  const bed = document.getElementById('sleep-bedtime').value;
+  const wake = document.getElementById('sleep-waketime').value;
+  if (bed && wake) { onSleepTimeInput(); return; }
+  onSleepDurationInput();
+}
+
+function updateSleepPreview(totalMin, wakeMins, nap) {
+  const el = document.getElementById('sleep-calc-preview');
+  if (!el) return;
+  const parts = [];
+  if (totalMin > 0) parts.push(`Total : ${fmtSleepDur(totalMin)}`);
+  if (wakeMins > 0) parts.push(`dont ${wakeMins} min de réveils`);
+  if (nap > 0) parts.push(`+ sieste ${nap} min`);
+  el.textContent = parts.join(' · ');
+}
+
+async function loadSleepData() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const { data } = await sb.from('sleep_entries').select('*').eq('user_id', user.id)
+    .gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false });
+  sleepEntries = data || [];
+  renderSleepStats();
+  renderSleepChart();
+  renderSleepHistory();
+}
+
+function renderSleepStats() {
+  const now = new Date();
+  const d7 = new Date(); d7.setDate(d7.getDate() - 7);
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const entries7 = sleepEntries.filter(e => new Date(e.date) >= d7 && e.duration_min);
+  const entries30 = sleepEntries.filter(e => new Date(e.date) >= d30 && e.duration_min);
+  const avg7 = entries7.length ? Math.round(entries7.reduce((s, e) => s + e.duration_min, 0) / entries7.length) : null;
+  const avg30 = entries30.length ? Math.round(entries30.reduce((s, e) => s + e.duration_min, 0) / entries30.length) : null;
+  const last = sleepEntries.find(e => e.duration_min);
+  document.getElementById('sleep-avg-7').textContent = avg7 ? fmtSleepDur(avg7) : '—';
+  document.getElementById('sleep-avg-30').textContent = avg30 ? fmtSleepDur(avg30) : '—';
+  document.getElementById('sleep-last').textContent = last ? fmtSleepDur(last.duration_min) : '—';
+}
+
+function renderSleepChart() {
+  const svg = document.getElementById('sleep-chart-svg');
+  if (!svg) return;
+  const days = 7;
+  const W = 350, H = 100, PL = 30, PR = 8, PT = 10, PB = 20;
+  const chartW = W - PL - PR, chartH = H - PT - PB;
+  const labels = [], data = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const entry = sleepEntries.find(e => e.date === ds);
+    labels.push(['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'][d.getDay() === 0 ? 6 : d.getDay() - 1]);
+    data.push(entry?.duration_min || null);
+  }
+  const maxH = Math.max(9 * 60, ...data.filter(Boolean)) + 30;
+  const minH = 0;
+  const ys = v => PT + chartH - (v - minH) / (maxH - minH) * chartH;
+  const xs = i => PL + (i + 0.5) * (chartW / days);
+  const barW = chartW / days * 0.6;
+  // Target line at 8h
+  const targetY = ys(8 * 60);
+  let html = `<line x1="${PL}" y1="${targetY}" x2="${W - PR}" y2="${targetY}" stroke="rgba(124,111,255,0.4)" stroke-width="1" stroke-dasharray="4,3"/>`;
+  html += `<text x="${PL - 2}" y="${targetY + 3}" text-anchor="end" fill="var(--muted)" font-size="8">8h</text>`;
+  data.forEach((v, i) => {
+    const cx = xs(i);
+    const col = !v ? 'var(--border2)' : v >= 7 * 60 ? '#3dd68c' : v >= 6 * 60 ? '#f59e0b' : '#ef4444';
+    const bh = v ? Math.max(4, ys(0) - ys(v)) : 4;
+    const by = v ? ys(v) : ys(0) - 4;
+    html += `<rect x="${cx - barW/2}" y="${by}" width="${barW}" height="${bh}" fill="${col}" rx="3" opacity="0.85"/>`;
+    if (v) {
+      const lbl = fmtSleepDur(v);
+      const lblY = by > 30 ? by - 4 : by + bh + 10;
+      html += `<text x="${cx}" y="${lblY}" text-anchor="middle" fill="${col}" font-size="8" font-weight="700">${lbl}</text>`;
+    }
+    html += `<text x="${cx}" y="${H - 4}" text-anchor="middle" fill="var(--muted)" font-size="9">${labels[i]}</text>`;
+  });
+  svg.innerHTML = html;
+}
+
+function renderSleepHistory() {
+  const el = document.getElementById('sleep-history-list');
+  if (!el) return;
+  if (!sleepEntries.length) { el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:8px 0;">Aucune entrée.</div>`; return; }
+  el.innerHTML = sleepEntries.map(e => {
+    const col = !e.duration_min ? 'var(--muted)' : e.duration_min >= 7*60 ? '#3dd68c' : e.duration_min >= 6*60 ? '#f59e0b' : '#ef4444';
+    const meta = [];
+    if (e.bedtime && e.waketime) meta.push(`${e.bedtime} → ${e.waketime}`);
+    if (e.wake_count) meta.push(`${e.wake_count} réveil${e.wake_count > 1 ? 's' : ''}`);
+    if (e.wake_min) meta.push(`${e.wake_min} min d'éveil`);
+    if (e.nap_min) meta.push(`sieste ${e.nap_min} min`);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">${formatDateFR(e.date, {weekday:'short',day:'numeric',month:'short'})}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${meta.join(' · ') || '—'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:16px;font-weight:800;color:${col};">${fmtSleepDur(e.duration_min)}</div>
+        <button onclick="editSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✎</button>
+        <button onclick="deleteSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveSleepEntry() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const date = document.getElementById('sleep-date').value;
+  if (!date) { alert('Sélectionne une date'); return; }
+  const bedtime = document.getElementById('sleep-bedtime').value || null;
+  const waketime = document.getElementById('sleep-waketime').value || null;
+  const durH = parseFloat(document.getElementById('sleep-duration').value) || null;
+  const wake_count = parseInt(document.getElementById('sleep-wake-count').value) || 0;
+  const wake_min = parseInt(document.getElementById('sleep-wake-min').value) || 0;
+  const nap_min = parseInt(document.getElementById('sleep-nap').value) || 0;
+  // Calculate duration_min
+  let duration_min = durH ? Math.round(durH * 60) : null;
+  if (!duration_min && bedtime && waketime) {
+    const raw = calcSleepMinFromTimes(bedtime, waketime);
+    if (raw) duration_min = Math.max(0, raw - wake_min) + nap_min;
+  }
+  const payload = { user_id: user.id, date, bedtime, waketime, duration_min, wake_count, wake_min, nap_min };
+  await sb.from('sleep_entries').upsert(payload, { onConflict: 'user_id,date' });
+  // Reset form
+  ['sleep-bedtime','sleep-waketime','sleep-duration','sleep-wake-count','sleep-wake-min','sleep-nap'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('sleep-date').value = todayStr();
+  document.getElementById('sleep-calc-preview').textContent = '';
+  loadSleepData();
+}
+
+function editSleepEntry(id) {
+  const e = sleepEntries.find(s => String(s.id) === String(id));
+  if (!e) return;
+  document.getElementById('sleep-date').value = e.date;
+  document.getElementById('sleep-bedtime').value = e.bedtime || '';
+  document.getElementById('sleep-waketime').value = e.waketime || '';
+  document.getElementById('sleep-duration').value = e.duration_min ? Math.round(e.duration_min / 60 * 4) / 4 : '';
+  document.getElementById('sleep-wake-count').value = e.wake_count || '';
+  document.getElementById('sleep-wake-min').value = e.wake_min || '';
+  document.getElementById('sleep-nap').value = e.nap_min || '';
+  document.getElementById('sleep-date').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteSleepEntry(id) {
+  if (!confirm('Supprimer cette entrée ?')) return;
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('sleep_entries').delete().eq('id', id).eq('user_id', user.id);
+  loadSleepData();
+}
 
 async function loadData() {
 const _scrollBefore = window.scrollY;
