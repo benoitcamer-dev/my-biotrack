@@ -2158,6 +2158,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="setting-row">
 <label>📅 Google Calendar (Client ID OAuth)</label>
 <input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
+<label style="margin-top:10px;display:block;">🗺️ Google Maps (Clé API)</label>
+<input id="s-gmaps-key" type="text" placeholder="Colle ta clé API Google Maps ici" style="font-size:11px;">
 <button onclick="syncGoogleFit(false)" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;">🏃 Connecter / Sync Google Fit</button>
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
 </div>
@@ -2791,6 +2793,7 @@ Oui si nécessaire
 const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
 const ORS_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjIwMzk5Yzc0MDY2YzQxNDNhOWU2YWM1OWI4YWI0MWFlIiwiaCI6Im11cm11cjY0In0=";
+let GMAPS_API_KEY = localStorage.getItem('gmaps_api_key') || '';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 let currentCat = "";
 let userGoal = 2300, userWeight = 75, userHeight = 175, userAge = 30, userSexe = "H";
@@ -3704,6 +3707,8 @@ document.getElementById('s-sexe').value = userSexe;
 document.getElementById('s-gemini').value = localStorage.getItem('gemini_api_key') || '';
 const gcalEl = document.getElementById('s-gcal-client-id');
 if (gcalEl) gcalEl.value = GCAL_CLIENT_ID;
+const gmapsEl = document.getElementById('s-gmaps-key');
+if (gmapsEl) gmapsEl.value = GMAPS_API_KEY;
 document.getElementById('theme-toggle-btn').textContent = localStorage.getItem('theme') === 'light' ? 'ON' : 'OFF';
 updateBMRLive();
 document.getElementById('modal-settings').classList.add('open');
@@ -3729,6 +3734,9 @@ userSexe = document.getElementById('s-sexe').value;
 const gcalClientId = (document.getElementById('s-gcal-client-id')?.value || '').trim();
 if (gcalClientId) { GCAL_CLIENT_ID = gcalClientId; localStorage.setItem('gcal_client_id', gcalClientId); }
 else if (gcalClientId === '') { GCAL_CLIENT_ID = ''; localStorage.removeItem('gcal_client_id'); }
+const gmapsKey = (document.getElementById('s-gmaps-key')?.value || '').trim();
+if (gmapsKey) { GMAPS_API_KEY = gmapsKey; localStorage.setItem('gmaps_api_key', gmapsKey); initGooglePlaces(); }
+else if (gmapsKey === '') { GMAPS_API_KEY = ''; localStorage.removeItem('gmaps_api_key'); }
 const geminiKey = document.getElementById('s-gemini').value.trim();
 if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
 else localStorage.removeItem('gemini_api_key');
@@ -4458,7 +4466,10 @@ document.getElementById('walk-simple-section').style.display = mode === 'simple'
 document.getElementById('walk-route-section').style.display = mode === 'route' ? 'block' : 'none';
 document.getElementById('speed-row').style.display = 'grid'; // always visible
 document.getElementById('sport-favs-section').style.display = 'none';
-if (mode === 'route') renderSavedPlacesChips();
+if (mode === 'route') {
+  renderSavedPlacesChips();
+  setTimeout(() => { if (GMAPS_API_KEY) _attachPlacesAutocomplete(); }, 100);
+}
 }
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
@@ -4613,40 +4624,75 @@ async function geocodePlace(name) {
   return null;
 }
 
+// ═══ GOOGLE PLACES AUTOCOMPLETE ════════════════════════════════════════════
+
+let _placesService = null;
+let _placesAutocomplete = {};
+
+function initGooglePlaces() {
+  if (!GMAPS_API_KEY) return;
+  if (typeof google !== 'undefined' && google.maps?.places) {
+    _attachPlacesAutocomplete();
+    return;
+  }
+  // Load Maps JS API if not already loaded
+  if (document.querySelector('script[src*="maps.googleapis.com"]')) return;
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_API_KEY}&libraries=places&callback=_onGoogleMapsLoaded`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+function _onGoogleMapsLoaded() {
+  _attachPlacesAutocomplete();
+}
+window._onGoogleMapsLoaded = _onGoogleMapsLoaded;
+
+function _attachPlacesAutocomplete() {
+  if (!google?.maps?.places) return;
+  document.querySelectorAll('.walk-step-input').forEach(input => {
+    if (input._placesAttached) return;
+    const ac = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'fr' },
+      fields: ['geometry', 'formatted_address', 'name'],
+      types: ['geocode', 'establishment'],
+      bounds: new google.maps.LatLngBounds(
+        new google.maps.LatLng(45.70, 4.77),
+        new google.maps.LatLng(45.82, 4.90)
+      )
+    });
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      if (place.geometry) {
+        input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
+        input._gLabel = place.formatted_address || place.name;
+      }
+    });
+    input._placesAttached = true;
+  });
+}
+
+// Override geocodeAddress to use Google if available
 async function geocodeAddress(query) {
-  const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
-  const hasNumber = /^\d+/.test(query.trim());
-  // If query starts with a number, try Nominatim first (better at street numbers)
-  if (hasNumber) {
+  // Try Google Geocoding first if key available
+  if (GMAPS_API_KEY) {
     try {
-      const queryWithLyon = query.toLowerCase().includes('lyon') || /6900[0-9]/.test(query) ? query : query + ' Lyon';
-      // Try ORS first for numbered addresses — better at French city districts
-      const orsR = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(queryWithLyon)}&size=1${lyonBias}`);
-      const orsD = await orsR.json();
-      const orsF = orsD.features?.[0];
-      if (orsF) return { coords: orsF.geometry.coordinates, label: orsF.properties.label };
-    } catch(e) {}
-    try {
-      const queryWithLyon = query.toLowerCase().includes('lyon') ? query : query + ' Lyon';
-      const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryWithLyon)}&format=json&limit=1&countrycodes=fr&addressdetails=1&viewbox=4.77,45.82,4.90,45.70&bounded=1`, {
-        headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
-      });
-      const nd = await nr.json();
-      if (nd[0]) {
-        const a = nd[0].address;
-        const label = [nd[0].display_name.split(',')[0], a.road, a.city || a.town || 'Lyon'].filter(Boolean).join(', ');
-        return { coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label };
+      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query + ' Lyon France')}&key=${GMAPS_API_KEY}&region=fr&bounds=45.70,4.77|45.82,4.90`);
+      const d = await r.json();
+      if (d.results?.[0]) {
+        const loc = d.results[0].geometry.location;
+        return { coords: [loc.lng, loc.lat], label: d.results[0].formatted_address };
       }
     } catch(e) {}
   }
-  // ORS
+  // Fallback to ORS + Nominatim
+  const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
   try {
     const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
     const d = await r.json();
     const f = d.features?.[0];
     if (f) return { coords: f.geometry.coordinates, label: f.properties.label };
   } catch(e) {}
-  // Nominatim fallback
   try {
     const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`, {
       headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
@@ -5196,6 +5242,8 @@ if (srEl) {
 // Store user id for Google Fit
 const { data: { user: _u } } = await sb.auth.getUser();
 if (_u) _currentUserId = _u.id;
+// Init Google Places if key available
+if (GMAPS_API_KEY) initGooglePlaces();
 // Sync Google Fit silently in background
 const _gfitParam = new URLSearchParams(window.location.search).get('gfit');
 if (_gfitParam === 'connected') {
