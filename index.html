@@ -4631,15 +4631,15 @@ let _placesAutocomplete = {};
 
 function initGooglePlaces() {
   if (!GMAPS_API_KEY) return;
-  if (typeof google !== 'undefined' && google.maps?.places) {
-    _attachPlacesAutocomplete();
+  if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+    // Already loading/loaded
+    if (typeof google !== 'undefined' && google.maps?.places) _attachPlacesAutocomplete();
     return;
   }
-  // Load Maps JS API if not already loaded
-  if (document.querySelector('script[src*="maps.googleapis.com"]')) return;
   const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_API_KEY}&libraries=places&callback=_onGoogleMapsLoaded`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_API_KEY}&libraries=places&loading=async&callback=_onGoogleMapsLoaded`;
   script.async = true;
+  script.defer = true;
   document.head.appendChild(script);
 }
 
@@ -4652,23 +4652,44 @@ function _attachPlacesAutocomplete() {
   if (!google?.maps?.places) return;
   document.querySelectorAll('.walk-step-input').forEach(input => {
     if (input._placesAttached) return;
-    const ac = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: 'fr' },
-      fields: ['geometry', 'formatted_address', 'name'],
-      types: ['geocode', 'establishment'],
-      bounds: new google.maps.LatLngBounds(
-        new google.maps.LatLng(45.70, 4.77),
-        new google.maps.LatLng(45.82, 4.90)
-      )
-    });
-    ac.addListener('place_changed', () => {
-      const place = ac.getPlace();
-      if (place.geometry) {
-        input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
-        input._gLabel = place.formatted_address || place.name;
-      }
-    });
-    input._placesAttached = true;
+    try {
+      // Use new PlaceAutocompleteElement API
+      const container = input.parentElement;
+      const pac = new google.maps.places.PlaceAutocompleteElement({
+        componentRestrictions: { country: 'fr' },
+        locationBias: new google.maps.LatLngBounds(
+          new google.maps.LatLng(45.70, 4.77),
+          new google.maps.LatLng(45.82, 4.90)
+        )
+      });
+      pac.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;opacity:0;z-index:10;';
+      container.style.position = 'relative';
+      container.appendChild(pac);
+      pac.addEventListener('gmp-placeselect', async e => {
+        const place = e.place;
+        await place.fetchFields({ fields: ['location', 'formattedAddress', 'displayName'] });
+        input.value = place.formattedAddress || place.displayName;
+        input._gCoords = [place.location.lng(), place.location.lat()];
+        input._gLabel = place.formattedAddress || place.displayName;
+      });
+      input._placesAttached = true;
+    } catch(err) {
+      // Fallback to old API if new one not available
+      try {
+        const ac = new google.maps.places.Autocomplete(input, {
+          componentRestrictions: { country: 'fr' },
+          fields: ['geometry', 'formatted_address', 'name'],
+        });
+        ac.addListener('place_changed', () => {
+          const place = ac.getPlace();
+          if (place.geometry) {
+            input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
+            input._gLabel = place.formatted_address || place.name;
+          }
+        });
+        input._placesAttached = true;
+      } catch(e2) { console.warn('Places autocomplete error:', e2); }
+    }
   });
 }
 
