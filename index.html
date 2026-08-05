@@ -4668,50 +4668,24 @@ function _onGoogleMapsLoaded() {
 window._onGoogleMapsLoaded = _onGoogleMapsLoaded;
 
 function _attachPlacesAutocomplete() {
-  if (typeof google === 'undefined' || !google.maps?.places) {
-    // Google not ready yet — will be called by _onGoogleMapsLoaded callback
-    return;
-  }
+  if (typeof google === 'undefined' || !google.maps?.places) return;
   document.querySelectorAll('.walk-step-input').forEach(input => {
     if (input._placesAttached) return;
     try {
-      // Use new PlaceAutocompleteElement API
-      const container = input.parentElement;
-      const pac = new google.maps.places.PlaceAutocompleteElement({
+      const ac = new google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: 'fr' },
-        locationBias: new google.maps.LatLngBounds(
-          new google.maps.LatLng(45.70, 4.77),
-          new google.maps.LatLng(45.82, 4.90)
-        )
+        fields: ['geometry', 'formatted_address', 'name'],
       });
-      pac.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;opacity:0;z-index:10;';
-      container.style.position = 'relative';
-      container.appendChild(pac);
-      pac.addEventListener('gmp-placeselect', async e => {
-        const place = e.place;
-        await place.fetchFields({ fields: ['location', 'formattedAddress', 'displayName'] });
-        input.value = place.formattedAddress || place.displayName;
-        input._gCoords = [place.location.lng(), place.location.lat()];
-        input._gLabel = place.formattedAddress || place.displayName;
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place.geometry) {
+          input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
+          input._gLabel = place.formatted_address || place.name;
+          input.value = place.formatted_address || place.name;
+        }
       });
       input._placesAttached = true;
-    } catch(err) {
-      // Fallback to old API if new one not available
-      try {
-        const ac = new google.maps.places.Autocomplete(input, {
-          componentRestrictions: { country: 'fr' },
-          fields: ['geometry', 'formatted_address', 'name'],
-        });
-        ac.addListener('place_changed', () => {
-          const place = ac.getPlace();
-          if (place.geometry) {
-            input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
-            input._gLabel = place.formatted_address || place.name;
-          }
-        });
-        input._placesAttached = true;
-      } catch(e2) { console.warn('Places autocomplete error:', e2); }
-    }
+    } catch(e) { console.warn('Places error:', e); }
   });
 }
 
