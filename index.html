@@ -4032,41 +4032,32 @@ if (isRecipe) {
 }
 }
 function showAllSports() {
-const div = document.getElementById('search-results');
-div.style.display = 'block';
-// Favoris en premier, puis modes Marche/Vélo en bas
-const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
-let favsHtml = '';
-if (hasWalk) {
-  favsHtml += `<div class="sport-fav-section" style="padding:6px 4px 2px;">
-    <div class="sport-fav-title">🚶 Trajets marche favoris</div>
-    ${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
-      <div class="sport-fav-name">⭐ ${f.name}</div>
-      <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
-    </div>`).join('')}
-  </div>`;
+  const div = document.getElementById('search-results');
+  div.style.display = 'block';
+  div.innerHTML = `
+    <div style="padding:10px 8px 6px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <button onclick="selectWalkMode()" style="padding:14px 8px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Marche</button>
+        <button onclick="selectBikeModeQuick()" style="padding:14px 8px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚴 Vélo</button>
+      </div>
+      ${walkFavorites.length ? `<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⭐ Marche favoris</div>
+      ${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
+        <div class="sport-fav-name">⭐ ${f.name}</div>
+        <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
+      </div>`).join('')}` : ''}
+      ${bikeFavorites.length ? `<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:8px 0 6px;">⭐ Vélo favoris</div>
+      ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
+        <div class="sport-fav-name">⭐ ${f.name}</div>
+        <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
+      </div>`).join('')}` : ''}
+    </div>`;
+  renderSportFavsQuick();
 }
-if (hasBike) {
-  favsHtml += `<div class="sport-fav-section" style="padding:6px 4px 2px;">
-    <div class="sport-fav-title">🚴 Sorties vélo favorites</div>
-    ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
-      <div class="sport-fav-name">⭐ ${f.name}</div>
-      <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
-    </div>`).join('')}
-  </div>`;
-}
-const modesHtml = `<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
-  <div class="result-item" onclick="selectWalkMode()">
-    <div class="result-name">🚶 Marche</div>
-    <div class="result-kcal burn">Calcul précis ou simple</div>
-  </div>
-  <div class="result-item" onclick="selectBikeMode()">
-    <div class="result-name">🚴 Vélo</div>
-    <div class="result-kcal burn">Calcul avec ton profil</div>
-  </div>
-</div>`;
-div.innerHTML = favsHtml + modesHtml;
-renderSportFavsQuick();
+
+function selectBikeModeQuick() {
+  selectBikeMode();
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-results').innerHTML = '';
 }
 function renderSportFavsQuick() {
 const section = document.getElementById('sport-favs-section');
@@ -4675,6 +4666,11 @@ function _attachPlacesAutocomplete() {
       const ac = new google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: 'fr' },
         fields: ['geometry', 'formatted_address', 'name'],
+        bounds: new google.maps.LatLngBounds(
+          new google.maps.LatLng(45.70, 4.77),
+          new google.maps.LatLng(45.82, 4.90)
+        ),
+        strictBounds: false,
       });
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
