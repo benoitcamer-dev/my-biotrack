@@ -4480,7 +4480,9 @@ document.getElementById('speed-row').style.display = 'grid'; // always visible
 document.getElementById('sport-favs-section').style.display = 'none';
 if (mode === 'route') {
   renderSavedPlacesChips();
-  if (GMAPS_API_KEY && _googleMapsReady) _attachPlacesAutocomplete();
+  if (GMAPS_API_KEY && _googleMapsReady) {
+    setTimeout(() => _attachPlacesAutocomplete(), 50);
+  }
 }
 }
 function renderWalkFavsInModal() {
@@ -4658,7 +4660,10 @@ function initGooglePlaces() {
 let _googleMapsReady = false;
 function _onGoogleMapsLoaded() {
   _googleMapsReady = true;
-  _attachPlacesAutocomplete();
+  // Attach if already in route mode
+  if (typeof currentWalkMode !== 'undefined' && currentWalkMode === 'route') {
+    _attachPlacesAutocomplete();
+  }
 }
 window._onGoogleMapsLoaded = _onGoogleMapsLoaded;
 
