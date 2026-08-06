@@ -1960,7 +1960,7 @@ if ('serviceWorker' in navigator) {
 <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="openAddPlaceForm()">+ Ajouter un lieu</button>
 <div id="place-form" style="display:none;margin-top:12px;background:var(--surface2);border-radius:12px;padding:12px;">
 <div class="setting-row"><label>Nom court</label><input id="place-form-name" class="text-input" type="text" placeholder="Ex: Gym, Affreux Jojo…"></div>
-<div class="setting-row"><label>Adresse complète</label><input id="place-form-addr" class="text-input" type="text" placeholder="Ex: 61 Rue de la Part-Dieu, Lyon"></div>
+<div class="setting-row"><label>Adresse complète</label><input id="place-form-addr" class="text-input walk-places-input" type="text" placeholder="Ex: 61 Rue de la Part-Dieu, Lyon" autocomplete="off"></div>
 <div style="display:flex;gap:8px;margin-top:8px;">
 <button class="btn-cancel" style="flex:1;" onclick="closePlaceForm()">Annuler</button>
 <button class="btn-primary" style="flex:2;" onclick="savePlace()">✓ Enregistrer</button>
@@ -3782,6 +3782,7 @@ let _editingPlaceIdx = -1;
 function openPlacesModal() {
   renderPlacesList();
   document.getElementById('modal-places').classList.add('open');
+  if (GMAPS_API_KEY && _googleMapsReady) setTimeout(() => _attachPlacesAutocomplete(), 100);
 }
 function closePlacesModal() { document.getElementById('modal-places').classList.remove('open'); }
 
@@ -4660,7 +4661,7 @@ window._onGoogleMapsLoaded = _onGoogleMapsLoaded;
 
 function _attachPlacesAutocomplete() {
   if (typeof google === 'undefined' || !google.maps?.places) return;
-  document.querySelectorAll('.walk-step-input').forEach(input => {
+  document.querySelectorAll('.walk-step-input, .walk-places-input').forEach(input => {
     if (input._placesAttached) return;
     try {
       const ac = new google.maps.places.Autocomplete(input, {
@@ -7005,6 +7006,8 @@ function openCreateWalkFav() {
   el.innerHTML = `<div class="sport-fav-item" style="flex-direction:column;align-items:stretch;gap:8px;background:var(--surface3);">
 <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;">+ Nouveau trajet marche</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-new-name" class="text-input" type="text" placeholder="Ex : Chez moi → Bureau" style="font-size:12px;"></div>
+<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Départ</label><input id="sf-new-from" class="text-input walk-places-input" type="text" placeholder="Adresse de départ" style="font-size:12px;" autocomplete="off"></div>
+<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Arrivée</label><input id="sf-new-to" class="text-input walk-places-input" type="text" placeholder="Adresse d'arrivée" style="font-size:12px;" autocomplete="off"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
 <div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-new-dist" type="number" placeholder="0" step="0.1" min="0"></div>
 <div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-new-dur" type="number" placeholder="0" min="1"></div>
@@ -7015,16 +7018,21 @@ function openCreateWalkFav() {
 <button class="btn-primary" style="flex:2;font-size:12px;" onclick="confirmCreateWalkFav()">✓ Créer</button>
 </div>
 </div>` + el.innerHTML;
-  setTimeout(() => document.getElementById('sf-new-name')?.focus(), 80);
+  setTimeout(() => {
+    document.getElementById('sf-new-name')?.focus();
+    if (GMAPS_API_KEY && _googleMapsReady) _attachPlacesAutocomplete();
+  }, 80);
 }
 function confirmCreateWalkFav() {
   const name = document.getElementById('sf-new-name')?.value.trim();
+  const from = document.getElementById('sf-new-from')?.value.trim() || '';
+  const to   = document.getElementById('sf-new-to')?.value.trim() || '';
   const dist = parseFloat(document.getElementById('sf-new-dist')?.value) || 0;
   const dur  = parseFloat(document.getElementById('sf-new-dur')?.value) || 0;
   let kcal   = parseFloat(document.getElementById('sf-new-kcal')?.value) || 0;
   if (!name || !dur) { alert('Nom et durée requis.'); return; }
   if (!kcal) { const spd = dist && dur ? round1(dist/(dur/60)) : 5; kcal = calcWalkKcal(spd, dur); }
-  walkFavorites.unshift({ name, from: '', to: '', roundtrip: false, distance: dist, duration: dur, kcal });
+  walkFavorites.unshift({ name, from, to, roundtrip: false, distance: dist, duration: dur, kcal });
   saveSettingsLocal(); pushSettingsRemote();
   renderSportFavsContent();
 }
@@ -7867,7 +7875,7 @@ function toggleVoiceInput() {
   }
   _voiceRecognition = new SR();
   _voiceRecognition.lang = 'fr-FR';
-  _voiceRecognition.continuous = false;
+  _voiceRecognition.continuous = true;
   _voiceRecognition.interimResults = true;
   _voiceActive = true;
   btn.textContent = '🔴';
@@ -7877,10 +7885,13 @@ function toggleVoiceInput() {
     inp.value = transcript;
   };
   _voiceRecognition.onend = () => {
+    if (_voiceActive) {
+      // Restarted automatically (Android stops after silence)
+      try { _voiceRecognition.start(); return; } catch(e) {}
+    }
     _voiceActive = false;
     btn.textContent = '🎤';
     btn.style.borderColor = '';
-    // Auto-send if we have text
     if (inp.value.trim()) askAI();
   };
   _voiceRecognition.onerror = () => {
