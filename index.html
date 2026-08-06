@@ -842,21 +842,30 @@ font-weight: 800;
 letter-spacing: -0.5px;
 }
 .modal-close {
-background: rgba(255,255,255,0.06);
-border: 1px solid rgba(255,255,255,0.08);
-width: 34px;
-height: 34px;
+position: relative;
+background: rgba(255,255,255,0.08);
+border: 1px solid rgba(255,255,255,0.1);
+width: 44px;
+height: 44px;
 border-radius: 50%;
 cursor: pointer;
 color: var(--muted);
-font-size: 16px;
+font-size: 20px;
 display: flex;
 align-items: center;
 justify-content: center;
 transition: all 0.2s;
 flex-shrink: 0;
+touch-action: manipulation;
 }
-.modal-close:hover { color: var(--text); border-color: var(--border2); }
+/* Zone de tap invisible un peu plus large que le cercle visible, pour plus de tolérance */
+.modal-close::before {
+content: '';
+position: absolute;
+inset: -6px;
+}
+.modal-close:hover { color: var(--text); border-color: var(--border2); background: rgba(255,255,255,0.12); }
+.modal-close:active { background: rgba(255,255,255,0.16); transform: scale(0.94); }
 .search-row { display: flex; gap: 7px; margin-bottom: 10px; }
 #search-results,#re-search-results {
 background: var(--surface);
