@@ -811,6 +811,16 @@ box-shadow: 0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
 .settings-sheet { padding-bottom: 48px; max-height: 90dvh; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
 .unit-g { font-family: 'Georgia', serif; font-style: italic; font-size: 0.9em; }
+.modal-sticky-header {
+position: sticky;
+top: 0;
+z-index: 8;
+background: var(--surface);
+margin: -20px -18px 16px;
+padding: 20px 18px 0;
+border-radius: 28px 28px 0 0;
+}
+[data-theme="light"] .modal-sticky-header { background: #FFFFFF; }
 .modal-handle {
 width: 40px;
 height: 4px;
@@ -1878,7 +1888,7 @@ if ('serviceWorker' in navigator) {
 <button class="bottom-nav-btn" onclick="openAlimentsModal()"><span>⭐</span><span>Aliments</span></button>
 <button class="bottom-nav-btn" onclick="openRecipesModal()"><span>📚</span><span>Recettes</span></button>
 <button class="bottom-nav-btn" onclick="openPlacesModal()"><span>📍</span><span>Lieux</span></button>
-<button class="bottom-nav-btn" onclick="openSportFavsModal()"><span>🏃</span><span>Sports</span></button>
+<button class="bottom-nav-btn" onclick="openModal('Sport')"><span>🏃</span><span>Sports</span></button>
 <button class="bottom-nav-btn" onclick="openWeightModal()"><span>⚖️</span><span>Poids</span></button>
 <button class="bottom-nav-btn" onclick="openSettings()"><span>⚙️</span><span>Réglages</span></button>
 </nav>
@@ -4037,20 +4047,12 @@ function showAllSports() {
   div.style.display = 'block';
   div.innerHTML = `
     <div style="padding:10px 8px 6px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <button onclick="selectWalkMode()" style="padding:14px 8px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Marche</button>
-        <button onclick="selectBikeModeQuick()" style="padding:14px 8px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚴 Vélo</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;">
+        <button onclick="selectBikeModeQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚴 Vélo</button>
+        <button onclick="selectWalkRouteQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Itinéraire</button>
+        <button onclick="selectWalkSimpleQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Simple</button>
       </div>
-      ${walkFavorites.length ? `<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">⭐ Marche favoris</div>
-      ${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
-        <div class="sport-fav-name">⭐ ${f.name}</div>
-        <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
-      </div>`).join('')}` : ''}
-      ${bikeFavorites.length ? `<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:8px 0 6px;">⭐ Vélo favoris</div>
-      ${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
-        <div class="sport-fav-name">⭐ ${f.name}</div>
-        <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
-      </div>`).join('')}` : ''}
+      <button onclick="openSportFavsModal()" style="width:100%;background:none;border:none;color:var(--muted);font-size:11px;padding:4px 0 2px;cursor:pointer;text-align:center;">⚙️ Gérer mes favoris</button>
     </div>`;
   renderSportFavsQuick();
 }
@@ -4060,45 +4062,25 @@ function selectBikeModeQuick() {
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('search-results').innerHTML = '';
 }
+function selectWalkRouteQuick() {
+  selectWalkMode();
+  setWalkMode('route');
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-results').innerHTML = '';
+}
+function selectWalkSimpleQuick() {
+  selectWalkMode();
+  setWalkMode('simple');
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-results').innerHTML = '';
+}
 function renderSportFavsQuick() {
 const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
-// Clear search dropdown to avoid overlap
-const sr = document.getElementById('search-results'); if (sr) sr.innerHTML = '';
-let html = '';
-if (hasWalk) {
-html += `<div class="sport-fav-section">
-<div class="sport-fav-title">🚶 Trajets marche favoris</div>
-${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})">
-<div>
-<div class="sport-fav-name">⭐ ${f.name}</div>
-<div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
-</div>
-</div>`).join('')}
-</div>`;
-}
-if (hasBike) {
-html += `<div class="sport-fav-section">
-<div class="sport-fav-title">🚴 Sorties vélo favorites</div>
-${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})">
-<div>
-<div class="sport-fav-name">⭐ ${f.name}</div>
-<div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
-</div>
-</div>`).join('')}
-</div>`;
-}
-if (hasWalk) {
-document.getElementById('walk-favs-quick-list').innerHTML = `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>`;
-}
-// Always show Marche/Vélo mode buttons at the bottom
-document.getElementById('bike-favs-quick-list').innerHTML = (hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '')
-  + `<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
-  <div class="result-item" onclick="selectWalkMode()"><div class="result-name">🚶 Marche</div><div class="result-kcal burn">Calcul précis ou simple</div></div>
-  <div class="result-item" onclick="selectBikeMode()"><div class="result-name">🚴 Vélo</div><div class="result-kcal burn">Calcul avec ton profil</div></div>
-</div>`;
+document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
@@ -8262,40 +8244,10 @@ function toggleTheme() {
 }
 applyTheme(localStorage.getItem('theme') === 'light');
 
-function addSwipeToClose(id, fn) {
-  const o = document.getElementById(id); if (!o) return;
-  const s = o.querySelector('.modal-sheet,.settings-sheet'); if (!s) return;
-  const h = s.querySelector('.modal-handle');
-  let y = 0, d = false;
-  // Listen on handle AND top area of sheet for swipe down
-  const targets = h ? [h] : [];
-  targets.push(s);
-  targets.forEach(t => {
-    t.addEventListener('touchstart', e => {
-      // Only start swipe if touch begins near top of sheet (first 60px) or on handle
-      const rect = s.getBoundingClientRect();
-      const touchY = e.touches[0].clientY;
-      if (t === h || touchY - rect.top < 60) { y = touchY; d = true; }
-    }, { passive: true });
-    t.addEventListener('touchmove', e => {
-      if (!d) return;
-      const dy = e.touches[0].clientY - y;
-      if (dy > 0) s.style.transform = 'translateY(' + dy + 'px)';
-    }, { passive: true });
-    t.addEventListener('touchend', e => {
-      if (!d) return; d = false; s.style.transform = '';
-      if (e.changedTouches[0].clientY - y > 80) fn();
-    });
-  });
-}
-[['modal-add', closeModal], ['modal-settings', closeSettings],
- ['modal-recipe-link', closeRecipeLinkModal], ['modal-recipe-editor', closeRecipeEditor],
- ['modal-recipes', closeRecipesModal], ['modal-recipe-picker', closeRecipePicker], ['modal-custom-food', closeCustomFoodModal],
- ['modal-aliments', closeAlimentsModal], ['modal-favs-quick', closeFavoritesQuickModal],
- ['modal-weight', closeWeightModal], ['modal-sport-favs', closeSportFavsModal],
- ['modal-recipe-date-meal', closeRecipeDateMealModal], ['modal-sport-fav-date', closeSportFavDateModal],
- ['modal-edit-weight', closeEditWeightModal], ['modal-ai', closeAIModal]
-].forEach(([id, fn]) => addSwipeToClose(id, fn));
+// Le swipe-to-close est géré par le système consolidé plus bas (voir "Swipe to dismiss — bottom sheets").
+// L'ancienne version ici faisait doublon (deux listeners concurrents sur les mêmes sheets)
+// et ne fonctionnait que si le geste démarrait dans les 60px du haut — d'où le besoin de
+// remonter en haut du contenu pour fermer un modal. Voir plus bas pour la version corrigée.
 
 
 function niceScale(maxVal, steps = 4) {
@@ -8928,9 +8880,23 @@ document.addEventListener('touchmove', (e) => {
     'modal-sport-fav-date': () => closeSportFavDateModal(),
     'modal-copy-meal': () => closeCopyMealModal(),
     'modal-recipe-link': () => closeRecipeLinkModal(),
-    'modal-favs-quick': () => closeFavsQuickModal(),
-    'modal-recipe-picker': () => closeRecipePickerModal(),
+    'modal-favs-quick': () => closeFavoritesQuickModal(),
+    'modal-recipe-picker': () => closeRecipePicker(),
+    'modal-recipe-date-meal': () => closeRecipeDateMealModal(),
+    'modal-edit-weight': () => closeEditWeightModal(),
   };
+
+  // Vrai si la zone scrollable la plus proche entre `el` et `container` (incluse) est déjà tout en haut.
+  // Si aucune zone scrollable n'est trouvée, on considère qu'il n'y a rien à scroller → true.
+  function nearestScrollableIsAtTop(el, container) {
+    let node = el;
+    while (node) {
+      if (node.scrollHeight > node.clientHeight + 1) return node.scrollTop <= 0;
+      if (node === container) break;
+      node = node.parentElement;
+    }
+    return true;
+  }
 
   function initSwipe(sheet, closeFn) {
     let startY = 0, currentY = 0, startTime = 0, dragging = false;
@@ -8938,6 +8904,9 @@ document.addEventListener('touchmove', (e) => {
     sheet.addEventListener('touchstart', e => {
       const tag = e.target.tagName.toLowerCase();
       if (['input','select','textarea','button'].includes(tag)) return;
+      // Ne pas démarrer le geste si on est en train de scroller une liste interne
+      // non arrivée en haut (sinon le swipe-to-close entre en conflit avec le scroll).
+      if (!nearestScrollableIsAtTop(e.target, sheet)) { dragging = false; return; }
       startY = e.touches[0].clientY;
       currentY = startY;
       startTime = Date.now();
@@ -8948,7 +8917,8 @@ document.addEventListener('touchmove', (e) => {
     sheet.addEventListener('touchmove', e => {
       if (!dragging) return;
       currentY = e.touches[0].clientY;
-      const dy = Math.max(0, currentY - startY); // seulement vers le bas
+      const dy = currentY - startY;
+      if (dy < 0) { dragging = false; sheet.style.transform = ''; return; } // remonte : on annule, le scroll natif reprend
       sheet.style.transform = `translateY(${dy}px)`;
     }, { passive: true });
 
@@ -8999,6 +8969,20 @@ document.addEventListener('touchmove', (e) => {
 
   // Initialiser après chargement du DOM
   window.addEventListener('DOMContentLoaded', () => {
+    // En-tête sticky (poignée + titre + croix) sur toutes les feuilles modales,
+    // pour que le bouton de fermeture reste toujours accessible sans remonter en haut.
+    document.querySelectorAll('.modal-sheet, .settings-sheet').forEach(sheet => {
+      const handle = sheet.querySelector(':scope > .modal-handle');
+      const titleRow = sheet.querySelector(':scope > .modal-title-row');
+      if (handle && titleRow && handle.nextElementSibling === titleRow) {
+        const wrap = document.createElement('div');
+        wrap.className = 'modal-sticky-header';
+        handle.parentNode.insertBefore(wrap, handle);
+        wrap.appendChild(handle);
+        wrap.appendChild(titleRow);
+      }
+    });
+
     Object.entries(CLOSE_FNS).forEach(([modalId, closeFn]) => {
       const modal = document.getElementById(modalId);
       if (!modal) return;
