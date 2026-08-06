@@ -1080,6 +1080,56 @@ touch-action: manipulation;
 }
 .btn-cancel:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
 .btn-cancel:active { transform: scale(0.98); }
+.btn-danger {
+width: 100%;
+background: var(--danger);
+border: none;
+border-radius: 16px;
+padding: 16px;
+color: white;
+font-family: 'Inter', sans-serif;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+transition: all 0.2s;
+cursor: pointer;
+box-shadow: 0 4px 20px rgba(255,77,106,0.3);
+touch-action: manipulation;
+}
+.btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-danger:active { transform: scale(0.98) translateY(0); box-shadow: none; }
+.app-confirm-overlay {
+position: fixed; inset: 0;
+background: rgba(0,0,0,0.6);
+backdrop-filter: blur(8px);
+z-index: 500;
+display: flex; align-items: flex-end; justify-content: center;
+opacity: 0; pointer-events: none;
+transition: opacity 0.2s;
+}
+.app-confirm-overlay.open { opacity: 1; pointer-events: auto; }
+.app-confirm-sheet {
+background: var(--surface);
+border: 1px solid rgba(124,111,255,0.1);
+border-top: 1px solid rgba(255,255,255,0.08);
+border-radius: 24px 24px 0 0;
+width: 100%; max-width: 480px;
+padding: 26px 18px calc(20px + env(safe-area-inset-bottom));
+box-shadow: 0 -8px 48px rgba(0,0,0,0.5);
+transform: translateY(24px);
+transition: transform 0.25s cubic-bezier(0.32,1.2,0.64,1);
+box-sizing: border-box;
+}
+.app-confirm-overlay.open .app-confirm-sheet { transform: translateY(0); }
+.app-confirm-msg {
+font-size: 15px;
+font-weight: 600;
+color: var(--text);
+line-height: 1.5;
+text-align: center;
+margin-bottom: 20px;
+}
 [data-theme="light"] .btn-cancel {
   background: rgba(0,0,0,0.04);
   border-color: rgba(0,0,0,0.1);
@@ -2097,7 +2147,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
 <label style="font-size:11px;color:var(--muted);">Vitesse :</label>
-<input id="walk-route-speed" type="number" value="6" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
+<input id="walk-route-speed" type="number" inputmode="decimal" value="6" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
 <label style="font-size:11px;color:var(--muted);">km/h</label>
 <button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
 </div>
@@ -2105,7 +2155,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="walk-custom-dur-box" class="walk-custom-duration" style="display:none;">
 <label style="font-size:12px;color:var(--muted);">Ajuste la durée réelle si besoin :</label>
 <div style="display:flex;align-items:center;gap:8px;">
-<input type="number" id="walk-custom-dur" min="1" oninput="onCustomDurationChange()">
+<input type="number" inputmode="decimal" id="walk-custom-dur" min="1" oninput="onCustomDurationChange()">
 <span class="walk-recalc-info" id="walk-recalc-info"></span>
 </div>
 </div>
@@ -2117,21 +2167,21 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 </div>
 <div class="inputs-grid">
-<div class="input-box"><label id="label-qty">Quantité (g)</label><input id="in-qty" type="number" value="100" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
-<div class="input-box"><label id="label-kcal">Kcal / 100</label><input id="in-kcal" type="number" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="input-box"><label id="label-qty">Quantité (g)</label><input id="in-qty" type="number" inputmode="decimal" value="100" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="input-box"><label id="label-kcal">Kcal / 100</label><input id="in-kcal" type="number" inputmode="decimal" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 </div>
 <div class="inputs-grid" id="speed-row" style="display:none;">
-<div class="input-box"><label>Vitesse (km/h)</label><input id="in-speed" type="number" value="5" step="0.1" oninput="onWalkSpeedInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="input-box"><label>Vitesse (km/h)</label><input id="in-speed" type="number" inputmode="decimal" value="5" step="0.1" oninput="onWalkSpeedInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="input-box"><label>Distance estimée</label><input id="in-distance" type="text" value="—" placeholder="ex: 3.5 km" oninput="onWalkDistInput(this.value)" style="opacity:1;"></div>
 </div>
 <div class="inputs-grid" id="drink-portions-row" style="display:none;">
-<div class="input-box"><label>Nb de verres/portions</label><input id="in-portions" type="number" value="1" min="0.5" step="0.5" oninput="onPortionsChange()"></div>
-<div class="input-box"><label id="label-portion-unit">Dose (cl)</label><input id="in-portion-unit" type="number" value="50" min="1" step="1" oninput="onPortionUnitChange()"></div>
+<div class="input-box"><label>Nb de verres/portions</label><input id="in-portions" type="number" inputmode="decimal" value="1" min="0.5" step="0.5" oninput="onPortionsChange()"></div>
+<div class="input-box"><label id="label-portion-unit">Dose (cl)</label><input id="in-portion-unit" type="number" inputmode="decimal" value="50" min="1" step="1" oninput="onPortionUnitChange()"></div>
 </div>
 <div class="macros-row" id="macro-fields">
-<div class="macro-input prot"><label>Prot.</label><input id="in-p" type="number" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
-<div class="macro-input gluc"><label>Gluc.</label><input id="in-g" type="number" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
-<div class="macro-input lip"><label>Lip.</label><input id="in-l" type="number" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="macro-input prot"><label>Prot.</label><input id="in-p" type="number" inputmode="decimal" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="macro-input gluc"><label>Gluc.</label><input id="in-g" type="number" inputmode="decimal" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="macro-input lip"><label>Lip.</label><input id="in-l" type="number" inputmode="decimal" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 </div>
 <div class="calc-result"><div class="big" id="calc-res">0 kcal</div><div class="sub" id="calc-sub">pour 100g</div></div>
 <button class="btn-primary" id="submit-btn" onclick="submitEntry()">Valider</button>
@@ -2161,23 +2211,23 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div class="setting-row">
 <label>🎯 Objectif calorique (kcal/jour)</label>
-<input id="s-goal" type="number" placeholder="2300" oninput="onSettingChange()">
+<input id="s-goal" type="number" inputmode="decimal" placeholder="2300" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
 <label>💪 Objectif protéines (g/jour) <span style="font-size:12px;color:var(--muted);">— laisser 0 pour ne pas afficher</span></label>
-<input id="s-prot-goal" type="number" placeholder="0" oninput="onSettingChange()">
+<input id="s-prot-goal" type="number" inputmode="decimal" placeholder="0" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
 <label>⚖️ Poids (kg)</label>
-<input id="s-weight" type="number" placeholder="75" oninput="onSettingChange()">
+<input id="s-weight" type="number" inputmode="decimal" placeholder="75" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
 <label>📐 Taille (cm)</label>
-<input id="s-height" type="number" placeholder="175" oninput="onSettingChange()">
+<input id="s-height" type="number" inputmode="decimal" placeholder="175" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
 <label>🎂 Âge</label>
-<input id="s-age" type="number" placeholder="30" oninput="onSettingChange()">
+<input id="s-age" type="number" inputmode="decimal" placeholder="30" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
 <label>🚻 Sexe</label>
@@ -2251,29 +2301,29 @@ autocomplete="off" onkeydown="if(event.key==='Enter'){searchRecipeFood();this.bl
 <div class="inputs-grid">
 <div class="input-box">
 <label>Quantité (g/ml)</label>
-<input id="re-qty" type="number" value="100" oninput="recalcRecipeDraft()"
+<input id="re-qty" type="number" inputmode="decimal" value="100" oninput="recalcRecipeDraft()"
 onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeBuilder();}">
 </div>
 <div class="input-box">
 <label>Kcal / 100</label>
-<input id="re-kcal" type="number" placeholder="0" oninput="recalcRecipeDraft()"
+<input id="re-kcal" type="number" inputmode="decimal" placeholder="0" oninput="recalcRecipeDraft()"
 onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeBuilder();}">
 </div>
 </div>
 <div class="macros-row">
 <div class="macro-input prot">
 <label>Prot.</label>
-<input id="re-p" type="number" value="0" placeholder="0"
+<input id="re-p" type="number" inputmode="decimal" value="0" placeholder="0"
 onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeBuilder();}">
 </div>
 <div class="macro-input gluc">
 <label>Gluc.</label>
-<input id="re-g" type="number" value="0" placeholder="0"
+<input id="re-g" type="number" inputmode="decimal" value="0" placeholder="0"
 onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeBuilder();}">
 </div>
 <div class="macro-input lip">
 <label>Lip.</label>
-<input id="re-l" type="number" value="0" placeholder="0"
+<input id="re-l" type="number" inputmode="decimal" value="0" placeholder="0"
 onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeBuilder();}">
 </div>
 </div>
@@ -2319,13 +2369,13 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="inputs-grid">
 <div class="input-box" style="grid-column:span 2;">
 <label>Kcal / 100g</label>
-<input id="cf-kcal" type="number" placeholder="0">
+<input id="cf-kcal" type="number" inputmode="decimal" placeholder="0">
 </div>
 </div>
 <div class="macros-row">
-<div class="macro-input prot"><label>Prot.</label><input id="cf-p" type="number" placeholder="0"></div>
-<div class="macro-input gluc"><label>Gluc.</label><input id="cf-g" type="number" placeholder="0"></div>
-<div class="macro-input lip"><label>Lip.</label><input id="cf-l" type="number" placeholder="0"></div>
+<div class="macro-input prot"><label>Prot.</label><input id="cf-p" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="macro-input gluc"><label>Gluc.</label><input id="cf-g" type="number" inputmode="decimal" placeholder="0"></div>
+<div class="macro-input lip"><label>Lip.</label><input id="cf-l" type="number" inputmode="decimal" placeholder="0"></div>
 </div>
 <!-- Unité & dose -->
 <div style="margin-bottom:10px;">
@@ -2333,7 +2383,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;align-items:end;">
 <div class="input-box" style="margin:0;">
 <label>Quantité</label>
-<input id="cf-default-qty" type="number" value="100" min="0.1" step="0.1" placeholder="100">
+<input id="cf-default-qty" type="number" inputmode="decimal" value="100" min="0.1" step="0.1" placeholder="100">
 </div>
 <div class="input-box" style="margin:0;">
 <label>Unité</label>
@@ -2348,7 +2398,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="input-box" style="margin:0;" id="cf-unit-g-wrap">
 <label>= <span id="cf-unit-g-label">g</span></label>
-<input id="cf-unit-g" type="number" value="1" min="0.1" step="0.1" placeholder="1" style="opacity:0.5;pointer-events:none;">
+<input id="cf-unit-g" type="number" inputmode="decimal" value="1" min="0.1" step="0.1" placeholder="1" style="opacity:0.5;pointer-events:none;">
 </div>
 </div>
 <div id="cf-unit-hint" style="font-size:10px;color:var(--muted);margin-top:5px;display:none;"></div>
@@ -2412,7 +2462,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="weight-inputs">
 <div class="weight-input-box">
 <label>Poids (kg)</label>
-<input id="w-val" type="number" step="0.1" placeholder="75.0">
+<input id="w-val" type="number" inputmode="decimal" step="0.1" placeholder="75.0">
 </div>
 <div class="weight-input-box">
 <label>Date</label>
@@ -2517,7 +2567,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
       </div>
       <div>
         <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Durée totale (h)</label>
-        <input id="sleep-duration" type="number" step="0.25" min="0" max="24" placeholder="7.5" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepDurationInput()">
+        <input id="sleep-duration" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="7.5" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepDurationInput()">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -2533,15 +2583,15 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
       <div>
         <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (nb)</label>
-        <input id="sleep-wake-count" type="number" min="0" max="20" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
+        <input id="sleep-wake-count" type="number" inputmode="decimal" min="0" max="20" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
       </div>
       <div>
         <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (min)</label>
-        <input id="sleep-wake-min" type="number" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepWakeMinInput()">
+        <input id="sleep-wake-min" type="number" inputmode="decimal" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepWakeMinInput()">
       </div>
       <div>
         <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Sieste (min)</label>
-        <input id="sleep-nap" type="number" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepNapInput()">
+        <input id="sleep-nap" type="number" inputmode="decimal" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepNapInput()">
       </div>
     </div>
     <div id="sleep-calc-preview" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:16px;"></div>
@@ -2651,7 +2701,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="weight-inputs">
 <div class="weight-input-box">
 <label>Poids (kg)</label>
-<input id="edit-w-val" type="number" step="0.1" placeholder="75.0">
+<input id="edit-w-val" type="number" inputmode="decimal" step="0.1" placeholder="75.0">
 </div>
 <div class="weight-input-box">
 <label>Date</label>
@@ -2684,10 +2734,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <input id="bc-name" class="input-field" type="text" placeholder="Nom du produit">
 </div>
 <div class="inputs-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-<div class="input-box"><label>Kcal/100g</label><input id="bc-kcal" class="input-field" type="number" step="1" placeholder="0"></div>
-<div class="input-box"><label>Protéines (g)</label><input id="bc-prot" class="input-field" type="number" step="0.1" placeholder="0"></div>
-<div class="input-box"><label>Glucides (g)</label><input id="bc-gluc" class="input-field" type="number" step="0.1" placeholder="0"></div>
-<div class="input-box"><label>Lipides (g)</label><input id="bc-lip" class="input-field" type="number" step="0.1" placeholder="0"></div>
+<div class="input-box"><label>Kcal/100g</label><input id="bc-kcal" class="input-field" type="number" inputmode="decimal" step="1" placeholder="0"></div>
+<div class="input-box"><label>Protéines (g)</label><input id="bc-prot" class="input-field" type="number" inputmode="decimal" step="0.1" placeholder="0"></div>
+<div class="input-box"><label>Glucides (g)</label><input id="bc-gluc" class="input-field" type="number" inputmode="decimal" step="0.1" placeholder="0"></div>
+<div class="input-box"><label>Lipides (g)</label><input id="bc-lip" class="input-field" type="number" inputmode="decimal" step="0.1" placeholder="0"></div>
 </div>
 <div style="display:flex;gap:8px;">
 <button class="btn-cancel" style="flex:1;" onclick="closeBarcodeScanner()">Annuler</button>
@@ -2784,13 +2834,13 @@ Oui si nécessaire
 <div style="background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px;">
 <div id="ai-result-text" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
 <div class="inputs-grid">
-<div class="input-box"><label id="ai-label-qty">Quantité (g)</label><input id="ai-qty" type="number" value="100" oninput="recalcAI()"></div>
-<div class="input-box"><label id="ai-label-kcal">Kcal / 100</label><input id="ai-kcal" type="number" placeholder="0" oninput="recalcAI()"></div>
+<div class="input-box"><label id="ai-label-qty">Quantité (g)</label><input id="ai-qty" type="number" inputmode="decimal" value="100" oninput="recalcAI()"></div>
+<div class="input-box"><label id="ai-label-kcal">Kcal / 100</label><input id="ai-kcal" type="number" inputmode="decimal" placeholder="0" oninput="recalcAI()"></div>
 </div>
 <div class="macros-row" id="ai-macro-fields">
-<div class="macro-input prot"><label>Prot.</label><input id="ai-p" type="number" value="0" placeholder="0"></div>
-<div class="macro-input gluc"><label>Gluc.</label><input id="ai-g" type="number" value="0" placeholder="0"></div>
-<div class="macro-input lip"><label>Lip.</label><input id="ai-l" type="number" value="0" placeholder="0"></div>
+<div class="macro-input prot"><label>Prot.</label><input id="ai-p" type="number" inputmode="decimal" value="0" placeholder="0"></div>
+<div class="macro-input gluc"><label>Gluc.</label><input id="ai-g" type="number" inputmode="decimal" value="0" placeholder="0"></div>
+<div class="macro-input lip"><label>Lip.</label><input id="ai-l" type="number" inputmode="decimal" value="0" placeholder="0"></div>
 </div>
 <div class="calc-result">
 <div class="big" id="ai-calc-res">0 kcal</div>
@@ -2839,9 +2889,9 @@ function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
 
 async function gfitAuthorize() {
   const clientId = GCAL_CLIENT_ID;
-  if (!clientId) { alert('Configure d\'abord ton Client ID Google dans les paramètres'); return; }
+  if (!clientId) { showToast('Configure d\'abord ton Client ID Google dans les paramètres', 'error'); return; }
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) { alert('Tu dois être connecté'); return; }
+  if (!user) { showToast('Tu dois être connecté', 'error'); return; }
   const redirectUri = 'https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-callback';
   const scope = 'https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.location.read';
   const returnUrl = window.location.href.split('?')[0];
@@ -2910,7 +2960,7 @@ async function syncGoogleFit(silent = true) {
     if (result.imported?.length || result.updated?.length) loadData();
     if (!silent) {
       const total = (result.imported?.length || 0) + (result.updated?.length || 0);
-      alert(total > 0 ? `✅ ${result.imported?.length || 0} nouveau(x), ${result.updated?.length || 0} mis à jour` : 'Aucune nouvelle donnée');
+      showToast(total > 0 ? `✅ ${result.imported?.length || 0} nouveau(x), ${result.updated?.length || 0} mis à jour` : 'Aucune nouvelle donnée', total > 0 ? 'success' : 'info');
     }
   } catch(e) { console.warn('Google Fit sync:', e); }
 }
@@ -3703,7 +3753,7 @@ updateRecipeDateMealUI();
 document.getElementById('modal-recipe-date-meal').classList.add('open');
 }
 async function deleteCustomFood(id) {
-if (!confirm('Supprimer cet aliment ?')) return;
+if (!(await showConfirm('Supprimer cet aliment ?', {danger:true}))) return;
 await sb.from('favorites').delete().eq('food_id', id);
 await sb.from('custom_foods').delete().eq('id', id);
 favoriteIds = favoriteIds.filter(x => x !== id);
@@ -3869,7 +3919,7 @@ function closePlaceForm() {
 async function savePlace() {
   const name = document.getElementById('place-form-name').value.trim();
   const address = document.getElementById('place-form-addr').value.trim();
-  if (!name || !address) { alert("Remplis le nom et l'adresse."); return; }
+  if (!name || !address) { showToast("Remplis le nom et l'adresse.", 'error'); return; }
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Géocodage…'; btn.disabled = true; }
   // Geocode address to store coords (with timeout)
@@ -3880,7 +3930,7 @@ async function savePlace() {
     result = await Promise.race([geocodeAddress(query), timeout]);
   } catch(e) {
     if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
-    if (confirm('Géocodage échoué. Enregistrer sans coordonnées GPS ?')) {
+    if (await showConfirm('Géocodage échoué. Enregistrer sans coordonnées GPS ?')) {
       const place = { name, address, coords: null, resolvedLabel: null };
       if (_editingPlaceIdx >= 0) { savedPlaces[_editingPlaceIdx] = place; } else { savedPlaces.push(place); }
       saveSettingsLocal(); pushSettingsRemote(); closePlaceForm(); renderPlacesList(); updateKnownPlaces();
@@ -3890,8 +3940,8 @@ async function savePlace() {
   const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
   // Show resolved address for confirmation
   if (result) {
-    const confirm = window.confirm(`Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
-    if (!confirm) {
+    const confirmed = await showConfirm(`Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
+    if (!confirmed) {
       if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
       return;
     }
@@ -3907,8 +3957,8 @@ async function savePlace() {
   updateKnownPlaces();
 }
 
-function deletePlace(i) {
-  if (!confirm('Supprimer ce lieu ?')) return;
+async function deletePlace(i) {
+  if (!(await showConfirm('Supprimer ce lieu ?', {danger:true}))) return;
   savedPlaces.splice(i, 1);
   saveSettingsLocal(); pushSettingsRemote();
   renderPlacesList();
@@ -4270,10 +4320,10 @@ function selectLocalFoodItem(idx, isRecipe) {
   _pickLocalFood(idx, isRecipe);
 }
 async function deleteCiqualFood(id, name, btn) {
-  if (!confirm(`Supprimer définitivement "${name}" de la base Ciqual ?`)) return;
+  if (!(await showConfirm(`Supprimer définitivement "${name}" de la base Ciqual ?`, {danger:true}))) return;
   btn.textContent = '⏳'; btn.disabled = true;
   const { error } = await sb.from('ciqual_foods').delete().eq('id', id);
-  if (error) { btn.textContent = '🗑️'; btn.disabled = false; alert('Erreur : ' + error.message); return; }
+  if (error) { btn.textContent = '🗑️'; btn.disabled = false; showToast('Erreur : ' + error.message, 'error'); return; }
   btn.closest('.food-item').remove();
 }
 async function hideCiqualFood(ciqualId, btn) {
@@ -4288,7 +4338,7 @@ async function saveOPFToBase(name, kcal_100, prot_100, gluc_100, lip_100, btn) {
   const { data: { user } } = await sb.auth.getUser();
   if (existing) {
     // Already in base → toggle remove
-    if (!confirm(`Retirer "${name}" de la base ?`)) return;
+    if (!(await showConfirm(`Retirer "${name}" de la base ?`, {danger:true}))) return;
     btn.textContent = '⏳'; btn.disabled = true;
     await sb.from('favorites').delete().eq('food_id', existing.id);
     await sb.from('custom_foods').delete().eq('id', existing.id);
@@ -4534,7 +4584,7 @@ function promptSaveStepPlace(btn) {
   const row = btn.closest('.walk-addr-row');
   const inp = row.querySelector('.walk-step-input');
   const address = inp ? inp.value.trim() : '';
-  if (!address) { alert("Entre une adresse d'abord."); return; }
+  if (!address) { showToast("Entre une adresse d'abord.", 'error'); return; }
   const name = prompt("Nom court pour ce lieu :", "");
   if (!name) return;
   saveQuickPlace(name, address);
@@ -4737,7 +4787,7 @@ async function calcMultiLegRoute(places) {
 
 async function calcRoute() {
 const steps = getWalkSteps();
-if (steps.length < 2) { alert('Renseigne au moins départ et arrivée.'); return; }
+if (steps.length < 2) { showToast('Renseigne au moins départ et arrivée.', 'error'); return; }
 const box = document.getElementById('walk-route-result');
 box.style.display = 'block';
 box.innerHTML = '⏳ Calcul…';
@@ -4990,7 +5040,7 @@ const { data: { user } } = await sb.auth.getUser();
 if (!user) { _isSubmitting = false; return; }
 const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
 const q = parseFloat(document.getElementById('in-qty').value) || 0;
-if (q <= 0) { alert('Indique une quantité ou une durée.'); return; }
+if (q <= 0) { showToast('Indique une quantité ou une durée.', 'error'); return; }
 const rawKcal = parseFloat(document.getElementById('in-kcal').value) || 0;
 // If a custom unit is active, convert qty to grams for macros/kcal calculation
 const effectiveG = (_currentFoodUnit && !isSport) ? q * _currentFoodUnit.unitG : q;
@@ -5081,7 +5131,7 @@ date: document.getElementById('in-entry-date').value || journalDateStr()
 let error = null;
 if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
 else { const res = await sb.from('entries').insert([payload]); error = res.error; }
-if (error) { console.error(error); alert('Erreur : ' + error.message); _isSubmitting = false; return; }
+if (error) { console.error(error); showToast('Erreur : ' + error.message, 'error'); _isSubmitting = false; return; }
 haptic(10);
 // Naviguer vers la date de l'entrée si différente du jour affiché
 const _entryDate = document.getElementById('in-entry-date').value;
@@ -5404,7 +5454,7 @@ r.totalLip = round1(t.lip);
 async function saveAndSyncRecipes() { saveSettingsLocal(); await pushSettingsRemote(); }
 async function saveRecipeFromBuilder() {
 const name = document.getElementById('re-name').value.trim();
-if (!name || !recipeBuilder.length) { alert('Nom + ingrédients requis.'); return; }
+if (!name || !recipeBuilder.length) { showToast('Nom + ingrédients requis.', 'error'); return; }
 const payload = { id: editingRecipeId || String(Date.now()), name, items: recipeBuilder.map(({ id, ...r }) => r) };
 recomputeRecipe(payload);
 if (editingRecipeId) { const i = savedRecipes.findIndex(r => r.id === editingRecipeId); if (i >= 0) savedRecipes[i] = payload; }
@@ -5785,7 +5835,7 @@ async function addWeightEntry() {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const v = parseFloat(document.getElementById('w-val').value), date = document.getElementById('w-date').value;
-if (!v || !date) { alert('Renseigne poids et date.'); return; }
+if (!v || !date) { showToast('Renseigne poids et date.', 'error'); return; }
 await sb.from('weight_entries').upsert({ user_id: user.id, weight: v, date }, { onConflict: 'user_id,date' });
 const last = weightEntries.length ? weightEntries[weightEntries.length - 1].date : '';
 if (!last || date >= last) {
@@ -5809,7 +5859,7 @@ async function saveEditedWeight() {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const v = parseFloat(document.getElementById('edit-w-val').value), date = document.getElementById('edit-w-date').value;
-if (!v || !date) { alert('Renseigne poids et date.'); return; }
+if (!v || !date) { showToast('Renseigne poids et date.', 'error'); return; }
 await sb.from('weight_entries').update({ weight: v }).eq('id', editingWeightId);
 await loadWeightEntries();
 renderWeightModal();
@@ -6069,7 +6119,7 @@ async function saveSleepEntry() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const date = document.getElementById('sleep-date').value;
-  if (!date) { alert('Sélectionne une date'); return; }
+  if (!date) { showToast('Sélectionne une date', 'error'); return; }
   const bedtime = document.getElementById('sleep-bedtime').value || null;
   const waketime = document.getElementById('sleep-waketime').value || null;
   const durH = parseFloat(document.getElementById('sleep-duration').value) || null;
@@ -6105,7 +6155,7 @@ function editSleepEntry(id) {
 }
 
 async function deleteSleepEntry(id) {
-  if (!confirm('Supprimer cette entrée ?')) return;
+  if (!(await showConfirm('Supprimer cette entrée ?', {danger:true}))) return;
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('sleep_entries').delete().eq('id', id).eq('user_id', user.id);
   loadSleepData();
@@ -6446,11 +6496,11 @@ function _rebuildEntryIngTable(entryId) {
   const rows = _entryIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
-      <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="g">
+      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="g">
       <span style="font-size:10px;color:var(--muted);">g</span>
-      <input type="number" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
+      <input type="number" inputmode="decimal" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
-      <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
+      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
     </div>`).join('');
   const total = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
@@ -6713,7 +6763,7 @@ async function confirmCopyMeal() {
   if (!_copyMealSourceCat) return;
   const destCat = document.getElementById('copy-meal-cat').value;
   const destDate = document.getElementById('copy-meal-date').value;
-  if (!destDate) { alert('Choisis une date.'); return; }
+  if (!destDate) { showToast('Choisis une date.', 'error'); return; }
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   const sourceEntries = currentEntries.filter(e => e.category === _copyMealSourceCat && e.type === 'food');
@@ -6796,7 +6846,7 @@ async function undoDel(btn) {
   } catch(e) { console.error('undoDel:', e); }
 }
 async function clearMealEntries(cat) {
-if (!confirm(`Supprimer tous les aliments de ${cat} ?`)) return;
+if (!(await showConfirm(`Supprimer tous les aliments de ${cat} ?`, {danger:true}))) return;
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');
@@ -6893,9 +6943,9 @@ el.innerHTML = walkFavorites.map((f, i) => {
 <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">✎ Modifier le trajet</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-<div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-edit-dist" type="number" value="${f.distance}" step="0.1" min="0"></div>
-<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" value="${f.duration}" min="1"></div>
-<div class="input-box" style="margin:0;"><label>Kcal</label><input id="sf-edit-kcal" type="number" value="${f.kcal}" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-edit-dist" type="number" inputmode="decimal" value="${f.distance}" step="0.1" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" inputmode="decimal" value="${f.duration}" min="1"></div>
+<div class="input-box" style="margin:0;"><label>Kcal</label><input id="sf-edit-kcal" type="number" inputmode="decimal" value="${f.kcal}" min="0"></div>
 </div>
 <div style="display:flex;gap:7px;">
 <button class="btn-cancel" style="flex:1;font-size:12px;" onclick="renderSportFavsContent()">Annuler</button>
@@ -6923,9 +6973,9 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">✎ Modifier la sortie</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-<div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-edit-speed" type="number" value="${f.speed}" step="0.5" min="0"></div>
-<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" value="${f.duration}" min="1"></div>
-<div class="input-box" style="margin:0;"><label>Kcal</label><input id="sf-edit-kcal" type="number" value="${f.kcal}" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-edit-speed" type="number" inputmode="decimal" value="${f.speed}" step="0.5" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" inputmode="decimal" value="${f.duration}" min="1"></div>
+<div class="input-box" style="margin:0;"><label>Kcal</label><input id="sf-edit-kcal" type="number" inputmode="decimal" value="${f.kcal}" min="0"></div>
 </div>
 <div style="display:flex;gap:7px;">
 <button class="btn-cancel" style="flex:1;font-size:12px;" onclick="renderSportFavsContent()">Annuler</button>
@@ -7000,9 +7050,9 @@ function openCreateWalkFav() {
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Départ</label><input id="sf-new-from" class="text-input walk-places-input" type="text" placeholder="Adresse de départ" style="font-size:12px;" autocomplete="off"></div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Arrivée</label><input id="sf-new-to" class="text-input walk-places-input" type="text" placeholder="Adresse d'arrivée" style="font-size:12px;" autocomplete="off"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-<div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-new-dist" type="number" placeholder="0" step="0.1" min="0"></div>
-<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-new-dur" type="number" placeholder="0" min="1"></div>
-<div class="input-box" style="margin:0;"><label>Kcal (auto)</label><input id="sf-new-kcal" type="number" placeholder="auto" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-new-dist" type="number" inputmode="decimal" placeholder="0" step="0.1" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-new-dur" type="number" inputmode="decimal" placeholder="0" min="1"></div>
+<div class="input-box" style="margin:0;"><label>Kcal (auto)</label><input id="sf-new-kcal" type="number" inputmode="decimal" placeholder="auto" min="0"></div>
 </div>
 <div style="display:flex;gap:7px;">
 <button class="btn-cancel" style="flex:1;font-size:12px;" onclick="renderSportFavsContent()">Annuler</button>
@@ -7021,7 +7071,7 @@ function confirmCreateWalkFav() {
   const dist = parseFloat(document.getElementById('sf-new-dist')?.value) || 0;
   const dur  = parseFloat(document.getElementById('sf-new-dur')?.value) || 0;
   let kcal   = parseFloat(document.getElementById('sf-new-kcal')?.value) || 0;
-  if (!name || !dur) { alert('Nom et durée requis.'); return; }
+  if (!name || !dur) { showToast('Nom et durée requis.', 'error'); return; }
   if (!kcal) { const spd = dist && dur ? round1(dist/(dur/60)) : 5; kcal = calcWalkKcal(spd, dur); }
   walkFavorites.unshift({ name, from, to, roundtrip: false, distance: dist, duration: dur, kcal });
   saveSettingsLocal(); pushSettingsRemote();
@@ -7034,9 +7084,9 @@ function openCreateBikeFav() {
 <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;">+ Nouvelle sortie vélo</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-new-name" class="text-input" type="text" placeholder="Ex : Tour du parc" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-<div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-new-speed" type="number" placeholder="18" step="0.5" min="0"></div>
-<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-new-dur" type="number" placeholder="0" min="1"></div>
-<div class="input-box" style="margin:0;"><label>Kcal (auto)</label><input id="sf-new-kcal" type="number" placeholder="auto" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-new-speed" type="number" inputmode="decimal" placeholder="18" step="0.5" min="0"></div>
+<div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-new-dur" type="number" inputmode="decimal" placeholder="0" min="1"></div>
+<div class="input-box" style="margin:0;"><label>Kcal (auto)</label><input id="sf-new-kcal" type="number" inputmode="decimal" placeholder="auto" min="0"></div>
 </div>
 <div style="display:flex;gap:7px;">
 <button class="btn-cancel" style="flex:1;font-size:12px;" onclick="renderSportFavsContent()">Annuler</button>
@@ -7050,7 +7100,7 @@ function confirmCreateBikeFav() {
   const speed = parseFloat(document.getElementById('sf-new-speed')?.value) || 18;
   const dur   = parseFloat(document.getElementById('sf-new-dur')?.value) || 0;
   let kcal    = parseFloat(document.getElementById('sf-new-kcal')?.value) || 0;
-  if (!name || !dur) { alert('Nom et durée requis.'); return; }
+  if (!name || !dur) { showToast('Nom et durée requis.', 'error'); return; }
   if (!kcal) kcal = calcBikeKcal(speed, dur);
   bikeFavorites.unshift({ name, speed, duration: dur, kcal });
   saveSettingsLocal(); pushSettingsRemote();
@@ -7410,7 +7460,7 @@ function confirmBarcodeProduct() {
   const pr = parseFloat(document.getElementById('bc-prot').value) || 0;
   const gl = parseFloat(document.getElementById('bc-gluc').value) || 0;
   const lp = parseFloat(document.getElementById('bc-lip').value) || 0;
-  if (!name) { alert('Nom requis'); return; }
+  if (!name) { showToast('Nom requis', 'error'); return; }
   closeBarcodeScanner();
   if (barcodeTarget === 'main') { fillFood(name, k, pr, gl, lp); }
   else if (barcodeTarget === 'recipe') { fillRecipeIngredient(name, k, pr, gl, lp); }
@@ -7536,13 +7586,13 @@ function _rebuildIngredientTable() {
   const rows = _aiIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
-      <input type="number" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
+      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
         onchange="_ingChange(${i},'qty',this.value)" title="Grammes">
       <span style="font-size:10px;color:var(--muted);">g</span>
-      <input type="number" style="width:58px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1"
+      <input type="number" inputmode="decimal" style="width:58px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1"
         onchange="_ingChange(${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
-      <input type="number" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
+      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
         onchange="_ingChange(${i},'kcalTotal',this.value)" title="kcal total">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
     </div>`).join('');
@@ -7859,7 +7909,7 @@ function toggleVoiceInput() {
   const btn = document.getElementById('ai-voice-btn');
   const inp = document.getElementById('ai-input');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert('Reconnaissance vocale non supportée sur ce navigateur.'); return; }
+  if (!SR) { showToast('Reconnaissance vocale non supportée sur ce navigateur.', 'error'); return; }
   if (_voiceActive && _voiceRecognition) {
     _voiceRecognition.stop();
     return;
@@ -8113,13 +8163,13 @@ async function saveAIEntryAsFavorite() {
   const prot_100 = parseFloat(document.getElementById('ai-p').value) || 0;
   const gluc_100 = parseFloat(document.getElementById('ai-g').value) || 0;
   const lip_100  = parseFloat(document.getElementById('ai-l').value) || 0;
-  if (!name || kcal_100 <= 0) { alert('Aucun aliment à sauvegarder.'); return; }
+  if (!name || kcal_100 <= 0) { showToast('Aucun aliment à sauvegarder.', 'error'); return; }
   btn.textContent = '⏳ Sauvegarde...'; btn.disabled = true;
   let existing = customFoods.find(f => f.name.toLowerCase() === name.toLowerCase());
   let foodId = existing ? existing.id : null;
   if (!foodId) {
     const { data: inserted, error } = await sb.from('custom_foods').insert([{ user_id: user.id, name, kcal_100, prot_100, gluc_100, lip_100 }]).select().single();
-    if (error || !inserted) { btn.textContent = '⭐ Sauvegarder en favori'; btn.disabled = false; alert('Erreur : ' + (error?.message || 'inconnue')); return; }
+    if (error || !inserted) { btn.textContent = '⭐ Sauvegarder en favori'; btn.disabled = false; showToast('Erreur : ' + (error?.message || 'inconnue'), 'error'); return; }
     foodId = inserted.id;
     await loadCustomFoods();
   }
@@ -8157,9 +8207,9 @@ function openAIWalkFavForm(p) {
       <input id="ai-wf-name" class="text-input" type="text" value="${defaultName}" style="font-size:12px;">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-      <div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="ai-wf-dist" type="number" value="${dist}" step="0.1" min="0"></div>
-      <div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="ai-wf-dur" type="number" value="${dur}" min="1"></div>
-      <div class="input-box" style="margin:0;"><label>Kcal</label><input id="ai-wf-kcal" type="number" value="${kcal}" min="0"></div>
+      <div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="ai-wf-dist" type="number" inputmode="decimal" value="${dist}" step="0.1" min="0"></div>
+      <div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="ai-wf-dur" type="number" inputmode="decimal" value="${dur}" min="1"></div>
+      <div class="input-box" style="margin:0;"><label>Kcal</label><input id="ai-wf-kcal" type="number" inputmode="decimal" value="${kcal}" min="0"></div>
     </div>
     <div style="display:flex;gap:7px;">
       <button class="btn-cancel" style="flex:1;font-size:12px;" onclick="document.getElementById('${formId}').remove()">Annuler</button>
@@ -8209,7 +8259,7 @@ async function exportCSV() {
   else { start = startOfYear(now); end = endOfYear(now); }
   const startStr = dateToStr(start), endStr = dateToStr(end);
   const { data } = await sb.from('entries').select('*').eq('user_id', user.id).gte('date', startStr).lte('date', endStr).order('date', { ascending: true });
-  if (!data || !data.length) { alert('Aucune donnée sur cette période.'); return; }
+  if (!data || !data.length) { showToast('Aucune donnée sur cette période.', 'info'); return; }
   const BOM = '\uFEFF';
   const header = 'Date;Repas;Type;Description;Valeur (kcal);Protéines (g);Glucides (g);Lipides (g)\n';
   const rows = data.map(e => `${e.date};${e.category};${e.type === 'burn' ? 'Sport' : 'Aliment'};${e.desc || ''};${e.val || 0};${e.prot || 0};${e.gluc || 0};${e.lip || 0}`).join('\n');
@@ -8715,7 +8765,7 @@ async function saveAIEntryToBase() {
   const prot_100 = parseFloat(document.getElementById('ai-p').value) || 0;
   const gluc_100 = parseFloat(document.getElementById('ai-g').value) || 0;
   const lip_100  = parseFloat(document.getElementById('ai-l').value) || 0;
-  if (!name || kcal_100 <= 0) { alert('Aucun aliment à sauvegarder.'); return; }
+  if (!name || kcal_100 <= 0) { showToast('Aucun aliment à sauvegarder.', 'error'); return; }
   const btn = document.getElementById('ai-save-base-btn');
   btn.textContent = '⏳'; btn.disabled = true;
   // Check if already exists
@@ -8729,7 +8779,7 @@ async function saveAIEntryToBase() {
     user_id: user.id, name, kcal_100, prot_100, gluc_100, lip_100,
     unit_label: 'g', unit_g: 1, default_qty: parseFloat(document.getElementById('ai-qty').value) || 100
   }]).select().single();
-  if (error || !inserted) { btn.textContent = '📦 Base'; btn.disabled = false; alert('Erreur.'); return; }
+  if (error || !inserted) { btn.textContent = '📦 Base'; btn.disabled = false; showToast('Erreur.', 'error'); return; }
   await loadCustomFoods();
   btn.textContent = '✅ Ajouté !';
   btn.style.background = 'rgba(61,214,140,0.15)'; btn.style.color = 'var(--green)';
@@ -8750,7 +8800,7 @@ async function saveEntryAsFavorite(entryId) {
 
 
 function openBaseOnRecipePicker() {
-  if (!savedRecipes.length) { alert('Aucune recette existante.'); return; }
+  if (!savedRecipes.length) { showToast('Aucune recette existante.', 'info'); return; }
   _recipePickerFromAdd = false;
   const inp = document.getElementById('recipe-picker-search');
   if (inp) inp.value = '';
@@ -8790,6 +8840,50 @@ function openRecipeAIModal() {
 
 // Retour haptique léger (Android uniquement)
 function haptic(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+
+// ── Toast unifié (remplace alert()) ──────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const colors = { success: 'var(--green)', error: 'var(--danger)', info: 'var(--accent)' };
+  const color = colors[type] || colors.info;
+  document.querySelectorAll('.app-toast').forEach(t => t.remove());
+  const toast = document.createElement('div');
+  toast.className = 'app-toast';
+  toast.textContent = message;
+  toast.style.cssText = `position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid ${color};color:${color};padding:11px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:500;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:88vw;text-align:center;white-space:pre-line;`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.transition = 'opacity 0.25s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 250); }, type === 'error' ? 3200 : 2400);
+}
+
+// ── Confirmation stylée (remplace confirm()) — retourne une Promise<boolean> ──
+function showConfirm(message, opts = {}) {
+  return new Promise(resolve => {
+    document.querySelectorAll('.app-confirm-overlay').forEach(o => o.remove());
+    const danger = !!opts.danger;
+    const okLabel = opts.confirmLabel || (danger ? '🗑️ Supprimer' : 'Confirmer');
+    const cancelLabel = opts.cancelLabel || 'Annuler';
+    const overlay = document.createElement('div');
+    overlay.className = 'app-confirm-overlay';
+    overlay.innerHTML = `<div class="app-confirm-sheet">
+      <div class="app-confirm-msg">${String(message).replace(/\n/g,'<br>')}</div>
+      <button class="${danger ? 'btn-danger' : 'btn-primary'}" data-act="ok">${okLabel}</button>
+      <button class="btn-cancel" data-act="cancel">${cancelLabel}</button>
+    </div>`;
+    document.body.appendChild(overlay);
+    document.body.classList.add('modal-open');
+    requestAnimationFrame(() => overlay.classList.add('open'));
+    function close(result) {
+      overlay.classList.remove('open');
+      document.body.classList.remove('modal-open');
+      setTimeout(() => overlay.remove(), 200);
+      resolve(result);
+    }
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) return close(false);
+      const act = e.target.closest('[data-act]');
+      if (act) close(act.dataset.act === 'ok');
+    });
+  });
+}
 
 // ── Gestion offline ──────────────────────────────────────────────────────────
 (function() {
@@ -9014,7 +9108,7 @@ document.addEventListener('touchmove', (e) => {
 <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">📏 Dose par défaut</div>
 <div id="dose-fav-name" style="font-size:12px;color:var(--muted);margin-bottom:16px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;align-items:end;margin-bottom:14px;">
-<div class="input-box" style="margin:0;"><label>Quantité</label><input id="dose-fav-qty" type="number" value="100" min="0.1" step="0.1"></div>
+<div class="input-box" style="margin:0;"><label>Quantité</label><input id="dose-fav-qty" type="number" inputmode="decimal" value="100" min="0.1" step="0.1"></div>
 <div class="input-box" style="margin:0;"><label>Unité</label>
 <select id="dose-fav-unit" onchange="onDoseFavUnitChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text);outline:none;">
 <option value="g">g</option><option value="ml">ml</option><option value="cl">cl</option>
@@ -9022,7 +9116,7 @@ document.addEventListener('touchmove', (e) => {
 </select></div>
 <div class="input-box" style="margin:0;" id="dose-fav-g-wrap" style="display:none;">
 <label>= <span id="dose-fav-g-label">g</span></label>
-<input id="dose-fav-unit-g" type="number" value="1" min="0.1" step="0.1" style="opacity:0.5;pointer-events:none;">
+<input id="dose-fav-unit-g" type="number" inputmode="decimal" value="1" min="0.1" step="0.1" style="opacity:0.5;pointer-events:none;">
 </div>
 </div>
 <div id="dose-fav-hint" style="font-size:10px;color:var(--muted);margin-bottom:14px;display:none;"></div>
