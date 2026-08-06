@@ -1130,6 +1130,18 @@ line-height: 1.5;
 text-align: center;
 margin-bottom: 20px;
 }
+/* Petits boutons "×" (effacer recherche, supprimer une ligne/étape) : icône compacte
+   mais zone de tap élargie à ~40px via une zone invisible, pour rester tapable
+   sans agrandir visuellement l'icône dans des listes/rangées serrées. */
+.icon-x-btn {
+position: relative;
+touch-action: manipulation;
+}
+.icon-x-btn::before {
+content: '';
+position: absolute;
+inset: -12px;
+}
 [data-theme="light"] .btn-cancel {
   background: rgba(0,0,0,0.04);
   border-color: rgba(0,0,0,0.1);
@@ -1696,13 +1708,16 @@ font-size: 14px;
 font-weight: 700;
 }
 .weight-entry-del {
+position: relative;
 background: none;
 border: none;
 color: var(--border2);
 font-size: 13px;
 cursor: pointer;
 padding: 2px;
+touch-action: manipulation;
 }
+.weight-entry-del::before { content: ''; position: absolute; inset: -12px; }
 .weight-entry-del:hover { color: var(--danger); }
 .weight-entry-edit {
 background: none;
@@ -2054,7 +2069,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <div style="position:relative;margin-bottom:10px;">
 <input id="recipe-search" class="search-input" type="text" placeholder="🔍 Rechercher par nom ou ingrédient…" oninput="renderRecipesPage()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
-<button onclick="clearRecipeSearch()" id="recipe-search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
+<button onclick="clearRecipeSearch()" id="recipe-search-clear" class="icon-x-btn" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
 <div id="recipe-search-count" style="font-size:11px;color:var(--muted);margin-bottom:8px;display:none;"></div>
 <div id="recipes-list" class="recipes-list"></div>
@@ -2130,7 +2145,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div class="walk-addr-row" style="position:relative;">
 <input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;" onfocus="_activeWalkStep=1">
-<button onclick="removeWalkStep(this)" class="step-remove-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+<button onclick="removeWalkStep(this)" class="step-remove-btn icon-x-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
 </div>
 </div>
@@ -2349,7 +2364,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div id="recipe-picker-list" style="margin-bottom:8px;"></div>
 <div style="position:relative;margin-bottom:10px;">
 <input id="recipe-picker-search" class="search-input" type="text" placeholder="🔍 Rechercher une recette…" oninput="renderRecipePicker(_recipePickerFromAdd)" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
-<button onclick="clearRecipePickerSearch()" id="recipe-picker-search-clear" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
+<button onclick="clearRecipePickerSearch()" id="recipe-picker-search-clear" class="icon-x-btn" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
 </div>
 </div>
@@ -2422,7 +2437,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 
 <div style="position:relative;margin-bottom:8px;">
 <input id="aliments-search" class="search-input" type="text" placeholder="🔍 Rechercher…" oninput="const ciqualVisible=document.getElementById('ciqual-list')?.style.display!=='none';ciqualVisible?renderCiqualList():renderAlimentsList()" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:32px;">
-<button onclick="document.getElementById('aliments-search').value='';renderAlimentsList();" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;" id="aliments-search-clear">✕</button>
+<button onclick="document.getElementById('aliments-search').value='';renderAlimentsList();" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;" class="icon-x-btn" id="aliments-search-clear">✕</button>
 <div id="aliments-search-results" style="position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;display:none;background:var(--surface);border:1px solid var(--border2);border-radius:16px;max-height:260px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,0.5);"></div>
 </div>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="aliments-actions">
@@ -4527,7 +4542,7 @@ el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
 </div>
-<button onclick="event.stopPropagation();deleteWalkFav(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+<button onclick="event.stopPropagation();deleteWalkFav(${i})" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
 </div>`).join('');
 // Drag & drop reorder
 let dragIdx = null;
@@ -4604,7 +4619,7 @@ function addWalkStep() {
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
   row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}">
-    <button onclick="removeWalkStep(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>`;
+    <button onclick="removeWalkStep(this)" class="icon-x-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>`;
   // Insert before last step
   const lastRow = steps[steps.length - 1].closest('.walk-addr-row');
   container.insertBefore(row, lastRow);
@@ -4852,7 +4867,7 @@ const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class=
 </div>
 <div class="food-item-actions">
 <button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})">✎</button>
-<button class="food-btn danger" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
+<button class="food-btn danger icon-x-btn" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
 </div>
 </div>`).join('') : '';
 el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;" id="bike-favs-drag-list">
@@ -6109,7 +6124,7 @@ function renderSleepHistory() {
       <div style="display:flex;align-items:center;gap:8px;">
         <div style="font-size:16px;font-weight:800;color:${col};">${fmtSleepDur(e.duration_min)}</div>
         <button onclick="editSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✎</button>
-        <button onclick="deleteSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>
+        <button onclick="deleteSleepEntry('${e.id}')" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>
       </div>
     </div>`;
   }).join('');
