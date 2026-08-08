@@ -2191,7 +2191,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div class="inputs-grid" id="bike-machine-row" style="display:none;">
 <div class="input-box"><label>Kcal affichées sur le vélo</label><input id="in-bike-machine-kcal" type="number" inputmode="decimal" placeholder="0" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
-<div class="input-box"><label>Poids réf. machine (kg)</label><input id="in-bike-ref-weight" type="number" inputmode="decimal" value="75" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+<div class="input-box"><label>Correction (%)</label><input id="in-bike-correction" type="number" inputmode="decimal" value="25" min="0" max="60" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 </div>
 <div id="bike-machine-note" style="display:none;font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;"></div>
 <div class="inputs-grid" id="speed-row" style="display:none;">
@@ -4876,8 +4876,8 @@ document.getElementById('walk-advanced').style.display = 'none';
 currentWalkFavName = '';
 document.getElementById('bike-mode-tabs').style.display = 'grid';
 document.getElementById('in-bike-machine-kcal').value = '';
-document.getElementById('in-bike-ref-weight').value = localStorage.getItem('bt_bike_ref_weight') || '75';
-setBikeMode('speed');
+document.getElementById('in-bike-correction').value = localStorage.getItem('bt_bike_correction') || '25';
+setBikeMode('machine');
 renderBikeFavsInModal();
 recalc();
 }
@@ -4895,17 +4895,16 @@ function onBikeMachineKcalInput() {
 const noteEl = document.getElementById('bike-machine-note');
 if (currentBikeMode !== 'machine') { recalc(); return; }
 const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').value) || 0;
-const refWeight = parseFloat(document.getElementById('in-bike-ref-weight').value) || 75;
-localStorage.setItem('bt_bike_ref_weight', refWeight);
+const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
+localStorage.setItem('bt_bike_correction', correction);
 const durMin = parseFloat(document.getElementById('in-qty').value) || 0;
-const w = getCurrentWeight();
 if (machineKcal > 0 && durMin > 0) {
-  const adjustedTotal = machineKcal * (w / refWeight);
+  const adjustedTotal = machineKcal * (1 - correction / 100);
   bikeMachineKcalPerHour = Math.round(adjustedTotal / (durMin / 60));
-  noteEl.innerHTML = `${machineKcal} kcal affichées → <strong style="color:var(--text);">${Math.round(adjustedTotal)} kcal</strong> ajustées à ton poids (le vélo suppose ${refWeight}kg, toi ${w}kg). Reste une estimation : les compteurs de vélo surestiment souvent de 20 à 40 % — ajuste le poids de référence si besoin.`;
+  noteEl.innerHTML = `${machineKcal} kcal affichées → <strong style="color:var(--text);">${Math.round(adjustedTotal)} kcal</strong> (−${correction}%). Sur un vélo assis, la dépense dépend surtout de la puissance (résistance × cadence), pas de ton poids — les compteurs d'entrée de gamme surestiment généralement de 20 à 30 %. Ajuste le % si besoin.`;
 } else {
   bikeMachineKcalPerHour = 0;
-  noteEl.innerHTML = `Indique les kcal affichées sur ton vélo : elles seront ajustées à ton poids réel (le compteur suppose un poids générique, pas le tien).`;
+  noteEl.innerHTML = `Indique les kcal affichées sur ton vélo : une correction (surestimation typique des compteurs d'entrée de gamme) sera appliquée.`;
 }
 recalc();
 }
@@ -4949,6 +4948,7 @@ el.querySelectorAll('[data-idx]').forEach(item => {
 function loadBikeFav(i) {
 const f = bikeFavorites[i];
 if (!f) return;
+setBikeMode('speed');
 currentWalkFavName = f.name;
 document.getElementById('in-qty').value = f.duration;
 document.getElementById('in-kcal').value = f.speed;
@@ -4995,8 +4995,8 @@ const q = parseFloat(document.getElementById('in-qty').value) || 0;
 const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
 if (currentCat === 'Sport' && currentBikeMode === 'machine' && document.getElementById('in-desc').value.trim().toLowerCase() === 'vélo') {
   const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').value) || 0;
-  const refWeight = parseFloat(document.getElementById('in-bike-ref-weight').value) || 75;
-  bikeMachineKcalPerHour = (machineKcal > 0 && q > 0) ? Math.round(machineKcal * (getCurrentWeight() / refWeight) / (q / 60)) : 0;
+  const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
+  bikeMachineKcalPerHour = (machineKcal > 0 && q > 0) ? Math.round(machineKcal * (1 - correction / 100) / (q / 60)) : 0;
 }
 const k = getEffectiveKcal();
 const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
@@ -5013,7 +5013,8 @@ document.getElementById('in-distance').value = dist + ' km';
 document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 } else if (isSport && desc === 'vélo') {
 if (currentBikeMode === 'machine') {
-  document.getElementById('calc-sub').textContent = `Ajusté à ton poids · ${k} kcal/h (${getCurrentWeight()}kg)`;
+  const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
+  document.getElementById('calc-sub').textContent = `Correction −${correction}% · ${k} kcal/h`;
 } else {
   document.getElementById('calc-sub').textContent = `${raw || 0} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 }
@@ -7221,6 +7222,7 @@ if (!f) return;
 closeSportFavsModal();
 openModal('Sport');
 selectBikeMode();
+setBikeMode('speed');
 document.getElementById('in-qty').value = f.duration;
 document.getElementById('in-kcal').value = f.speed;
 currentWalkFavName = f.name;
