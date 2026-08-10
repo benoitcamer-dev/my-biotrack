@@ -5114,6 +5114,11 @@ async function submitEntry() {
 if (_isSubmitting) return;
 _isSubmitting = true;
 try {
+// Pré-autoriser Google Calendar depuis ce clic direct (avant tout await), sinon le popup est bloqué
+const _isBikeClick = currentCat === 'Sport' && document.getElementById('in-desc').value.trim().toLowerCase() === 'vélo';
+if (_isBikeClick && !editingId && gcalIsConfigured()) {
+  try { await gcalPreAuth(); } catch(e) { console.warn('gcal pre-auth:', e); }
+}
 const { data: { user } } = await sb.auth.getUser();
 if (!user) { _isSubmitting = false; return; }
 const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
@@ -5134,6 +5139,7 @@ const unitDisplay = isSport ? 'min' : (_currentFoodUnit ? _currentFoodUnit.label
 let descName = document.getElementById('in-desc').value.trim();
 if (!descName) { document.getElementById('in-desc').focus(); return; }
 let descFinal;
+let bikeLabel = null;
 if (isSport) {
 const dl = descName.toLowerCase();
 if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
@@ -5157,6 +5163,7 @@ const dist = round1(spd * (q / 60));
 descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'vélo') {
 const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
+bikeLabel = label;
 if (currentBikeMode === 'machine') {
   const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').value) || 0;
   descFinal = `🚴 ${label} (${q}min · ${machineKcal}kcal machine → ${val}kcal ajusté)`;
@@ -5211,11 +5218,16 @@ qty: isSport ? null : q,
 kcal_100: isSport ? null : parseFloat(document.getElementById('in-kcal').value) || null,
 date: document.getElementById('in-entry-date').value || journalDateStr()
 };
-let error = null;
+let error = null, insertedEntryId = null;
 if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
-else { const res = await sb.from('entries').insert([payload]); error = res.error; }
+else { const res = await sb.from('entries').insert([payload]).select('id').single(); error = res.error; insertedEntryId = res.data?.id || null; }
 if (error) { console.error(error); showToast('Erreur : ' + error.message, 'error'); _isSubmitting = false; return; }
 haptic(10);
+// Ajout manuel d'une sortie vélo -> synchro Google Agenda (comme pour les favoris vélo)
+if (!editingId && isSport && descName.trim().toLowerCase() === 'vélo') {
+  const _bikeEntryDate = document.getElementById('in-entry-date').value || journalDateStr();
+  await addBikeToGoogleCalendar(bikeLabel || descName, q, Math.round(val), strToDate(_bikeEntryDate), insertedEntryId);
+}
 // Naviguer vers la date de l'entrée si différente du jour affiché
 const _entryDate = document.getElementById('in-entry-date').value;
 if (_entryDate && _entryDate !== journalDateStr()) {
