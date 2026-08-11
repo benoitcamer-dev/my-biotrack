@@ -3516,6 +3516,7 @@ html += `<div class="cal-day${isT ? ' today' : ''}${isS ? ' selected' : ''}" onc
 document.getElementById('cal-grid').innerHTML = html;
 }
 function selectCalDate(ds) { journalDate = strToDate(ds); localStorage.setItem('bt_journal_date', ds); updateJournalDateUI(); closeCalendar(); loadData(); }
+function goToJournalDate(ds) { journalDate = strToDate(ds); localStorage.setItem('bt_journal_date', ds); updateJournalDateUI(); showPage('journal'); loadData(); }
 async function loadCustomFoods() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('custom_foods').select('*').eq('user_id', user.id).order('created_at', { ascending: false }); customFoods = data || []; } catch (e) { console.error(e); }
 }
@@ -6032,13 +6033,17 @@ for (let w = minW; w <= maxW; w += 5) {
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
   const label = e.weight + ' kg \u2014 ' + formatDateFR(e.date, { day: 'numeric', month: 'short' });
-  const tx = cx > W - 80 ? cx - 4 : cx + 4;
-  const anchor = cx > W - 80 ? 'end' : 'start';
-  const rectX = anchor === 'end' ? (tx - 124) : (tx - 4);
+  // Largeur de l'étiquette calculée dynamiquement (au lieu d'une largeur fixe qui pouvait
+  // ne pas correspondre au texte réel) puis bornée pour ne jamais sortir du graphique.
+  const labelW = Math.max(50, label.length * 6.3 + 10);
+  let boxX = cx + 10;
+  if (boxX + labelW > W - 2) boxX = cx - 10 - labelW;
+  boxX = Math.max(2, Math.min(boxX, W - labelW - 2));
+  const textX = boxX + 6;
   return '<g style="cursor:pointer">'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/>'
-    + '<rect id="wlbl-bg' + i + '" x="' + rectX + '" y="' + (cy - 22) + '" width="120" height="16" rx="4" fill="rgba(20,22,35,0.75)" opacity="0" pointer-events="none"/>'
-    + '<text id="wlbl' + i + '" x="' + tx + '" y="' + (cy - 10) + '" text-anchor="' + anchor + '" fill="#ffffff" font-size="11" font-weight="600" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
+    + '<rect id="wlbl-bg' + i + '" x="' + boxX + '" y="' + (cy - 22) + '" width="' + labelW + '" height="16" rx="4" fill="rgba(20,22,35,0.75)" opacity="0" pointer-events="none"/>'
+    + '<text id="wlbl' + i + '" x="' + textX + '" y="' + (cy - 10) + '" text-anchor="start" fill="#ffffff" font-size="11" font-weight="600" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
     + '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent"'
     + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
     + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
@@ -8451,64 +8456,86 @@ function renderBilanChart(values, goal, range) {
   const W = 360, H = 170, PL = 42, PR = 12, PT = 16, PB = 32;
 
   // For month/quarter/year: group by appropriate unit
-  let chartData = []; // [{label, food, isEmpty}]
+  let chartData = []; // [{label, food, isEmpty, navDate}]
   if (range === 'week') {
     chartData = values.map(([date, v]) => ({
       label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
-      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
+      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner')),
+      navDate: date
     }));
   } else if (range === 'month') {
     chartData = values.map(([date, v]) => ({
       label: new Date(date + 'T12:00:00').getDate().toString(),
-      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner'))
+      food: v.food, isEmpty: !(v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner')),
+      navDate: date
     }));
   } else if (range === 'quarter') {
-    // Group by week
+    // Group par semaine ISO (lundi→dimanche) — reste cohérent même à cheval sur 2 mois,
+    // et donne une vraie date de départ pour l'étiquette + la navigation.
     const weeks = {};
+    const weekOrder = [];
     values.forEach(([date, v]) => {
       const d = new Date(date + 'T12:00:00');
-      const wk = Math.ceil((d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7);
-      const key = `${d.getFullYear()}-${d.getMonth()}-W${wk}`;
-      if (!weeks[key]) weeks[key] = { food: 0, days: 0, label: 'S' + Object.keys(weeks).length };
+      const wkStart = startOfWeek(d);
+      const key = dateToStr(wkStart);
+      if (!weeks[key]) { weeks[key] = { food: 0, days: 0, start: key }; weekOrder.push(key); }
       const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
       if (full) { weeks[key].food += v.food; weeks[key].days++; }
     });
-    chartData = Object.values(weeks).map((w, i) => ({
-      label: 'S' + (i + 1), food: w.days > 0 ? Math.round(w.food / w.days) : 0, isEmpty: w.days === 0
-    }));
+    chartData = weekOrder.map(key => {
+      const w = weeks[key];
+      return {
+        label: formatDateFR(w.start, { day: 'numeric', month: 'short' }),
+        food: w.days > 0 ? Math.round(w.food / w.days) : 0, isEmpty: w.days === 0,
+        navDate: w.start
+      };
+    });
   } else {
     // Year: group by month
     const months = {};
+    const monthOrder = [];
     values.forEach(([date, v]) => {
       const d = new Date(date + 'T12:00:00');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (!months[key]) months[key] = { food: 0, days: 0, label: d.toLocaleDateString('fr-FR', { month: 'short' }) };
+      if (!months[key]) { months[key] = { food: 0, days: 0, label: d.toLocaleDateString('fr-FR', { month: 'short' }), navDate: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01` }; monthOrder.push(key); }
       const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
       if (full) { months[key].food += v.food; months[key].days++; }
     });
-    chartData = Object.values(months).map(m => ({
-      label: m.label, food: m.days > 0 ? Math.round(m.food / m.days) : 0, isEmpty: m.days === 0
-    }));
+    chartData = monthOrder.map(key => {
+      const m = months[key];
+      return { label: m.label, food: m.days > 0 ? Math.round(m.food / m.days) : 0, isEmpty: m.days === 0, navDate: m.navDate };
+    });
   }
 
   const foods = chartData.map(d => d.food);
   const maxVal = Math.max(...foods, goal, 100);
   const n = chartData.length;
-  const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
-  const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
+  const slotW = (W - PL - PR) / n;
+  const barW = Math.max(4, Math.floor(slotW - 2));
+  const xs = (i) => PL + (i + 0.5) * slotW;
   const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(goal);
 
+  // Étiquettes de l'axe X : n'en afficher qu'autant que la largeur permet, pour éviter
+  // qu'elles se chevauchent (ex: "S1S2S3..." ou "123456789101112...").
+  const maxLabelChars = Math.max(1, ...chartData.map(d => d.label.length));
+  const estLabelW = Math.max(16, maxLabelChars * 6);
+  const labelSkip = n <= 31 ? Math.max(1, Math.ceil(estLabelW / slotW)) : Infinity;
+
   const trendLine = ''; // trend line removed
 
-  // Bars
+  // Bars — chacune est cliquable et amène au journal du jour/semaine/mois concerné
   const bars = chartData.map((d, i) => {
-    const cx = xs(i), showLabel = n <= 31;
+    const cx = xs(i), showLabel = n <= 31 && (labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0);
     const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
-    return `<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 12 : 14}" font-family="Plus Jakarta Sans">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${fmtNum(d.food)}</text>` : ''}`;
+    const hitX = cx - slotW/2;
+    return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
+<rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
+<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
+${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${fmtNum(d.food)}</text>` : ''}
+</g>`;
   }).join('');
 
   // Y axis — nice round ticks
@@ -8527,6 +8554,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
       ${bars}
     </svg>
+    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Touche une barre pour ouvrir le journal du jour concerné.</div>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;">
       <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span><span style="color:#ef4444;margin-left:auto;">— objectif : ${goal} kcal</span>
     </div>`;
