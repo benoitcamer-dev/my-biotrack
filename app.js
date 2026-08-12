@@ -3190,17 +3190,25 @@ function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
 if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="13" font-family="Inter">Ajoute au moins 2 entrées.</text>'; return; }
 const allW = weightEntries.map(e => e.weight);
-const minW = 70, maxW = 100;
+// Échelle Y dynamique : avant, la plage était fixée en dur à 70-100kg, ce qui écrasait
+// les vraies variations (ou pire, coupait carrément les points hors de cette plage).
+const rawMin = Math.min(...allW), rawMax = Math.max(...allW);
+const pad = Math.max(2, (rawMax - rawMin) * 0.15);
+const minW = Math.floor((rawMin - pad) / 5) * 5;
+const maxW = Math.ceil((rawMax + pad) / 5) * 5;
+const range = maxW - minW;
+const gridStep = range <= 15 ? 2 : range <= 30 ? 5 : range <= 60 ? 10 : 20;
 const W = 400, H = 160, P = 32;
 const xs = function(i) { return (i / (weightEntries.length - 1)) * (W - P * 2) + P; };
 // Inverted Y: higher weight = lower on chart (top = maxW, bottom = minW)
 const ys = function(v) { return P + ((maxW - v) / (maxW - minW)) * (H - P * 2); };
-const pts = weightEntries.map(function(e, i) { return xs(i) + ',' + ys(e.weight); }).join(' ');
+const ptsArr = weightEntries.map(function(e, i) { return [xs(i), ys(e.weight)]; });
+const pts = ptsArr.map(p => p.join(',')).join(' ');
 document.getElementById('y-axis-min').textContent = minW;
 document.getElementById('y-axis-max').textContent = maxW;
-// Y-axis gridlines every 5kg
+// Y-axis gridlines, pas adapté à l'amplitude réelle des données
 const gridLines = [];
-for (let w = minW; w <= maxW; w += 5) {
+for (let w = minW; w <= maxW; w += gridStep) {
   const y = ys(w);
   gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
   gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="13" font-family="Inter">' + w + '</text>');
@@ -3240,12 +3248,31 @@ const tx0 = xs(0), ty0 = ys(intercept);
 const tx1 = xs(n-1), ty1 = ys(slope*(n-1)+intercept);
 svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>'
   + gridLines.join('')
-  + '<polygon class="wchart-area" points="' + P + ',' + (H - P) + ' ' + pts + ' ' + (W - P) + ',' + (H - P) + '" fill="url(#wg)"/>'
-  + '<polyline class="wchart-line" points="' + pts + '" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+  + '<path class="wchart-area" d="' + smoothAreaPath(ptsArr, P, H - P, W - P) + '" fill="url(#wg)"/>'
+  + '<path class="wchart-line" d="' + smoothLinePath(ptsArr) + '" fill="none" stroke="#5b7fff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
   + '<line x1="' + tx0 + '" y1="' + ty0 + '" x2="' + tx1 + '" y2="' + ty1 + '" stroke="' + (slope < 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>'
   + dots
   + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
   + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
+enableChartZoom(svg);
+}
+// Lisse une courbe (Catmull-Rom → Bézier) au lieu de segments droits, pour un rendu plus doux.
+function smoothLinePath(points) {
+  if (points.length < 3) return 'M' + points.map(p => p.join(',')).join('L');
+  let d = 'M' + points[0][0] + ',' + points[0][1];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] || p2;
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ' C' + c1x + ',' + c1y + ' ' + c2x + ',' + c2y + ' ' + p2[0] + ',' + p2[1];
+  }
+  return d;
+}
+function smoothAreaPath(points, baseY, x0, x1) {
+  return smoothLinePath(points) + ' L' + x1 + ',' + baseY + ' L' + x0 + ',' + baseY + ' Z';
 }
 function renderWeightHistory() {
 const el = document.getElementById('weight-history-list');
@@ -5766,6 +5793,68 @@ applyTheme(localStorage.getItem('theme') === 'light');
 // remonter en haut du contenu pour fermer un modal. Voir plus bas pour la version corrigée.
 
 
+// ── Zoom / pan tactile sur les graphiques SVG (pincer pour zoomer, glisser pour naviguer
+// une fois zoomé, double-tap pour réinitialiser). Zoom horizontal uniquement : c'est l'axe
+// temps/catégories qui intéresse, l'échelle verticale reste stable et lisible.
+function enableChartZoom(svg) {
+  if (!svg || svg._zoomBound) return;
+  svg._zoomBound = true;
+  svg.style.touchAction = 'pan-y';
+  const vbParts = (svg.getAttribute('viewBox') || '0 0 400 160').split(' ').map(Number);
+  const base = { x: vbParts[0], y: vbParts[1], w: vbParts[2], h: vbParts[3] };
+  const MIN_W = base.w * 0.2; // zoom max ≈ x5
+  let pinchStartDist = null, pinchStartVB = null, panStart = null, lastTap = 0;
+
+  function curVB() {
+    const p = svg.getAttribute('viewBox').split(' ').map(Number);
+    return { x: p[0], y: p[1], w: p[2], h: p[3] };
+  }
+  function setVB(x, w) {
+    const clampedW = Math.max(MIN_W, Math.min(base.w, w));
+    const clampedX = Math.max(base.x, Math.min(x, base.x + base.w - clampedW));
+    svg.setAttribute('viewBox', clampedX + ' ' + base.y + ' ' + clampedW + ' ' + base.h);
+  }
+
+  svg.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      pinchStartDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1;
+      pinchStartVB = curVB();
+    } else if (e.touches.length === 1) {
+      const vb = curVB();
+      panStart = (vb.w < base.w - 0.5) ? { x: e.touches[0].clientX, vb } : null;
+    }
+  }, { passive: true });
+
+  svg.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && pinchStartVB) {
+      const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1;
+      const scale = pinchStartDist / dist;
+      const newW = Math.max(MIN_W, Math.min(base.w, pinchStartVB.w * scale));
+      const rect = svg.getBoundingClientRect();
+      const midClientX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const focalX = pinchStartVB.x + (midClientX - rect.left) / rect.width * pinchStartVB.w;
+      const newX = focalX - (focalX - pinchStartVB.x) * (newW / pinchStartVB.w);
+      setVB(newX, newW);
+    } else if (e.touches.length === 1 && panStart) {
+      const vb = panStart.vb;
+      const rect = svg.getBoundingClientRect();
+      const dxClient = e.touches[0].clientX - panStart.x;
+      const dx = -dxClient / rect.width * vb.w;
+      setVB(vb.x + dx, vb.w);
+    }
+  }, { passive: true });
+
+  svg.addEventListener('touchend', e => {
+    if (e.touches.length < 2) pinchStartVB = null;
+    if (e.touches.length === 0) {
+      panStart = null;
+      const now = Date.now();
+      if (now - lastTap < 300) setVB(base.x, base.w); // double-tap : réinitialiser
+      lastTap = now;
+    }
+  });
+}
+
 function niceScale(maxVal, steps = 4) {
   // Returns array of nice round tick values from 0 to above maxVal
   const raw = maxVal / steps;
@@ -5876,15 +5965,16 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
     <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+    <svg id="bilan-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
       ${bars}
     </svg>
-    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Touche une barre pour ouvrir le journal du jour concerné.</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Pince pour zoomer · touche une barre pour ouvrir le journal du jour concerné.</div>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;">
       <span>🟢 Sous objectif</span><span>🔴 Au-dessus</span><span style="color:#ef4444;margin-left:auto;">— objectif : ${goal} kcal</span>
     </div>`;
+  enableChartZoom(document.getElementById('bilan-svg'));
 }
 
 
@@ -5967,7 +6057,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${finalLblY}" text-anchor="middle" fill="${lb
     <div style="margin-bottom:6px;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">⚖️ Bilan net / jour</div>
     </div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible;">
+    <svg id="bilan-net-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;overflow:visible;">
       ${yLabels}
       ${bars}
       ${cumulLine}
@@ -5976,6 +6066,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${finalLblY}" text-anchor="middle" fill="${lb
       <span style="color:#3dd68c;">🟢 Déficit jour</span>
       <span style="color:#ef4444;">🔴 Excédent jour</span>
     </div>`;
+  enableChartZoom(document.getElementById('bilan-net-svg'));
 }
 
 
@@ -6040,17 +6131,18 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="midd
 
   wrap.innerHTML = `
     <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="dumbbell" class="lc-icon"></i> Protéines / jour</div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
+    <svg id="bilan-prot-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
       <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="13" font-family="Inter" opacity="0.8">objectif ${protGoal}g</text>
       ${bars}
     </svg>
-    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Touche une barre pour ouvrir le journal du jour concerné.</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Pince pour zoomer · touche une barre pour ouvrir le journal du jour concerné.</div>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
       <span style="color:#3dd68c;">🟢 Objectif atteint</span>
       <span style="color:#ef4444;">🔴 Sous objectif</span>
     </div>`;
+  enableChartZoom(document.getElementById('bilan-prot-svg'));
 }
 
 async function changePassword() {
@@ -6480,28 +6572,17 @@ document.addEventListener('touchmove', (e) => {
     'modal-edit-weight': () => closeEditWeightModal(),
   };
 
-  // Vrai si la zone scrollable la plus proche entre `el` et `container` (incluse) est déjà tout en haut.
-  // Si aucune zone scrollable n'est trouvée, on considère qu'il n'y a rien à scroller → true.
-  function nearestScrollableIsAtTop(el, container) {
-    let node = el;
-    while (node) {
-      if (node.scrollHeight > node.clientHeight + 1) return node.scrollTop <= 0;
-      if (node === container) break;
-      node = node.parentElement;
-    }
-    return true;
-  }
-
   function initSwipe(sheet, closeFn) {
     let startY = 0, currentY = 0, startTime = 0, dragging = false;
-    const DRAG_DEADZONE = 10; // px : évite que le moindre frémissement près du haut ne fasse "trembler" la feuille
+    const DRAG_DEADZONE = 6; // px : petite marge pour absorber un frémissement au moment d'attraper la poignée
 
     sheet.addEventListener('touchstart', e => {
       const tag = e.target.tagName.toLowerCase();
       if (['input','select','textarea','button'].includes(tag)) return;
-      // Ne pas démarrer le geste si on est en train de scroller une liste interne
-      // non arrivée en haut (sinon le swipe-to-close entre en conflit avec le scroll).
-      if (!nearestScrollableIsAtTop(e.target, sheet)) { dragging = false; return; }
+      // Le geste ne démarre que depuis la poignée / la barre de titre, jamais depuis le corps
+      // scrollable : impossible de distinguer fiablement "je scrolle vers le haut de la liste"
+      // de "je veux fermer" quand les deux commencent par un glissement vers le bas au même endroit.
+      if (!e.target.closest('.modal-handle, .modal-title-row, .modal-sticky-header')) { dragging = false; return; }
       startY = e.touches[0].clientY;
       currentY = startY;
       startTime = Date.now();
@@ -6513,12 +6594,7 @@ document.addEventListener('touchmove', (e) => {
       if (!dragging) return;
       currentY = e.touches[0].clientY;
       const dy = currentY - startY;
-      if (dy < 0) { dragging = false; sheet.style.transform = ''; return; } // remonte : on annule, le scroll natif reprend
-      // Revérifier en continu : si la liste a bougé entre-temps (rebond élastique, etc.),
-      // on annule pour laisser le scroll natif reprendre la main.
-      if (!nearestScrollableIsAtTop(e.target, sheet)) { dragging = false; sheet.style.transform = ''; return; }
-      // Zone morte : un petit mouvement accidentel près du haut (ex: on tapote une quantité
-      // dans la liste d'ingrédients IA) ne doit pas faire visuellement bouger la feuille.
+      if (dy < 0) { dragging = false; sheet.style.transform = ''; return; } // remonte : on annule
       if (dy < DRAG_DEADZONE) { sheet.style.transform = ''; return; }
       sheet.style.transform = `translateY(${dy - DRAG_DEADZONE}px)`;
     }, { passive: true });
