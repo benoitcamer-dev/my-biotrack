@@ -16,6 +16,7 @@
 <link rel="shortcut icon" href="favicon.ico">
 <title>LeGrosBarbu</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -824,6 +825,78 @@ padding: 20px 18px 0;
 border-radius: 28px 28px 0 0;
 }
 [data-theme="light"] .modal-sticky-header { background: #FFFFFF; }
+.modal-sticky-footer {
+position: sticky;
+bottom: -40px;
+z-index: 8;
+background: var(--surface);
+margin: 16px -18px -40px;
+padding: 12px 18px 40px;
+border-top: 1px solid var(--border);
+}
+[data-theme="light"] .modal-sticky-footer { background: #FFFFFF; }
+
+/* ── Icônes (Lucide) ─────────────────────────────────────────────────────── */
+.lc-icon, [data-lucide] { width: 16px; height: 16px; stroke-width: 2.1; vertical-align: -3px; flex-shrink: 0; }
+.lc-icon-lg { width: 20px; height: 20px; }
+.lc-icon-sm { width: 14px; height: 14px; }
+
+/* ── Squelette de chargement ─────────────────────────────────────────────── */
+@keyframes skeletonPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+.skeleton-item {
+  height: 52px; border-radius: 11px; margin-bottom: 8px;
+  background: var(--surface2);
+  animation: skeletonPulse 1.1s ease-in-out infinite;
+}
+.skeleton-block { height: 16px; border-radius: 6px; background: var(--surface2); animation: skeletonPulse 1.1s ease-in-out infinite; }
+
+/* ── Boutons icône (cible tactile ≥44px) ─────────────────────────────────── */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; background: none; border: none;
+  color: var(--muted); cursor: pointer; border-radius: 10px; flex-shrink: 0;
+  touch-action: manipulation;
+}
+.icon-btn:active { background: rgba(124,111,255,0.14); }
+.icon-btn-danger:active { background: rgba(255,77,106,0.14); color: var(--danger); }
+
+/* ── Boutons d'action pleine largeur (fiche détail entrée) ───────────────── */
+.action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 13px; font-weight: 700; padding: 12px; border-radius: 12px;
+  border: none; cursor: pointer; color: #fff; margin-bottom: 8px; width: 100%;
+  font-family: 'Inter', sans-serif; box-sizing: border-box;
+}
+.action-cyan { background: linear-gradient(135deg,#0891b2,#06b6d4); }
+.action-purple { background: linear-gradient(135deg,#7c3aed,#a78bfa); }
+.action-red { background: linear-gradient(135deg,#dc2626,#ef4444); }
+.action-green { background: linear-gradient(135deg,#059669,#10b981); }
+.action-amber { background: linear-gradient(135deg,#b45309,#d97706); }
+.action-grey { background: linear-gradient(135deg,#374151,#4b5563); }
+
+/* ── Swipe sur les entrées du journal ─────────────────────────────────────── */
+.entry-swipe-actions {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  display: flex; align-items: stretch; z-index: 0;
+}
+.entry-swipe-actions button {
+  width: 56px; border: none; display: flex; align-items: center; justify-content: center;
+  color: #fff; cursor: pointer; touch-action: manipulation;
+}
+.entry-swipe-copy { background: linear-gradient(135deg,#7c3aed,#a78bfa); }
+.entry-swipe-delete { background: linear-gradient(135deg,#dc2626,#ef4444); }
+.entry-item-inner {
+  position: relative; z-index: 1; background: var(--surface);
+  touch-action: pan-y;
+}
+
+/* ── Animations de graphiques ─────────────────────────────────────────────── */
+.wchart-line { stroke-dasharray: 1500; stroke-dashoffset: 1500; animation: wchartDraw 0.9s ease forwards; }
+@keyframes wchartDraw { to { stroke-dashoffset: 0; } }
+.wchart-area { opacity: 0; animation: wchartFadeIn 0.6s ease 0.35s forwards; }
+@keyframes wchartFadeIn { to { opacity: 1; } }
+.bilan-bar-rect { transform-box: fill-box; transform-origin: bottom; animation: bilanBarGrow 0.4s cubic-bezier(0.34,1.56,0.64,1) backwards; }
+@keyframes bilanBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .modal-handle {
 width: 40px;
 height: 4px;
@@ -1371,7 +1444,7 @@ body.modal-open { overflow: hidden; }
   padding: 9px 11px;
   gap: 8px;
 }
-.entry-swipe-actions { display: none; }
+.entry-swipe-actions { }
 
 /* Menu contextuel repas */
 .meal-ctx-menu {
@@ -1404,18 +1477,6 @@ body.modal-open { overflow: hidden; }
 .meal-ctx-item.danger { color: var(--danger); }
 .meal-ctx-item + .meal-ctx-item { border-top: 1px solid var(--border); }
 
-
-  .entry-item:hover .entry-swipe-actions { opacity: 1; }
-  .entry-swipe-edit, .entry-swipe-delete {
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-    margin: auto 2px;
-  }
-  .entry-swipe-delete { border-radius: 8px; }
-  .entry-item-inner { padding-right: 6px; }
-}
 /* Fondu journal au changement de jour */
 #daily-list, .kcal-card {
   transition: opacity 0.18s ease;
@@ -1526,6 +1587,8 @@ background: var(--surface);
 color: var(--text);
 border-radius: 7px;
 padding: 5px 9px;
+min-width: 40px;
+min-height: 40px;
 font-size: 10px;
 font-weight: 700;
 cursor: pointer;
@@ -1962,12 +2025,12 @@ if ('serviceWorker' in navigator) {
 </div>
 </header>
 <nav class="bottom-nav">
-<button class="bottom-nav-btn" onclick="openAlimentsModal()"><span>⭐</span><span>Aliments</span></button>
-<button class="bottom-nav-btn" onclick="openRecipesModal()"><span>📚</span><span>Recettes</span></button>
-<button class="bottom-nav-btn" onclick="openPlacesModal()"><span>📍</span><span>Lieux</span></button>
-<button class="bottom-nav-btn" onclick="openModal('Sport')"><span>🏃</span><span>Sports</span></button>
-<button class="bottom-nav-btn" onclick="openWeightModal()"><span>⚖️</span><span>Poids</span></button>
-<button class="bottom-nav-btn" onclick="openSettings()"><span>⚙️</span><span>Réglages</span></button>
+<button class="bottom-nav-btn" onclick="openAlimentsModal()"><span><i data-lucide="star" class="lc-icon-lg"></i></span><span>Aliments</span></button>
+<button class="bottom-nav-btn" onclick="openRecipesModal()"><span><i data-lucide="book-open" class="lc-icon-lg"></i></span><span>Recettes</span></button>
+<button class="bottom-nav-btn" onclick="openPlacesModal()"><span><i data-lucide="map-pin" class="lc-icon-lg"></i></span><span>Lieux</span></button>
+<button class="bottom-nav-btn" onclick="openModal('Sport')"><span><i data-lucide="activity" class="lc-icon-lg"></i></span><span>Sports</span></button>
+<button class="bottom-nav-btn" onclick="openWeightModal()"><span><i data-lucide="scale" class="lc-icon-lg"></i></span><span>Poids</span></button>
+<button class="bottom-nav-btn" onclick="openSettings()"><span><i data-lucide="settings" class="lc-icon-lg"></i></span><span>Réglages</span></button>
 </nav>
 <main>
 <div class="tabs">
@@ -2143,18 +2206,21 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <datalist id="saved-places-list"></datalist>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:56px;" onfocus="_activeWalkStep=0">
-<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:52px;" onfocus="_activeWalkStep=0">
+<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:56px;" onfocus="_activeWalkStep=1">
-<button onclick="removeWalkStep(this)" class="step-remove-btn icon-x-btn" style="display:none;position:absolute;right:30px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
-<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">💾</button>
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:96px;" onfocus="_activeWalkStep=1">
+<button onclick="removeWalkStep(this)" class="step-remove-btn icon-btn icon-btn-danger" style="display:none;position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
+<button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
 </div>
 <!-- Lieux enregistrés -->
 <div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
-<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📍 Lieux enregistrés</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">📍 Lieux enregistrés</div>
+<button onclick="openPlacesModal()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;">✎ Réordonner</button>
+</div>
 <div id="walk-saved-places-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
 <div style="display:flex;gap:7px;margin-bottom:6px;align-items:center;">
@@ -2210,10 +2276,12 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="macro-input gluc"><label>Gluc.</label><input id="in-g" type="number" inputmode="decimal" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="macro-input lip"><label>Lip.</label><input id="in-l" type="number" inputmode="decimal" value="0" placeholder="0" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 </div>
+<div class="modal-sticky-footer">
 <div class="calc-result"><div class="big" id="calc-res">0 kcal</div><div class="sub" id="calc-sub">pour 100g</div></div>
 <button class="btn-primary" id="submit-btn" onclick="submitEntry()">Valider</button>
 <button class="btn-cancel" id="cancel-edit-btn" style="display:none;" onclick="cancelEdit()">Annuler la modification</button>
 <button class="btn-cancel" onclick="closeModal()">Fermer</button>
+</div>
 </div>
 </div>
 <!-- MODAL SETTINGS -->
@@ -2911,6 +2979,32 @@ if (window.visualViewport) {
 } else {
   window.addEventListener('resize', _setAppHeight);
 }
+
+// Icônes (Lucide) : la plupart du contenu est injecté via innerHTML, donc on observe
+// le DOM et on rend les icônes dès qu'un élément [data-lucide] apparaît.
+let _lucideTimer = null;
+function _renderLucideIcons() { try { if (window.lucide) lucide.createIcons(); } catch(e) {} }
+if (window.lucide) {
+  _renderLucideIcons();
+  new MutationObserver(() => { clearTimeout(_lucideTimer); _lucideTimer = setTimeout(_renderLucideIcons, 40); })
+    .observe(document.body, { childList: true, subtree: true });
+}
+
+// Compteur animé (ease-out) pour les gros nombres qui changent peu souvent (ex: kcal restantes).
+function animateNumber(el, to, duration = 500) {
+  if (!el) return;
+  const from = parseFloat((el.textContent || '0').replace(/[^\d.-]/g, '')) || 0;
+  if (from === to) { el.textContent = fmtNum(to); return; }
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmtNum(Math.round(from + (to - from) * eased));
+    if (p < 1) requestAnimationFrame(step); else el.textContent = fmtNum(to);
+  }
+  requestAnimationFrame(step);
+}
+
 const SUPABASE_URL = "https://zlbwoxsmmdytoucgyhmc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsYndveHNtbWR5dG91Y2d5aG1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Nzk4MzUsImV4cCI6MjA5MTI1NTgzNX0.W1qBpzhCjOjVHRdeDCmfk6LjljlJc33AygVWG4CzWQE";
 const ORS_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjIwMzk5Yzc0MDY2YzQxNDNhOWU2YWM1OWI4YWI0MWFlIiwiaCI6Im11cm11cjY0In0=";
@@ -3097,8 +3191,8 @@ function renderSavedPlacesChips() {
   if (!section || !chips) return;
   if (!savedPlaces.length) { section.style.display = 'none'; return; }
   section.style.display = 'block';
-  const sorted = [...savedPlaces].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  chips.innerHTML = sorted.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
+  // Respecte l'ordre choisi par l'utilisateur (réordonnable dans Lieux ⋯) au lieu d'un tri alphabétique forcé.
+  chips.innerHTML = savedPlaces.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
     style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation;">
     📍 ${p.name}
   </button>`).join('');
@@ -3908,8 +4002,8 @@ function renderPlacesList() {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Aucun lieu enregistré.</div>';
     return;
   }
-  el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;">
-<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;flex-shrink:0;">⠿</span>
+  el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;touch-action:pan-y;">
+<span class="place-drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:8px 6px 8px 0;touch-action:none;flex-shrink:0;">⠿</span>
 <div class="food-item-main" style="flex:1;">
 <div class="food-item-name">📍 ${p.name}</div>
 <div class="food-item-meta">${p.address}</div>
@@ -3919,21 +4013,69 @@ ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-
 <button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();openEditPlaceForm(${i})'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deletePlace(${i})',danger:true}])">⋯</button>
 </div>
 </div>`).join('');
-  // Drag & drop
-  let dragIdx = null;
-  el.querySelectorAll('[data-idx]').forEach(item => {
-    item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
-    item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
-    item.addEventListener('dragover', e => { e.preventDefault(); item.style.borderColor = 'var(--accent)'; });
-    item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
-    item.addEventListener('drop', e => {
-      e.preventDefault(); item.style.borderColor = '';
-      const dropIdx = parseInt(item.dataset.idx);
-      if (dragIdx === null || dragIdx === dropIdx) return;
-      const moved = savedPlaces.splice(dragIdx, 1)[0];
-      savedPlaces.splice(dropIdx, 0, moved);
-      saveSettingsLocal(); pushSettingsRemote();
-      renderPlacesList(); updateKnownPlaces();
+  initPlacesDragReorder(el);
+}
+
+// Réordonnancement tactile (Pointer Events) — le drag-and-drop HTML5 natif ne fonctionne
+// qu'à la souris et pas au doigt sur mobile, donc le "⠿" restait sans effet sur téléphone.
+function initPlacesDragReorder(el) {
+  const rows = Array.from(el.querySelectorAll('.food-item[data-idx]'));
+  if (rows.length < 2) return;
+  const rowH = (rows[1].offsetTop - rows[0].offsetTop) || (rows[0].offsetHeight + 8);
+
+  rows.forEach(row => {
+    const handle = row.querySelector('.place-drag-handle');
+    if (!handle) return;
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const dragIdx = parseInt(row.dataset.idx, 10);
+      let curPos = dragIdx;
+      const startY = e.clientY;
+      row.style.position = 'relative';
+      row.style.zIndex = '50';
+      row.style.boxShadow = '0 6px 20px rgba(0,0,0,0.45)';
+      row.style.borderRadius = '12px';
+      row.style.background = 'var(--surface2)';
+      try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+
+      const onMove = (ev) => {
+        const dy = ev.clientY - startY;
+        row.style.transform = `translateY(${dy}px)`;
+        const newPos = Math.max(0, Math.min(rows.length - 1, Math.round(dragIdx + dy / rowH)));
+        if (newPos !== curPos) {
+          rows.forEach((r) => {
+            if (r === row) return;
+            const idx = parseInt(r.dataset.idx, 10);
+            let shift = 0;
+            if (newPos > curPos) { if (idx > curPos && idx <= newPos) shift = -1; }
+            else { if (idx >= newPos && idx < curPos) shift = 1; }
+            r.style.transition = 'transform 0.15s';
+            r.style.transform = shift ? `translateY(${shift * rowH}px)` : '';
+          });
+          curPos = newPos;
+        }
+      };
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
+        row.style.transition = '';
+        row.style.transform = '';
+        row.style.zIndex = '';
+        row.style.boxShadow = '';
+        row.style.position = '';
+        row.style.background = '';
+        rows.forEach(r => { if (r !== row) { r.style.transform = ''; r.style.transition = ''; } });
+        if (curPos !== dragIdx) {
+          const moved = savedPlaces.splice(dragIdx, 1)[0];
+          savedPlaces.splice(curPos, 0, moved);
+          saveSettingsLocal(); pushSettingsRemote();
+          haptic(8);
+        }
+        renderPlacesList(); updateKnownPlaces(); renderSavedPlacesChips();
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
     });
   });
 }
@@ -4656,8 +4798,9 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}">
-    <button onclick="removeWalkStep(this)" class="icon-x-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>`;
+  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}">
+    <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
+    <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step
   const lastRow = steps[steps.length - 1].closest('.walk-addr-row');
   container.insertBefore(row, lastRow);
@@ -4676,9 +4819,9 @@ function updateWalkStepIndices() {
   const rows = container.querySelectorAll('.walk-addr-row');
   rows.forEach((row, i) => {
     const inp = row.querySelector('.walk-step-input');
-    if (inp) inp.dataset.step = i;
-    const btn = row.querySelector('button');
-    if (btn) btn.style.display = (rows.length > 2) ? 'block' : 'none';
+    if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); }
+    const removeBtn = row.querySelector('.icon-btn-danger');
+    if (removeBtn) removeBtn.style.display = (rows.length > 2) ? 'block' : 'none';
   });
 }
 
@@ -6065,8 +6208,8 @@ const tx0 = xs(0), ty0 = ys(intercept);
 const tx1 = xs(n-1), ty1 = ys(slope*(n-1)+intercept);
 svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>'
   + gridLines.join('')
-  + '<polygon points="' + P + ',' + (H - P) + ' ' + pts + ' ' + (W - P) + ',' + (H - P) + '" fill="url(#wg)"/>'
-  + '<polyline points="' + pts + '" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+  + '<polygon class="wchart-area" points="' + P + ',' + (H - P) + ' ' + pts + ' ' + (W - P) + ',' + (H - P) + '" fill="url(#wg)"/>'
+  + '<polyline class="wchart-line" points="' + pts + '" fill="none" stroke="#5b7fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
   + '<line x1="' + tx0 + '" y1="' + ty0 + '" x2="' + tx1 + '" y2="' + ty1 + '" stroke="' + (slope < 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>'
   + dots
   + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
@@ -6286,6 +6429,10 @@ async function loadData() {
 const _scrollBefore = window.scrollY;
 const _journal = document.getElementById('page-journal');
 if (_journal) _journal.classList.add('data-loading');
+const _dailyListEl = document.getElementById('daily-list');
+if (_dailyListEl && !_dailyListEl.children.length) {
+  _dailyListEl.innerHTML = '<div class="skeleton-item" style="height:120px;"></div><div class="skeleton-item" style="height:80px;"></div><div class="skeleton-item" style="height:80px;"></div>';
+}
 try {
 const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
@@ -6300,10 +6447,10 @@ else { tSport += e.val; }
 const bmr = calcBMR(userWeight, userHeight, userAge, userSexe), totalOut = bmr + tSport, remaining = userGoal - tIn, bilan = tIn - totalOut;
 const kcalLabel = document.getElementById('kcal-label');
 if (remaining < 0) {
-  document.getElementById('kcal-left').textContent = fmtNum(Math.abs(remaining));
+  animateNumber(document.getElementById('kcal-left'), Math.abs(remaining));
   if (kcalLabel) kcalLabel.textContent = 'kcal en excès';
 } else {
-  document.getElementById('kcal-left').textContent = fmtNum(remaining);
+  animateNumber(document.getElementById('kcal-left'), remaining);
   if (kcalLabel) kcalLabel.textContent = 'kcal disponibles';
 }
 document.getElementById('stat-in').textContent = fmtNum(tIn);
@@ -6360,7 +6507,14 @@ else {
 ke.style.webkitBackgroundClip = 'text';
 ke.style.webkitTextFillColor = 'transparent';
 const ORDER = ['Petit-déjeuner', 'Déjeuner', 'Dîner', 'Snack', 'Boissons', 'Sport'];
-const ICONS = { 'Petit-déjeuner': '🥐', 'Déjeuner': '🍽️', 'Dîner': '🌙', 'Snack': '🍎', 'Boissons': '🥤', 'Sport': '🚴🚶' };
+const ICONS = {
+  'Petit-déjeuner': '<i data-lucide="coffee" class="lc-icon-lg"></i>',
+  'Déjeuner': '<i data-lucide="utensils" class="lc-icon-lg"></i>',
+  'Dîner': '<i data-lucide="moon" class="lc-icon-lg"></i>',
+  'Snack': '<i data-lucide="apple" class="lc-icon-lg"></i>',
+  'Boissons': '<i data-lucide="cup-soda" class="lc-icon-lg"></i>',
+  'Sport': '<i data-lucide="activity" class="lc-icon-lg"></i>'
+};
 const groups = {};
 ORDER.forEach(c => groups[c] = []);
 entries.forEach(e => { if (groups[e.category] !== undefined) groups[e.category].push(e); });
@@ -6388,6 +6542,10 @@ const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
 return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();_onEntryTap(this)">
+<div class="entry-swipe-actions">
+<button class="entry-swipe-copy" onclick="event.stopPropagation();_swipeCopy(${e.id})"><i data-lucide="copy" class="lc-icon-lg"></i></button>
+<button class="entry-swipe-delete" onclick="event.stopPropagation();_swipeDelete(${e.id})"><i data-lucide="trash-2" class="lc-icon-lg"></i></button>
+</div>
 <div class="entry-item-inner">
 <div class="entry-main">
 <div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${main}</span>` : main}</div>
@@ -6397,12 +6555,14 @@ ${sub2 ? `<div class="entry-sub">${sub2}</div>` : ''}
 ${(e.desc || '').startsWith('📚') ? '' : `<span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val}</span>`}
 
 </div>
+</div>
 </div>`;
 }).join('') : ''}</div>
 <button class="entry-add-bottom" onclick="event.stopPropagation();openModal('${cat}')">＋ Ajouter à ${cat}</button>
 </div>`;
 });
 document.getElementById('daily-list').innerHTML = html;
+initEntrySwipe();
 } catch (e) { console.error('loadData:', e); } finally {
 if (_journal) _journal.classList.remove('data-loading');
 if (currentPage === 'journal') requestAnimationFrame(() => { window.scrollTo(0, _savedScrollY || _scrollBefore); _savedScrollY = 0; });
@@ -6473,6 +6633,10 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
 
 // ── Popup détail entrée ──────────────────────────────────────────────────────
 function _onEntryTap(el) {
+  // Un swipe en cours ne doit pas déclencher l'ouverture du détail
+  if (el._wasSwiping) return;
+  // Si les actions sont révélées, un tap referme au lieu d'ouvrir le détail
+  if (el.classList.contains('swiped-open')) { _closeEntrySwipe(el); return; }
   // Ne pas ouvrir pour les entrées recette titre (📚)
   if ((el.dataset.desc || '').startsWith('📚')) return;
   const id = el.dataset.id;
@@ -6483,6 +6647,65 @@ function _onEntryTap(el) {
   const lip = parseFloat(el.dataset.lip) || 0;
   const type = el.dataset.type;
   showEntryDetail(id, desc, val, prot, gluc, lip, type);
+}
+
+// ── Swipe pour révéler Copier / Supprimer sur une entrée du journal ──────────
+const ENTRY_SWIPE_W = 112;
+function _closeEntrySwipe(item) {
+  item.classList.remove('swiped-open');
+  const inner = item.querySelector('.entry-item-inner');
+  if (inner) inner.style.transform = '';
+}
+function initEntrySwipe() {
+  document.querySelectorAll('#daily-list .entry-item-inner').forEach(inner => {
+    const item = inner.closest('.entry-item');
+    if (!item) return;
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, isHorizontal = false;
+    inner.addEventListener('pointerdown', (e) => {
+      document.querySelectorAll('#daily-list .entry-item.swiped-open').forEach(other => { if (other !== item) _closeEntrySwipe(other); });
+      startX = e.clientX; startY = e.clientY; dx = 0; dragging = true; decided = false; isHorizontal = false;
+      inner.style.transition = 'none';
+      try { inner.setPointerCapture(e.pointerId); } catch(err) {}
+    });
+    inner.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const ddx = e.clientX - startX, ddy = e.clientY - startY;
+      if (!decided) {
+        if (Math.abs(ddx) > 6 || Math.abs(ddy) > 6) { decided = true; isHorizontal = Math.abs(ddx) > Math.abs(ddy); } else return;
+      }
+      if (!isHorizontal) return;
+      e.preventDefault();
+      const base = item.classList.contains('swiped-open') ? -ENTRY_SWIPE_W : 0;
+      dx = Math.max(-ENTRY_SWIPE_W, Math.min(0, base + ddx));
+      inner.style.transform = `translateX(${dx}px)`;
+      item._wasSwiping = true;
+    });
+    const endDrag = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      inner.style.transition = '';
+      try { inner.releasePointerCapture(e.pointerId); } catch(err) {}
+      if (isHorizontal) {
+        if (dx < -ENTRY_SWIPE_W / 2) { inner.style.transform = `translateX(${-ENTRY_SWIPE_W}px)`; item.classList.add('swiped-open'); haptic(6); }
+        else { _closeEntrySwipe(item); }
+        setTimeout(() => { item._wasSwiping = false; }, 60);
+      } else {
+        item._wasSwiping = false;
+      }
+    };
+    inner.addEventListener('pointerup', endDrag);
+    inner.addEventListener('pointercancel', endDrag);
+  });
+}
+function _swipeCopy(id) {
+  const item = document.querySelector(`.entry-item[data-id="${id}"]`);
+  if (item) _closeEntrySwipe(item);
+  _copyEntry(id);
+}
+function _swipeDelete(id) {
+  const item = document.querySelector(`.entry-item[data-id="${id}"]`);
+  if (item) _closeEntrySwipe(item);
+  del(id);
 }
 
 function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
@@ -6501,8 +6724,9 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
   const matchedFood = customFoods.find(f => f.name.toLowerCase() === rawName)
     || customFoods.find(f => rawName.includes(f.name.toLowerCase()));
   const isFav = matchedFood && favoriteIds.includes(matchedFood.id);
-  const favLabel = isFav ? '★ Retirer des favoris' : '☆ Ajouter aux favoris';
-  const favColor = isFav ? 'linear-gradient(135deg,#b45309,#d97706)' : 'linear-gradient(135deg,#374151,#4b5563)';
+  const favLabel = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+  const favIcon = isFav ? '<i data-lucide="star" class="lc-icon" style="fill:currentColor;"></i>' : '<i data-lucide="star" class="lc-icon"></i>';
+  const favClass = isFav ? 'action-amber' : 'action-grey';
 
   const overlay = document.createElement('div');
   overlay.className = 'entry-detail-overlay';
@@ -6521,10 +6745,10 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
     </div>
     ${note ? `<div id="entry-ing-table-${id}" class="entry-detail-note"></div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-      <button class="btn-primary" style="font-size:13px;padding:12px 8px;" onclick="_closeDetailPopup();editEntry(${id})">✎ Modifier</button>
-      <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)">🤖 Via IA</button>
+      <button class="btn-primary" style="font-size:13px;padding:12px 8px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="_closeDetailPopup();editEntry(${id})"><i data-lucide="pencil" class="lc-icon"></i> Modifier</button>
+      <button class="btn-primary" style="font-size:13px;padding:12px 8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;gap:6px;" data-entry-id="${id}" data-main-desc="${mainDesc.replace(/"/g,'&quot;')}" data-val="${val}" data-prot="${prot}" data-gluc="${gluc}" data-lip="${lip}" data-note="${note.replace(/"/g,'&quot;')}" onclick="_editViaAIBtn(this)"><i data-lucide="sparkles" class="lc-icon"></i> Via IA</button>
     </div>
-    ${note && note.indexOf('→') > -1 ? `<button id="entry-ing-save-${id}" class="btn-primary" style="font-size:13px;padding:10px;margin-bottom:8px;width:100%;display:none;background:linear-gradient(135deg,#7c3aed,#5b7fff);" onclick="_saveIngEdits(${id},${val},${prot},${gluc},${lip})">💾 Enregistrer les modifications</button>` : ''}
+    ${note && note.indexOf('→') > -1 ? `<button id="entry-ing-save-${id}" class="action-btn" style="background:linear-gradient(135deg,#7c3aed,#5b7fff);display:none;" onclick="_saveIngEdits(${id},${val},${prot},${gluc},${lip})"><i data-lucide="save" class="lc-icon"></i> Enregistrer les modifications</button>` : ''}
     ${(type === 'food' && !matchedFood) ? (() => {
       const k100 = qty > 0 ? Math.round(val/qty*100) : 0;
       const p100 = qty > 0 ? Math.round(prot/qty*100*10)/10 : prot;
@@ -6532,11 +6756,12 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       const l100 = qty > 0 ? Math.round(lip/qty*100*10)/10 : lip;
       const cleanName = mainDesc.replace(/\s*\(.*$/, '').trim().replace(/"/g,'&quot;');
       const sqty = qty || 100;
-      return `<button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#059669,#10b981);margin-bottom:8px;" data-sname="${cleanName}" data-sk="${k100}" data-sp="${p100}" data-sg="${g100}" data-sl="${l100}" data-sqty="${sqty}" onclick="_saveToBaseBtn(this)">📦 Sauvegarder dans ma base</button>`;
+      return `<button class="action-btn action-green" data-sname="${cleanName}" data-sk="${k100}" data-sp="${p100}" data-sg="${g100}" data-sl="${l100}" data-sqty="${sqty}" onclick="_saveToBaseBtn(this)"><i data-lucide="package-plus" class="lc-icon"></i> Sauvegarder dans ma base</button>`;
     })() : ''}
-    ${matchedFood ? `<button class="btn-primary" style="font-size:13px;padding:12px;background:${favColor};margin-bottom:8px;" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favLabel}</button>` : ''}
-    <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);margin-bottom:8px;" onclick="_moveEntry(${id})">📦 Déplacer</button>
-    <button class="btn-primary" style="font-size:13px;padding:12px;background:linear-gradient(135deg,#dc2626,#ef4444);margin-bottom:8px;" onclick="_closeDetailPopup();del(${id})">🗑️ Supprimer</button>
+    ${matchedFood ? `<button class="action-btn ${favClass}" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favIcon} ${favLabel}</button>` : ''}
+    <button class="action-btn action-cyan" onclick="_moveEntry(${id})"><i data-lucide="move" class="lc-icon"></i> Déplacer</button>
+    <button class="action-btn action-purple" onclick="_copyEntry(${id})"><i data-lucide="copy" class="lc-icon"></i> Copier vers un autre jour</button>
+    <button class="action-btn action-red" onclick="_closeDetailPopup();del(${id})"><i data-lucide="trash-2" class="lc-icon"></i> Supprimer</button>
     <button class="btn-cancel" onclick="_closeDetailPopup()">Fermer</button>
   `;
 
@@ -6743,7 +6968,7 @@ function _moveEntry(id) {
   popup.className = 'entry-detail-popup';
   popup.innerHTML = `
     <div class="detail-handle"></div>
-    <div class="entry-detail-title" style="margin-bottom:16px;">📦 Déplacer l'entrée</div>
+    <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="move" class="lc-icon-lg"></i> Déplacer l'entrée</div>
     <div style="margin-bottom:12px;">
       <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
       <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
@@ -6758,7 +6983,7 @@ function _moveEntry(id) {
       <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
       <input type="date" id="move-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
     </div>
-    <button class="btn-primary" onclick="_confirmMoveEntry()">✓ Confirmer le déplacement</button>
+    <button class="action-btn action-cyan" onclick="_confirmMoveEntry()"><i data-lucide="check" class="lc-icon"></i> Confirmer le déplacement</button>
     <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
   `;
 
@@ -6782,6 +7007,76 @@ async function _confirmMoveEntry() {
   document.body.classList.remove('modal-open');
   haptic(10);
   loadData();
+}
+
+// ── Copier une seule entrée vers un autre jour (sans toucher au reste du repas) ─
+let _copyEntryId = null;
+function _copyEntry(id) {
+  _closeDetailPopup();
+  _copyEntryId = id;
+  const entry = currentEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'entry-detail-overlay';
+  overlay.onclick = () => { overlay.remove(); popup.remove(); document.body.classList.remove('modal-open'); };
+
+  const popup = document.createElement('div');
+  popup.className = 'entry-detail-popup';
+  popup.innerHTML = `
+    <div class="detail-handle"></div>
+    <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="copy" class="lc-icon-lg"></i> Copier vers un autre jour</div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
+      <select id="copy-entry-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
+        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
+        <option value="Déjeuner">🍽️ Déjeuner</option>
+        <option value="Dîner">🌙 Dîner</option>
+        <option value="Snack">🍎 Snack</option>
+        <option value="Boissons">🥤 Boissons</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
+      <input type="date" id="copy-entry-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+    </div>
+    <button class="action-btn action-purple" onclick="_confirmCopyEntry()"><i data-lucide="copy" class="lc-icon"></i> Copier</button>
+    <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+  document.body.classList.add('modal-open');
+
+  document.getElementById('copy-entry-cat').value = entry.category;
+  document.getElementById('copy-entry-date').value = entry.date || journalDateStr();
+}
+
+async function _confirmCopyEntry() {
+  const cat = document.getElementById('copy-entry-cat').value;
+  const date = document.getElementById('copy-entry-date').value;
+  if (!_copyEntryId || !cat || !date) return;
+  const entry = currentEntries.find(e => e.id === _copyEntryId);
+  if (!entry) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const { error } = await sb.from('entries').insert([{
+    user_id: user.id,
+    type: entry.type,
+    category: cat,
+    desc: entry.desc,
+    val: entry.val,
+    prot: entry.prot,
+    gluc: entry.gluc,
+    lip: entry.lip,
+    date: date
+  }]);
+  document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
+  document.body.classList.remove('modal-open');
+  if (error) { console.error(error); showToast('Erreur : ' + error.message, 'error'); return; }
+  haptic(10);
+  showToast('Copié ✓', 'success');
+  if (date === journalDateStr()) loadData();
 }
 
 // ── Modifier via IA ───────────────────────────────────────────────────────────
@@ -8529,10 +8824,10 @@ function renderBilanChart(values, goal, range) {
     const cx = xs(i), showLabel = n <= 31 && (labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0);
     const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
-    const hitX = cx - slotW/2;
+    const hitX = cx - slotW/2, barRx = Math.min(4, barW / 2).toFixed(1);
     return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
-<rect x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
+<rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
 ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${fmtNum(d.food)}</text>` : ''}
 </g>`;
@@ -8665,7 +8960,7 @@ function renderProtChart(values, protGoal, range) {
       const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
       return {
         label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }),
-        prot: Math.round(v.prot), isEmpty: !full
+        prot: Math.round(v.prot), isEmpty: !full, navDate: date
       };
     });
   } else {
@@ -8673,7 +8968,7 @@ function renderProtChart(values, protGoal, range) {
       const full = v.cats && v.cats.has('Déjeuner') && v.cats.has('Dîner');
       return {
         label: new Date(date + 'T12:00:00').getDate().toString(),
-        prot: Math.round(v.prot), isEmpty: !full
+        prot: Math.round(v.prot), isEmpty: !full, navDate: date
       };
     });
   }
@@ -8681,18 +8976,28 @@ function renderProtChart(values, protGoal, range) {
   const prots = chartData.map(d => d.prot);
   const maxVal = Math.max(...prots, protGoal, 10);
   const n = chartData.length;
-  const barW = Math.max(4, Math.floor((W - PL - PR) / n - 2));
-  const xs = (i) => PL + (i + 0.5) * ((W - PL - PR) / n);
+  const slotW = (W - PL - PR) / n;
+  const barW = Math.max(4, Math.floor(slotW - 2));
+  const xs = (i) => PL + (i + 0.5) * slotW;
   const ys = (v) => PT + (1 - v / maxVal) * (H - PT - PB);
   const goalY = ys(protGoal);
 
+  // Même anti-chevauchement que le graphique calories : n'affiche que ce qui tient sans se recouvrir.
+  const maxLabelChars = Math.max(1, ...chartData.map(d => d.label.length));
+  const estLabelW = Math.max(16, maxLabelChars * 6);
+  const labelSkip = Math.max(1, Math.ceil(estLabelW / slotW));
+
   const bars = chartData.map((d, i) => {
-    const x = xs(i) - barW / 2;
+    const cx = xs(i), x = cx - barW / 2, showLabel = labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0;
     const bh = Math.max(2, ys(0) - ys(d.prot));
     const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#ef4444';
-    return `<rect x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="2"/>
-<text x="${xs(i)}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 12 : 14}" font-family="Plus Jakarta Sans">${d.label}</text>
-${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700">${d.prot}</text>` : ''}`;
+    const hitX = cx - slotW / 2, barRx = Math.min(4, barW / 2).toFixed(1);
+    return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
+<rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
+<rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
+${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${d.prot}</text>` : ''}
+</g>`;
   }).join('');
 
   const yLabels = [0, Math.round(maxVal / 2), maxVal].map(v => {
@@ -8702,13 +9007,14 @@ ${!d.isEmpty && n <= 14 ? `<text x="${xs(i)}" y="${ys(d.prot)-3}" text-anchor="m
   }).join('');
 
   wrap.innerHTML = `
-    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">💪 Protéines / jour</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="dumbbell" class="lc-icon"></i> Protéines / jour</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
       <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="13" font-family="Inter" opacity="0.8">objectif ${protGoal}g</text>
       ${bars}
     </svg>
+    <div style="font-size:10px;color:var(--muted);margin-top:2px;">Touche une barre pour ouvrir le journal du jour concerné.</div>
     <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);">
       <span style="color:#3dd68c;">🟢 Objectif atteint</span>
       <span style="color:#ef4444;">🔴 Sous objectif</span>
