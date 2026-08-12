@@ -373,6 +373,41 @@ letter-spacing: -0.5px;
 .macro-pill.prot .label { color: var(--accent); }
 .macro-pill.gluc .label { color: var(--orange); }
 .macro-pill.lip .label { color: var(--pink); }
+/* Classes utilitaires — remplacent les styles inline les plus répétés dans le fichier */
+.form-input {
+width: 100%;
+background: var(--surface);
+border: 1px solid var(--border2);
+border-radius: 10px;
+padding: 8px;
+font-size: 13px;
+color: var(--text);
+box-sizing: border-box;
+}
+.form-field-label {
+font-size: 10px;
+color: var(--muted);
+font-weight: 600;
+display: block;
+margin-bottom: 3px;
+}
+.flex-center-gap8 { display: flex; align-items: center; gap: 8px; }
+.eyebrow-label {
+font-size: 9px;
+font-weight: 700;
+color: var(--muted);
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.eyebrow-label-block {
+font-size: 11px;
+font-weight: 700;
+color: var(--muted);
+text-transform: uppercase;
+letter-spacing: 1px;
+display: block;
+margin-bottom: 6px;
+}
 .section-label {
 font-size: 12px;
 font-weight: 700;

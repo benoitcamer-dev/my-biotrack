@@ -131,7 +131,7 @@ if ('serviceWorker' in navigator) {
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">📍 Mes lieux</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="map-pin" class="lc-icon-lg"></i> Mes lieux</div>
 <button class="modal-close" onclick="closePlacesModal()">×</button>
 </div>
 <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Ces lieux sont utilisables comme raccourcis dans l'IA et le formulaire itinéraire.</div>
@@ -153,7 +153,7 @@ if ('serviceWorker' in navigator) {
 <div class="settings-sheet" style="max-height:92dvh;">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">📚 Recettes</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="book-open" class="lc-icon-lg"></i> Recettes</div>
 <button class="modal-close" onclick="closeRecipesModal()">×</button>
 </div>
 <div class="recipe-form">
@@ -212,10 +212,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="search-results" style="display:none;border-radius:16px;background:var(--surface2);border:1px solid var(--border2);margin-top:2px;"></div>
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
-<button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">📚 Ajouter une recette</button>
+<button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i data-lucide="book-open" class="lc-icon-sm"></i> Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
-<button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;">📷 Scanner</button>
-<button id="ai-btn" class="fav-link-btn" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">🤖 IA</button>
+<button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
+<button id="ai-btn" class="fav-link-btn" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
 <button id="gfit-sync-btn" class="fav-link-btn" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">📲 Google Fit</button>
 <div id="gfit-sync-result" style="display:none;width:100%;font-size:12px;color:#34d399;padding:4px 2px;"></div>
 </div>
@@ -247,8 +247,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <!-- Lieux enregistrés -->
 <div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">📍 Lieux enregistrés</div>
-<button onclick="openPlacesModal()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;">✎ Réordonner</button>
+<div class="eyebrow-label">📍 Lieux enregistrés</div>
+<button onclick="openPlacesModal()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Réordonner</button>
 </div>
 <div id="walk-saved-places-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
@@ -267,7 +267,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="walk-route-result" class="walk-result-box" style="display:none;"></div>
 <div id="walk-custom-dur-box" class="walk-custom-duration" style="display:none;">
 <label style="font-size:12px;color:var(--muted);">Ajuste la durée réelle si besoin :</label>
-<div style="display:flex;align-items:center;gap:8px;">
+<div class="flex-center-gap8">
 <input type="number" inputmode="decimal" id="walk-custom-dur" min="1" oninput="onCustomDurationChange()">
 <span class="walk-recalc-info" id="walk-recalc-info"></span>
 </div>
@@ -369,7 +369,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
 </div>
 <div class="setting-row">
-<label>🤖 Clé API Gemini (IA)</label>
+<label style="display:flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> Clé API Gemini (IA)</label>
 <input id="s-gemini" type="text" placeholder="AIzaSy..." style="font-size:11px;">
 <button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;">🔍 Lister les modèles disponibles</button>
 <div id="gemini-models-list" style="font-size:10px;color:var(--muted);margin-top:6px;max-height:120px;overflow-y:auto;"></div>
@@ -419,8 +419,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <input id="re-desc" class="search-input" type="text" placeholder="Rechercher un ingrédient..."
 autocomplete="off" onkeydown="if(event.key==='Enter'){searchRecipeFood();this.blur();}">
 <button class="search-btn" onclick="searchRecipeFood()">↵</button>
-<button class="search-btn" onclick="openBarcodeScanner('recipe')" style="background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;">📷</button>
-<button class="search-btn" onclick="openRecipeAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;margin-left:4px;">🤖</button>
+<button class="search-btn" onclick="openBarcodeScanner('recipe')" style="background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;"><i data-lucide="camera" class="lc-icon-sm"></i></button>
+<button class="search-btn" onclick="openRecipeAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;"><i data-lucide="bot" class="lc-icon-sm"></i></button>
 </div>
 <div class="inputs-grid">
 <div class="input-box">
@@ -467,7 +467,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">📚 Choisir une recette</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="book-open" class="lc-icon-lg"></i> Choisir une recette</div>
 <button class="modal-close" onclick="closeRecipePicker()">×</button>
 </div>
 <div id="recipe-picker-list" style="margin-bottom:8px;"></div>
@@ -551,8 +551,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;" id="aliments-actions">
 <button class="btn-primary" style="font-size:13px;padding:10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openCustomFoodModal('',null,true)">+ Créer</button>
-<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openAIFromBase()">🤖 IA</button>
-<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" onclick="openBarcodeScanner('aliments')">📷 Scanner</button>
+<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="openAIFromBase()"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
+<button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="openBarcodeScanner('aliments')"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
 </div>
 <div style="display:flex;gap:6px;margin-bottom:12px;">
 <button id="alim-tab-base" onclick="switchAlimTab('base')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⭐ Ma base</button>
@@ -661,15 +661,15 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
   <!-- Stats moyennes -->
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Moy. 7 jours</div>
+      <div class="eyebrow-label">Moy. 7 jours</div>
       <div id="sleep-avg-7" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
     </div>
     <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Moy. 30 jours</div>
+      <div class="eyebrow-label">Moy. 30 jours</div>
       <div id="sleep-avg-30" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
     </div>
     <div style="flex:1;min-width:120px;background:var(--surface2);border-radius:14px;padding:10px 12px;border:1px solid var(--border);">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Nuit dernière</div>
+      <div class="eyebrow-label">Nuit dernière</div>
       <div id="sleep-last" style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px;">—</div>
     </div>
   </div>
@@ -688,36 +688,36 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Ajouter / modifier</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Date</label>
-        <input id="sleep-date" type="date" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
+        <label class="form-field-label">Date</label>
+        <input id="sleep-date" type="date" class="form-input">
       </div>
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Durée totale (h)</label>
-        <input id="sleep-duration" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="7.5" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepDurationInput()">
+        <label class="form-field-label">Durée totale (h)</label>
+        <input id="sleep-duration" type="number" inputmode="decimal" step="0.25" min="0" max="24" placeholder="7.5" class="form-input" oninput="onSleepDurationInput()">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Coucher</label>
-        <input id="sleep-bedtime" type="time" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepTimeInput()">
+        <label class="form-field-label">Coucher</label>
+        <input id="sleep-bedtime" type="time" class="form-input" oninput="onSleepTimeInput()">
       </div>
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveil</label>
-        <input id="sleep-waketime" type="time" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepTimeInput()">
+        <label class="form-field-label">Réveil</label>
+        <input id="sleep-waketime" type="time" class="form-input" oninput="onSleepTimeInput()">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (nb)</label>
-        <input id="sleep-wake-count" type="number" inputmode="decimal" min="0" max="20" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;">
+        <label class="form-field-label">Réveils (nb)</label>
+        <input id="sleep-wake-count" type="number" inputmode="decimal" min="0" max="20" placeholder="0" class="form-input">
       </div>
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Réveils (min)</label>
-        <input id="sleep-wake-min" type="number" inputmode="decimal" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepWakeMinInput()">
+        <label class="form-field-label">Réveils (min)</label>
+        <input id="sleep-wake-min" type="number" inputmode="decimal" min="0" max="300" placeholder="0" class="form-input" oninput="onSleepWakeMinInput()">
       </div>
       <div>
-        <label style="font-size:10px;color:var(--muted);font-weight:600;display:block;margin-bottom:3px;">Sieste (min)</label>
-        <input id="sleep-nap" type="number" inputmode="decimal" min="0" max="300" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:8px;font-size:13px;color:var(--text);box-sizing:border-box;" oninput="onSleepNapInput()">
+        <label class="form-field-label">Sieste (min)</label>
+        <input id="sleep-nap" type="number" inputmode="decimal" min="0" max="300" placeholder="0" class="form-input" oninput="onSleepNapInput()">
       </div>
     </div>
     <div id="sleep-calc-preview" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:16px;"></div>
@@ -843,7 +843,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet" style="max-height:92vh;">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">📷 Scanner un code-barres</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="camera" class="lc-icon-lg"></i> Scanner un code-barres</div>
 <button class="modal-close" onclick="closeBarcodeScanner()">×</button>
 </div>
 <div id="barcode-camera-wrap" style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:12px;">
@@ -912,7 +912,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">🤖 Assistant IA</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="bot" class="lc-icon-lg"></i> Assistant IA</div>
 <button class="modal-close" onclick="closeAIModal()">×</button>
 </div>
 <div style="margin-bottom:12px;">
@@ -978,7 +978,7 @@ Oui si nécessaire
 <button class="btn-primary" id="ai-save-fav-btn" onclick="saveAIEntryAsFavorite()" style="flex:1;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);">⭐ Favori</button>
 <button class="btn-primary" id="ai-save-base-btn" onclick="saveAIEntryToBase()" style="flex:1;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);">📦 Base</button>
 </div>
-<button class="btn-primary" id="ai-save-place-btn" onclick="openSavePlaceFromAI()" style="display:none;margin-top:6px;width:100%;background:rgba(91,127,255,0.12);color:var(--accent);border:1px solid rgba(91,127,255,0.3);">📍 Sauvegarder un lieu</button>
+<button class="btn-primary" id="ai-save-place-btn" onclick="openSavePlaceFromAI()" style="display:none;margin-top:6px;width:100%;background:rgba(91,127,255,0.12);color:var(--accent);border:1px solid rgba(91,127,255,0.3);"><i data-lucide="map-pin" class="lc-icon-sm"></i> Sauvegarder un lieu</button>
 </div>
 <div id="ai-loading" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">⏳ Analyse en cours...</div>
 <div id="ai-error" style="display:none;color:var(--danger);font-size:12px;padding:8px 0;"></div>
@@ -1030,7 +1030,7 @@ Oui si nécessaire
 <button onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:rgba(255,140,66,0.15);border:2px solid rgba(255,140,66,0.4);border-radius:32px;padding:20px 32px;color:#FF8C42;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.12s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🍎</span><span style="font-size:20px;font-weight:800;">Snack</span></button>
 <button onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:rgba(46,196,182,0.15);border:2px solid rgba(46,196,182,0.4);border-radius:32px;padding:20px 32px;color:#2EC4B6;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.16s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🥤</span><span style="font-size:20px;font-weight:800;">Boissons</span></button>
 <button onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:rgba(255,77,106,0.15);border:2px solid rgba(255,77,106,0.4);border-radius:32px;padding:20px 32px;color:#FF4D6A;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🏃</span><span style="font-size:20px;font-weight:800;">Sport</span></button>
-<button onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:rgba(124,92,250,0.18);border:2px solid rgba(124,92,250,0.5);border-radius:32px;padding:20px 32px;color:#a78bfa;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.24s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;touch-action:manipulation;"><span style="font-size:32px;width:42px;text-align:center;">🤖</span><span style="font-size:20px;font-weight:800;">Assistant IA</span></button>
+<button onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:rgba(124,92,250,0.18);border:2px solid rgba(124,92,250,0.5);border-radius:32px;padding:20px 32px;color:#a78bfa;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.24s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;touch-action:manipulation;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="bot" style="width:30px;height:30px;"></i></span><span style="font-size:20px;font-weight:800;">Assistant IA</span></button>
 </div>
 <div id="fab-overlay" style="display:none;"></div><!-- overlay handled by fab-menu -->
 <button id="fab-btn" onclick="toggleFab()" style="position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:20px;z-index:201;width:58px;height:58px;border-radius:50%;background:var(--gradient-main);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 6px 24px rgba(0,200,150,0.45);display:flex;align-items:center;justify-content:center;transition:all 0.25s;line-height:1;font-weight:300;">＋</button>

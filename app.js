@@ -226,7 +226,7 @@ function renderSavedPlacesChips() {
   // Respecte l'ordre choisi par l'utilisateur (réordonnable dans Lieux ⋯) au lieu d'un tri alphabétique forcé.
   chips.innerHTML = savedPlaces.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
     style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation;">
-    📍 ${p.name}
+    <i data-lucide="map-pin" class="lc-icon-sm"></i> ${p.name}
   </button>`).join('');
 }
 
@@ -461,6 +461,12 @@ function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m -
 })();
 function formatDateFR(ds, opts = { weekday: 'short', day: 'numeric', month: 'short' }) { return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR', opts); }
 function round1(n) { return Math.round(n * 10) / 10; }
+function emptyStateHTML(icon, text, padding) {
+  return `<div style="text-align:center;padding:${padding || '28px 20px'};color:var(--muted);">
+    <i data-lucide="${icon}" style="width:30px;height:30px;stroke-width:1.5;opacity:0.35;margin-bottom:8px;"></i>
+    <div style="font-size:13px;">${text}</div>
+  </div>`;
+}
 function fmtNum(n) {
   const abs = Math.abs(Math.round(n));
   const sign = n < 0 ? '-' : '';
@@ -787,7 +793,7 @@ async function renderCiqualList() {
           <div class="food-meta">${k} kcal/100g</div>
         </div>
         <button onclick="saveOPFToBase('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">📦</button>
-        <button onclick="deleteCiqualFood(${f.id},'${esc(f.name)}',this)" title="Supprimer définitivement" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">🗑️</button>
+        <button onclick="deleteCiqualFood(${f.id},'${esc(f.name)}',this)" title="Supprimer définitivement" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;"><i data-lucide="trash-2" class="lc-icon-sm"></i></button>
       </div>`;
     }).join('');
 }
@@ -825,7 +831,7 @@ foods.sort((a, b) => {
   return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
 });
 if (!foods.length) {
-  el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px;">${q ? "Aucun résultat." : "Aucun aliment."}</div>`;
+  el.innerHTML = q ? `<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px;">Aucun résultat.</div>` : emptyStateHTML('utensils', 'Aucun aliment.');
   return;
 }
 const favFoods = foods.filter(f => favoriteIds.includes(f.id));
@@ -859,7 +865,7 @@ return `<div class="food-item">
 </div>
 <div class="food-item-actions">
 <button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')">${isFav ? '⭐' : '☆'}</button>
-<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();closeAlimentsModal();openCustomFoodModal(\'\',\'${f.id}\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteCustomFood(\'${f.id}\')',danger:true}])">⋯</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();closeAlimentsModal();openCustomFoodModal(\'\',\'${f.id}\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteCustomFood(\'${f.id}\')',danger:true}])">⋯</button>
 </div>
 </div>`;
 }
@@ -936,7 +942,7 @@ renderAlimentsList();
 function openFavoritesQuickModal() {
 const el = document.getElementById('favs-quick-list');
 const fav = customFoods.filter(f => favoriteIds.includes(f.id));
-if (!fav.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucun favori.</div>`; }
+if (!fav.length) { el.innerHTML = emptyStateHTML('star', 'Aucun favori.'); }
 else { el.innerHTML = fav.map(f => `<div class="food-item" data-fav-id="${f.id}"><div class="food-item-main"><div class="food-item-name">${f.name}</div><div class="food-item-meta">${f.kcal_100} kcal/100g</div></div><div class="food-item-actions"><button class="food-btn primary">Utiliser</button></div></div>`).join('');
 el.querySelectorAll('[data-fav-id]').forEach(item => { item.querySelector('button').addEventListener('click', function(e) { e.stopPropagation(); useFavFood(item.dataset.favId); }); }); }
 document.getElementById('modal-favs-quick').classList.add('open');
@@ -1031,18 +1037,18 @@ function closePlacesModal() { document.getElementById('modal-places').classList.
 function renderPlacesList() {
   const el = document.getElementById('places-list');
   if (!savedPlaces.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Aucun lieu enregistré.</div>';
+    el.innerHTML = emptyStateHTML('map-pin', 'Aucun lieu enregistré.', '20px');
     return;
   }
   el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;touch-action:pan-y;">
 <span class="place-drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:8px 6px 8px 0;touch-action:none;flex-shrink:0;">⠿</span>
 <div class="food-item-main" style="flex:1;">
-<div class="food-item-name">📍 ${p.name}</div>
+<div class="food-item-name" style="display:flex;align-items:center;gap:6px;"><i data-lucide="map-pin" class="lc-icon-sm"></i> ${p.name}</div>
 <div class="food-item-meta">${p.address}</div>
 ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
 <div class="food-item-actions" style="flex-shrink:0;">
-<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();openEditPlaceForm(${i})'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deletePlace(${i})',danger:true}])">⋯</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();openEditPlaceForm(${i})'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deletePlace(${i})',danger:true}])">⋯</button>
 </div>
 </div>`).join('');
   initPlacesDragReorder(el);
@@ -1383,10 +1389,10 @@ const div = document.getElementById('search-results');
 div.style.display = 'block';
 const quickBtns = `<div style="display:flex;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
   <div class="result-item" onclick="openAIModal()" style="flex:1;min-width:120px;background:rgba(124,92,250,0.08);">
-    <div class="result-name" style="color:#a78bfa;">🤖 Assistant IA</div>
+    <div class="result-name" style="color:#a78bfa;display:flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> Assistant IA</div>
   </div>
   <div class="result-item" onclick="openRecipePickerToAdd()" style="flex:1;min-width:120px;background:rgba(124,111,255,0.08);">
-    <div class="result-name" style="color:var(--accent);">📚 Recettes</div>
+    <div class="result-name" style="color:var(--accent);display:flex;align-items:center;gap:6px;"><i data-lucide="book-open" class="lc-icon-sm"></i> Recettes</div>
   </div>
   <div class="result-item" onclick="openAlimentsFromAdd()" style="flex:1;min-width:120px;background:rgba(255,193,7,0.08);">
     <div class="result-name" style="color:#fbbf24;">⭐ Aliments</div>
@@ -1475,7 +1481,7 @@ try {
       const badge = f.is_average
         ? `<span class="result-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa;">Ciqual ★</span>`
         : `<span class="result-tag" style="background:rgba(59,130,246,0.08);color:#93c5fd;">Ciqual</span>`;
-      const hideBtn = !isR ? `<button onclick="event.stopPropagation();hideCiqualFood(${f.id},this)" title="Masquer" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;">🗑️</button>` : '';
+      const hideBtn = !isR ? `<button onclick="event.stopPropagation();hideCiqualFood(${f.id},this)" title="Masquer" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;"><i data-lucide="trash-2" class="lc-icon-sm"></i></button>` : '';
       const saveBtn = !isR ? `<button onclick="event.stopPropagation();saveOPFToBase('${esc(n)}',${k},${pr},${gl},${lp},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;min-height:44px;min-width:44px;">📦</button>` : '';
       return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:6px;">
 <div style="flex:1;cursor:pointer;min-width:0;" onclick="event.stopPropagation();${fillFn}">
@@ -1550,7 +1556,7 @@ async function deleteCiqualFood(id, name, btn) {
   if (!(await showConfirm(`Supprimer définitivement "${name}" de la base Ciqual ?`, {danger:true}))) return;
   btn.textContent = '⏳'; btn.disabled = true;
   const { error } = await sb.from('ciqual_foods').delete().eq('id', id);
-  if (error) { btn.textContent = '🗑️'; btn.disabled = false; showToast('Erreur : ' + error.message, 'error'); return; }
+  if (error) { btn.innerHTML = '<i data-lucide="trash-2" class="lc-icon-sm"></i>'; btn.disabled = false; showToast('Erreur : ' + error.message, 'error'); return; }
   btn.closest('.food-item').remove();
 }
 async function hideCiqualFood(ciqualId, btn) {
@@ -1747,7 +1753,7 @@ if (mode === 'route') {
 }
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
-if (!walkFavorites.length) { el.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:4px 0;">Aucun trajet favori.</div>`; return; }
+if (!walkFavorites.length) { el.innerHTML = emptyStateHTML('route', 'Aucun trajet favori.', '4px 0'); return; }
 el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadWalkFav(${i})">
@@ -2110,7 +2116,7 @@ const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class=
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})">✎</button>
+<button class="food-btn" onclick="event.stopPropagation();editBikeFav(${i})"><i data-lucide="pencil" class="lc-icon-sm"></i></button>
 <button class="food-btn danger icon-x-btn" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
 </div>
 </div>`).join('') : '';
@@ -2695,12 +2701,12 @@ renderRecipeBuilder();
 function removeBuilderItem(id) { recipeBuilder = recipeBuilder.filter(i => i.id !== id); renderRecipeBuilder(); }
 function renderRecipeBuilder() {
 const el = document.getElementById('recipe-builder-list');
-if (!recipeBuilder.length) { el.innerHTML = `<div class="recipe-card"><div class="recipe-meta">Aucun ingrédient.</div></div>`; return; }
+if (!recipeBuilder.length) { el.innerHTML = `<div class="recipe-card">${emptyStateHTML('list', 'Aucun ingrédient.', '16px')}</div>`; return; }
 const t = recipeTotals(recipeBuilder);
 el.innerHTML = `${recipeBuilder.map(i => {
   // Strip qty from desc to avoid double display e.g. "Ail (15g)"
   const cleanDesc = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl|min)\)/gi, '').trim();
-  return `<div class="builder-item" style="cursor:pointer;" onclick="showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();editRecipeIngredient(${i.id})'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();removeBuilderItem(${i.id})',danger:true}])">
+  return `<div class="builder-item" style="cursor:pointer;" onclick="showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();editRecipeIngredient(${i.id})'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();removeBuilderItem(${i.id})',danger:true}])">
 <div class="builder-main">
 <div class="builder-title">${cleanDesc} <span style="color:var(--accent);font-size:12px;font-weight:600;">${i.qty}&nbsp;g</span></div>
 <div class="builder-sub">${i.val} kcal · ${round1(i.prot)}&nbsp;g P · ${round1(i.gluc)}&nbsp;g G · ${round1(i.lip)}&nbsp;g L</div>
@@ -3188,7 +3194,7 @@ document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((i
 }
 function renderWeightChart() {
 const svg = document.getElementById('weight-svg');
-if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="#7a8098" font-size="13" font-family="Inter">Ajoute au moins 2 entrées.</text>'; return; }
+if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="var(--muted)" font-size="13" font-family="Inter">Ajoute au moins 2 entrées.</text>'; return; }
 const allW = weightEntries.map(e => e.weight);
 // Échelle Y dynamique : avant, la plage était fixée en dur à 70-100kg, ce qui écrasait
 // les vraies variations (ou pire, coupait carrément les points hors de cette plage).
@@ -3211,7 +3217,7 @@ const gridLines = [];
 for (let w = minW; w <= maxW; w += gridStep) {
   const y = ys(w);
   gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
-  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="#7a8098" font-size="13" font-family="Inter">' + w + '</text>');
+  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">' + w + '</text>');
 }
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
@@ -3252,8 +3258,8 @@ svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop
   + '<path class="wchart-line" d="' + smoothLinePath(ptsArr) + '" fill="none" stroke="#5b7fff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
   + '<line x1="' + tx0 + '" y1="' + ty0 + '" x2="' + tx1 + '" y2="' + ty1 + '" stroke="' + (slope < 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>'
   + dots
-  + '<text x="' + P + '" y="' + (H - 8) + '" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
-  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="#7a8098" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
+  + '<text x="' + P + '" y="' + (H - 8) + '" fill="var(--muted)" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
+  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="var(--muted)" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
 enableChartZoom(svg);
 }
 // Lisse une courbe (Catmull-Rom → Bézier) au lieu de segments droits, pour un rendu plus doux.
@@ -3276,11 +3282,11 @@ function smoothAreaPath(points, baseY, x0, x1) {
 }
 function renderWeightHistory() {
 const el = document.getElementById('weight-history-list');
-if (!weightEntries.length) { el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:12px 0;">Aucune entrée.</div>`; return; }
+if (!weightEntries.length) { el.innerHTML = emptyStateHTML('scale', 'Aucune entrée.', '12px 0'); return; }
 el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-item">
 <div class="weight-entry-date">${formatDateFR(e.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
 <div class="weight-entry-val">${e.weight} kg</div>
-<button class="weight-entry-edit" onclick="openEditWeightModal('${e.id}')">✎</button>
+<button class="weight-entry-edit" onclick="openEditWeightModal('${e.id}')"><i data-lucide="pencil" class="lc-icon-sm"></i></button>
 <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
 </div>`).join('');
 }
@@ -3416,7 +3422,7 @@ function renderSleepChart() {
 function renderSleepHistory() {
   const el = document.getElementById('sleep-history-list');
   if (!el) return;
-  if (!sleepEntries.length) { el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:8px 0;">Aucune entrée.</div>`; return; }
+  if (!sleepEntries.length) { el.innerHTML = emptyStateHTML('moon', 'Aucune entrée.', '8px 0'); return; }
   el.innerHTML = sleepEntries.map(e => {
     const col = !e.duration_min ? 'var(--muted)' : e.duration_min >= 7*60 ? '#3dd68c' : e.duration_min >= 6*60 ? '#f59e0b' : '#ef4444';
     const meta = [];
@@ -3429,9 +3435,9 @@ function renderSleepHistory() {
         <div style="font-size:13px;font-weight:600;color:var(--text);">${formatDateFR(e.date, {weekday:'short',day:'numeric',month:'short'})}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;">${meta.join(' · ') || '—'}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div class="flex-center-gap8">
         <div style="font-size:16px;font-weight:800;color:${col};">${fmtSleepDur(e.duration_min)}</div>
-        <button onclick="editSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✎</button>
+        <button onclick="editSleepEntry('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;"><i data-lucide="pencil" class="lc-icon-sm"></i></button>
         <button onclick="deleteSleepEntry('${e.id}')" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>
       </div>
     </div>`;
@@ -3640,15 +3646,15 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
   menu.className = 'meal-ctx-menu';
   const actions = [];
   if (isFood && hasItems) {
-    actions.push({ icon: '→', label: 'Lier à une recette', fn: `openLinkMealModal('${cat}');closeMealCtxMenu()` });
-    actions.push({ icon: '📋', label: 'Copier ce repas', fn: `openCopyMealModal('${cat}');closeMealCtxMenu()` });
+    actions.push({ icon: 'arrow-right', label: 'Lier à une recette', fn: `openLinkMealModal('${cat}');closeMealCtxMenu()` });
+    actions.push({ icon: 'copy', label: 'Copier ce repas', fn: `openCopyMealModal('${cat}');closeMealCtxMenu()` });
   }
   if (hasItems) {
-    actions.push({ icon: '🗑️', label: 'Vider le repas', fn: `clearMealEntries('${cat}');closeMealCtxMenu()`, danger: true });
+    actions.push({ icon: 'trash-2', label: 'Vider le repas', fn: `clearMealEntries('${cat}');closeMealCtxMenu()`, danger: true });
   }
   if (!actions.length) { return; }
   menu.innerHTML = actions.map(a =>
-    `<button class="meal-ctx-item${a.danger ? ' danger' : ''}" onclick="${a.fn}">${a.icon} ${a.label}</button>`
+    `<button class="meal-ctx-item${a.danger ? ' danger' : ''}" onclick="${a.fn}"><i data-lucide="${a.icon}" class="lc-icon"></i> ${a.label}</button>`
   ).join('');
   // Positionner près du titre cliqué
   const rect = e.target.getBoundingClientRect();
@@ -3994,7 +4000,7 @@ function showCtxPopup(e, actions) {
   const popup = document.createElement('div');
   popup.className = 'ctx-popup';
   popup.innerHTML = actions.map(a =>
-    `<button class="ctx-popup-item${a.danger ? ' danger' : ''}" onclick="${a.fn}">${a.icon} ${a.label}</button>`
+    `<button class="ctx-popup-item${a.danger ? ' danger' : ''}" onclick="${a.fn}"><i data-lucide="${a.icon}" class="lc-icon"></i> ${a.label}</button>`
   ).join('');
   // Positionner près du tap
   const x = Math.min(e.clientX || e.touches?.[0]?.clientX || 100, window.innerWidth - 200);
@@ -4029,7 +4035,7 @@ function _moveEntry(id) {
     <div class="detail-handle"></div>
     <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="move" class="lc-icon-lg"></i> Déplacer l'entrée</div>
     <div style="margin-bottom:12px;">
-      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
+      <label class="eyebrow-label-block">Catégorie</label>
       <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
         <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
         <option value="Déjeuner">🍽️ Déjeuner</option>
@@ -4039,7 +4045,7 @@ function _moveEntry(id) {
       </select>
     </div>
     <div style="margin-bottom:16px;">
-      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
+      <label class="eyebrow-label-block">Date</label>
       <input type="date" id="move-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
     </div>
     <button class="action-btn action-cyan" onclick="_confirmMoveEntry()"><i data-lucide="check" class="lc-icon"></i> Confirmer le déplacement</button>
@@ -4086,7 +4092,7 @@ function _copyEntry(id) {
     <div class="detail-handle"></div>
     <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="copy" class="lc-icon-lg"></i> Copier vers un autre jour</div>
     <div style="margin-bottom:12px;">
-      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Catégorie</label>
+      <label class="eyebrow-label-block">Catégorie</label>
       <select id="copy-entry-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
         <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
         <option value="Déjeuner">🍽️ Déjeuner</option>
@@ -4096,7 +4102,7 @@ function _copyEntry(id) {
       </select>
     </div>
     <div style="margin-bottom:16px;">
-      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Date</label>
+      <label class="eyebrow-label-block">Date</label>
       <input type="date" id="copy-entry-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
     </div>
     <button class="action-btn action-purple" onclick="_confirmCopyEntry()"><i data-lucide="copy" class="lc-icon"></i> Copier</button>
@@ -4413,11 +4419,11 @@ document.getElementById('sport-tab-bike').classList.toggle('active', currentSpor
 function renderSportFavsContent(editIdx = -1, editType = null) {
 const el = document.getElementById('sport-favs-content');
 if (currentSportTab === 'walk') {
-if (!walkFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucun trajet favori.</div>`; return; }
+if (!walkFavorites.length) { el.innerHTML = emptyStateHTML('route', 'Aucun trajet favori.'); return; }
 el.innerHTML = walkFavorites.map((f, i) => {
   if (editType === 'walk' && editIdx === i) {
     return `<div class="sport-fav-item" style="flex-direction:column;align-items:stretch;gap:8px;background:var(--surface3);">
-<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">✎ Modifier le trajet</div>
+<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Modifier le trajet</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
 <div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-edit-dist" type="number" inputmode="decimal" value="${f.distance}" step="0.1" min="0"></div>
@@ -4437,17 +4443,17 @@ el.innerHTML = walkFavorites.map((f, i) => {
 <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'walk\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteWalkFav(${i})',danger:true}])">⋯</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'walk\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteWalkFav(${i})',danger:true}])">⋯</button>
 </div>
 </div>`;
 }).join('');
 initSportFavsDrag(el, 'walk');
 } else {
-if (!bikeFavorites.length) { el.innerHTML = `<div style="text-align:center;padding:28px;color:var(--muted);">Aucune sortie vélo favorite.</div>`; return; }
+if (!bikeFavorites.length) { el.innerHTML = emptyStateHTML('bike', 'Aucune sortie vélo favorite.'); return; }
 el.innerHTML = bikeFavorites.map((f, i) => {
   if (editType === 'bike' && editIdx === i) {
     return `<div class="sport-fav-item" style="flex-direction:column;align-items:stretch;gap:8px;background:var(--surface3);">
-<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">✎ Modifier la sortie</div>
+<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Modifier la sortie</div>
 <div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
 <div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-edit-speed" type="number" inputmode="decimal" value="${f.speed}" step="0.5" min="0"></div>
@@ -4467,7 +4473,7 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'✎',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'bike\')'},{icon:'🗑️',label:'Supprimer',fn:'closeCtxPopup();deleteBikeFav(${i})',danger:true}])">⋯</button>
+<button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'bike\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteBikeFav(${i})',danger:true}])">⋯</button>
 </div>
 </div>`;
 }).join('');
@@ -6432,9 +6438,10 @@ function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = 'app-toast';
   toast.textContent = message;
-  toast.style.cssText = `position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid ${color};color:${color};padding:11px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:500;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:88vw;text-align:center;white-space:pre-line;`;
+  toast.style.cssText = `position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface);border:1px solid ${color};color:${color};padding:11px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:500;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:88vw;text-align:center;white-space:pre-line;opacity:0;transition:opacity 0.25s ease,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);`;
   document.body.appendChild(toast);
-  setTimeout(() => { toast.style.transition = 'opacity 0.25s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 250); }, type === 'error' ? 3200 : 2400);
+  requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(-50%) translateY(0)'; });
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(8px)'; setTimeout(() => toast.remove(), 250); }, type === 'error' ? 3200 : 2400);
 }
 
 // ── Confirmation stylée (remplace confirm()) — retourne une Promise<boolean> ──
@@ -6442,7 +6449,7 @@ function showConfirm(message, opts = {}) {
   return new Promise(resolve => {
     document.querySelectorAll('.app-confirm-overlay').forEach(o => o.remove());
     const danger = !!opts.danger;
-    const okLabel = opts.confirmLabel || (danger ? '🗑️ Supprimer' : 'Confirmer');
+    const okLabel = opts.confirmLabel || (danger ? '<i data-lucide="trash-2" class="lc-icon-sm"></i> Supprimer' : 'Confirmer');
     const cancelLabel = opts.cancelLabel || 'Annuler';
     const overlay = document.createElement('div');
     overlay.className = 'app-confirm-overlay';
