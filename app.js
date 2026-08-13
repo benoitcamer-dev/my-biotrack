@@ -2013,6 +2013,23 @@ function _attachPlacesAutocomplete() {
   });
 }
 
+// Le dropdown de suggestions Google (.pac-container) est positionné en absolute
+// sur <body> au moment où il s'ouvre, et ne se repositionne QUE sur le scroll de
+// window/visualViewport — jamais sur le scroll d'un ancêtre (ex: .modal-sheet/
+// .settings-sheet qui scrollent en interne). Résultat : la liste de suggestions
+// reste figée à l'écran, détachée du champ, quand on scrolle dans la modale.
+// Fix : fermer (blur) le champ actif dès que son conteneur scrollable défile,
+// ce qui referme le dropdown Google avec lui.
+document.addEventListener('scroll', (e) => {
+  const t = e.target;
+  if (!t || !t.classList) return;
+  if (!t.classList.contains('modal-sheet') && !t.classList.contains('settings-sheet')) return;
+  const active = document.activeElement;
+  if (active && active.classList && (active.classList.contains('walk-step-input') || active.classList.contains('walk-places-input'))) {
+    active.blur();
+  }
+}, true);
+
 // Override geocodeAddress to use Google if available
 async function geocodeAddress(query) {
   // Try Google Geocoding first if key available
