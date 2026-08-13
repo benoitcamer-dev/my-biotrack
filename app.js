@@ -1094,9 +1094,10 @@ function initTouchReorder(container, arr, onReordered) {
           curPos = newPos;
         }
       };
-      const onUp = () => {
+      const onUp = (upEvent) => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
         try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
         row.style.transition = '';
         row.style.transform = '';
@@ -1105,6 +1106,8 @@ function initTouchReorder(container, arr, onReordered) {
         row.style.position = '';
         row.style.background = '';
         rows.forEach(r => { if (r !== row) { r.style.transform = ''; r.style.transition = ''; } });
+        // Un pointercancel (geste interrompu par le navigateur/l'OS) ne doit jamais valider un déplacement.
+        if (upEvent && upEvent.type === 'pointercancel') return;
         if (curPos !== dragIdx) {
           const moved = arr.splice(dragIdx, 1)[0];
           arr.splice(curPos, 0, moved);
@@ -1114,6 +1117,7 @@ function initTouchReorder(container, arr, onReordered) {
       };
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onUp);
     });
   });
 }
@@ -1155,9 +1159,10 @@ function initPlacesDragReorder(el) {
           curPos = newPos;
         }
       };
-      const onUp = () => {
+      const onUp = (upEvent) => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
         try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
         row.style.transition = '';
         row.style.transform = '';
@@ -1166,7 +1171,7 @@ function initPlacesDragReorder(el) {
         row.style.position = '';
         row.style.background = '';
         rows.forEach(r => { if (r !== row) { r.style.transform = ''; r.style.transition = ''; } });
-        if (curPos !== dragIdx) {
+        if (curPos !== dragIdx && (!upEvent || upEvent.type !== 'pointercancel')) {
           const moved = savedPlaces.splice(dragIdx, 1)[0];
           savedPlaces.splice(curPos, 0, moved);
           saveSettingsLocal(); pushSettingsRemote();
@@ -1176,6 +1181,7 @@ function initPlacesDragReorder(el) {
       };
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onUp);
     });
   });
 }
