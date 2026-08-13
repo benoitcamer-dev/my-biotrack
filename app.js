@@ -1056,6 +1056,68 @@ ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-
 
 // Réordonnancement tactile (Pointer Events) — le drag-and-drop HTML5 natif ne fonctionne
 // qu'à la souris et pas au doigt sur mobile, donc le "⠿" restait sans effet sur téléphone.
+// Réordonnancement tactile générique (Pointer Events) — remplace le drag-and-drop HTML5
+// natif (mouse-only, ne marche pas au doigt, et l'attribut draggable="true" peut aussi
+// interférer avec les taps sur les boutons voisins sur mobile).
+function initTouchReorder(container, arr, onReordered) {
+  const rows = Array.from(container.querySelectorAll('[data-idx]'));
+  if (rows.length < 2) return;
+  const rowH = (rows[1].offsetTop - rows[0].offsetTop) || (rows[0].offsetHeight + 8);
+  rows.forEach(row => {
+    const handle = row.querySelector('.drag-handle') || row;
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      const dragIdx = parseInt(row.dataset.idx, 10);
+      let curPos = dragIdx;
+      const startY = e.clientY;
+      row.style.position = 'relative';
+      row.style.zIndex = '50';
+      row.style.boxShadow = '0 6px 20px rgba(0,0,0,0.45)';
+      row.style.borderRadius = '12px';
+      row.style.background = 'var(--surface2)';
+      try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+
+      const onMove = (ev) => {
+        const dy = ev.clientY - startY;
+        row.style.transform = `translateY(${dy}px)`;
+        const newPos = Math.max(0, Math.min(rows.length - 1, Math.round(dragIdx + dy / rowH)));
+        if (newPos !== curPos) {
+          rows.forEach((r) => {
+            if (r === row) return;
+            const idx = parseInt(r.dataset.idx, 10);
+            let shift = 0;
+            if (newPos > curPos) { if (idx > curPos && idx <= newPos) shift = -1; }
+            else { if (idx >= newPos && idx < curPos) shift = 1; }
+            r.style.transition = 'transform 0.15s';
+            r.style.transform = shift ? `translateY(${shift * rowH}px)` : '';
+          });
+          curPos = newPos;
+        }
+      };
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
+        row.style.transition = '';
+        row.style.transform = '';
+        row.style.zIndex = '';
+        row.style.boxShadow = '';
+        row.style.position = '';
+        row.style.background = '';
+        rows.forEach(r => { if (r !== row) { r.style.transform = ''; r.style.transition = ''; } });
+        if (curPos !== dragIdx) {
+          const moved = arr.splice(dragIdx, 1)[0];
+          arr.splice(curPos, 0, moved);
+          haptic(8);
+          onReordered();
+        }
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  });
+}
+
 function initPlacesDragReorder(el) {
   const rows = Array.from(el.querySelectorAll('.food-item[data-idx]'));
   if (rows.length < 2) return;
@@ -1754,31 +1816,15 @@ if (mode === 'route') {
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
 if (!walkFavorites.length) { el.innerHTML = emptyStateHTML('route', 'Aucun trajet favori.', '4px 0'); return; }
-el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
-<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadWalkFav(${i})">
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
 </div>
 <button onclick="event.stopPropagation();deleteWalkFav(${i})" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
 </div>`).join('');
-// Drag & drop reorder
-let dragIdx = null;
-el.querySelectorAll('[data-idx]').forEach(item => {
-  item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
-  item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
-  item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.borderColor = 'var(--accent)'; });
-  item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
-  item.addEventListener('drop', e => {
-    e.preventDefault(); item.style.borderColor = '';
-    const dropIdx = parseInt(item.dataset.idx);
-    if (dragIdx === null || dragIdx === dropIdx) return;
-    const moved = walkFavorites.splice(dragIdx, 1)[0];
-    walkFavorites.splice(dropIdx, 0, moved);
-    saveSettingsLocal(); pushSettingsRemote();
-    renderWalkFavsInModal(); renderSportFavsQuick();
-  });
-});
+initTouchReorder(el, walkFavorites, () => { saveSettingsLocal(); pushSettingsRemote(); renderWalkFavsInModal(); renderSportFavsQuick(); });
 }
 function loadWalkFav(i) {
 const f = walkFavorites[i];
@@ -2109,8 +2155,8 @@ recalc();
 function renderBikeFavsInModal() {
 const el = document.getElementById('walk-advanced');
 el.style.display = 'block';
-const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
-<span style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
+const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
+<span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadBikeFav(${i})">
 <div class="sport-fav-name">⭐ ${f.name}</div>
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
@@ -2125,23 +2171,7 @@ el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;" id="b
 ${listHTML}
 </div>
 <button class="walk-fav-btn" onclick="saveBikeFav()">⭐ Sauvegarder cette sortie</button>`;
-// Drag & drop
-let dragIdx = null;
-el.querySelectorAll('[data-idx]').forEach(item => {
-  item.addEventListener('dragstart', e => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
-  item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
-  item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; item.style.borderColor = 'var(--accent)'; });
-  item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
-  item.addEventListener('drop', e => {
-    e.preventDefault(); item.style.borderColor = '';
-    const dropIdx = parseInt(item.dataset.idx);
-    if (dragIdx === null || dragIdx === dropIdx) return;
-    const moved = bikeFavorites.splice(dragIdx, 1)[0];
-    bikeFavorites.splice(dropIdx, 0, moved);
-    saveSettingsLocal(); pushSettingsRemote();
-    renderBikeFavsInModal();
-  });
-});
+initTouchReorder(el, bikeFavorites, () => { saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); });
 }
 function loadBikeFav(i) {
 const f = bikeFavorites[i];
@@ -2760,9 +2790,6 @@ renderRecipesPage();
 async function deleteRecipe(rid) { savedRecipes = savedRecipes.filter(r => r.id !== rid); await saveAndSyncRecipes(); renderRecipesPage(); }
 function addRecipeToToday(rid, cat = 'Déjeuner') { currentCat = cat; addRecipeToCurrentMeal(rid); }
 // Normalise une chaîne : minuscules + suppression des accents
-function normalize(str) {
-  return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
 // Surligne les occurrences de q dans text (insensible casse + accents)
 function hl(text, q) {
   if (!q) return text;
@@ -4409,8 +4436,9 @@ currentSportTab = 'walk';
 renderSportFavsTabBtns();
 renderSportFavsContent();
 document.getElementById('modal-sport-favs').classList.add('open');
+document.body.classList.add('modal-open');
 }
-function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); }
+function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }
 function renderSportFavsTabBtns() {
 document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');
@@ -4436,7 +4464,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
 </div>
 </div>`;
   }
-  return `<div class="sport-fav-item" data-idx="${i}" data-type="walk" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+  return `<div class="sport-fav-item" data-idx="${i}" data-type="walk" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadWalkFavQuick(${i})">
 <div class="builder-title">${f.name}</div>
@@ -4466,7 +4494,7 @@ el.innerHTML = bikeFavorites.map((f, i) => {
 </div>
 </div>`;
   }
-  return `<div class="sport-fav-item" data-idx="${i}" data-type="bike" draggable="true" style="display:flex;align-items:center;gap:6px;cursor:default;">
+  return `<div class="sport-fav-item" data-idx="${i}" data-type="bike" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadBikeFavQuick(${i})">
 <div class="builder-title">${f.name}</div>
@@ -4481,27 +4509,8 @@ initSportFavsDrag(el, 'bike');
 }
 }
 function initSportFavsDrag(container, type) {
-  let dragIdx = null;
-  container.querySelectorAll('[data-idx]').forEach(item => {
-    item.addEventListener('dragstart', e => {
-      dragIdx = parseInt(item.dataset.idx);
-      item.style.opacity = '0.4';
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    item.addEventListener('dragend', () => { item.style.opacity = '1'; dragIdx = null; });
-    item.addEventListener('dragover', e => { e.preventDefault(); item.style.borderColor = 'var(--accent)'; });
-    item.addEventListener('dragleave', () => { item.style.borderColor = ''; });
-    item.addEventListener('drop', e => {
-      e.preventDefault(); item.style.borderColor = '';
-      const dropIdx = parseInt(item.dataset.idx);
-      if (dragIdx === null || dragIdx === dropIdx) return;
-      const arr = type === 'walk' ? walkFavorites : bikeFavorites;
-      const moved = arr.splice(dragIdx, 1)[0];
-      arr.splice(dropIdx, 0, moved);
-      saveSettingsLocal(); pushSettingsRemote();
-      renderSportFavsContent();
-    });
-  });
+  const arr = type === 'walk' ? walkFavorites : bikeFavorites;
+  initTouchReorder(container, arr, () => { saveSettingsLocal(); pushSettingsRemote(); renderSportFavsContent(); });
 }
 
 function saveWalkFavEdit(i) {
@@ -4953,9 +4962,9 @@ function confirmBarcodeProduct() {
     setTimeout(() => {
       document.getElementById('cf-name').value = name;
       document.getElementById('cf-kcal').value = k;
-      document.getElementById('cf-prot').value = pr;
-      document.getElementById('cf-gluc').value = gl;
-      document.getElementById('cf-lip').value = lp;
+      document.getElementById('cf-p').value = pr;
+      document.getElementById('cf-g').value = gl;
+      document.getElementById('cf-l').value = lp;
     }, 150);
   }
 }
@@ -6506,7 +6515,7 @@ function showConfirm(message, opts = {}) {
   function getActiveSheet() {
     for (const id of SHEETS_TO_LIFT) {
       const el = document.getElementById(id);
-      if (el && el.classList.contains('open')) return el.querySelector('.modal-sheet');
+      if (el && el.classList.contains('open')) return el.querySelector('.modal-sheet, .settings-sheet');
     }
     return null;
   }
@@ -6523,9 +6532,11 @@ function showConfirm(message, opts = {}) {
       const overflow = sheetBottom - visibleBottom;
       // Ne remonter que de l'overflow + 8px de marge, max 60% du clavier
       const lift = Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6));
+      sheet.dataset.kbLift = lift > 0 ? Math.round(lift) : 0;
       sheet.style.transform = lift > 0 ? `translateY(-${Math.round(lift)}px)` : '';
       sheet.style.transition = 'transform 0.15s ease';
     } else {
+      sheet.dataset.kbLift = 0;
       sheet.style.transform = '';
     }
   });
@@ -6533,7 +6544,7 @@ function showConfirm(message, opts = {}) {
   // Remet à zéro quand le modal se ferme via overlay ou bouton close
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal-close')) {
-      document.querySelectorAll('.modal-sheet').forEach(s => s.style.transform = '');
+      document.querySelectorAll('.modal-sheet, .settings-sheet').forEach(s => s.style.transform = '');
       document.body.classList.remove('modal-open');
     }
   });
@@ -6577,6 +6588,7 @@ document.addEventListener('touchmove', (e) => {
     'modal-recipe-picker': () => closeRecipePicker(),
     'modal-recipe-date-meal': () => closeRecipeDateMealModal(),
     'modal-edit-weight': () => closeEditWeightModal(),
+    'modal-barcode': () => closeBarcodeScanner(),
   };
 
   function initSwipe(sheet, closeFn) {
@@ -6601,9 +6613,10 @@ document.addEventListener('touchmove', (e) => {
       if (!dragging) return;
       currentY = e.touches[0].clientY;
       const dy = currentY - startY;
-      if (dy < 0) { dragging = false; sheet.style.transform = ''; return; } // remonte : on annule
-      if (dy < DRAG_DEADZONE) { sheet.style.transform = ''; return; }
-      sheet.style.transform = `translateY(${dy - DRAG_DEADZONE}px)`;
+      const kbLift = parseFloat(sheet.dataset.kbLift) || 0;
+      if (dy < 0) { dragging = false; sheet.style.transform = kbLift ? `translateY(-${kbLift}px)` : ''; sheet.style.transition = ''; return; } // remonte : on annule
+      if (dy < DRAG_DEADZONE) { sheet.style.transform = kbLift ? `translateY(-${kbLift}px)` : ''; return; }
+      sheet.style.transform = `translateY(${dy - DRAG_DEADZONE - kbLift}px)`;
     }, { passive: true });
 
     sheet.addEventListener('touchend', () => {
@@ -6613,6 +6626,7 @@ document.addEventListener('touchmove', (e) => {
       const elapsed = Date.now() - startTime;
       const velocity = dy / elapsed; // px/ms
       const sheetH = sheet.offsetHeight;
+      const kbLift = parseFloat(sheet.dataset.kbLift) || 0;
 
       sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
 
@@ -6627,8 +6641,8 @@ document.addEventListener('touchmove', (e) => {
           closeFn();
         }, 280);
       } else {
-        // Snap vers le haut → revenir en pleine hauteur
-        sheet.style.transform = '';
+        // Snap vers le haut → revenir à la position d'avant le geste (tient compte du clavier)
+        sheet.style.transform = kbLift ? `translateY(-${kbLift}px)` : '';
         setTimeout(() => { sheet.style.transition = ''; }, 320);
       }
     });
@@ -6670,7 +6684,7 @@ document.addEventListener('touchmove', (e) => {
     Object.entries(CLOSE_FNS).forEach(([modalId, closeFn]) => {
       const modal = document.getElementById(modalId);
       if (!modal) return;
-      const sheet = modal.querySelector('.modal-sheet');
+      const sheet = modal.querySelector('.modal-sheet, .settings-sheet');
       if (sheet) initSwipe(sheet, closeFn);
     });
     const fabMenu = document.getElementById('fab-menu');

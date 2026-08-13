@@ -827,6 +827,7 @@ box-shadow: 0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
 }
 .settings-sheet { padding-bottom: 48px; max-height: 90dvh; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+@keyframes fabItemIn { from { opacity: 0; transform: translateY(16px) scale(0.85); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .unit-g { font-family: 'Georgia', serif; font-style: italic; font-size: 0.9em; }
 .modal-sticky-header {
 position: sticky;
@@ -1411,6 +1412,7 @@ body.modal-open { overflow: hidden; }
 @media (hover: hover) {
   .food-item:hover .food-item-actions,
   .builder-item:hover .builder-item-hover-actions,
+  .sport-fav-item:hover .food-item-actions,
   .sport-fav-item:hover .sport-fav-hover-actions { opacity: 1; }
   .food-item-actions, .builder-item-hover-actions, .sport-fav-hover-actions {
     opacity: 0;
