@@ -1,6 +1,11 @@
 # Claude Code / Impeccable skill tooling — not part of the app
 .claude/
+.agents/
+skills-lock.json
 
 # Impeccable local/session-only files (not meant to be shared)
 .impeccable/config.local.json
 .impeccable/hook.cache.json
+
+# Browser automation scratch output (screenshots, snapshots)
+.playwright-mcp/
