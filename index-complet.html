@@ -71,6 +71,37 @@ color: #0A1A12;
 [data-theme="light"] .result-item { background: #FFFFFF; }
 [data-theme="light"] #search-results, [data-theme="light"] #re-search-results { background: #FFFFFF; border-color: rgba(91,79,232,0.15); }
 
+/* Dropdown de suggestions Google Places (.pac-container) : injecté par Google
+   directement dans <body>, hors de notre CSS scoping habituel. Sans ces règles
+   il garde son thème blanc par défaut, en rupture totale avec le thème sombre
+   de l'appli. */
+.pac-container {
+background: var(--surface2);
+border: 1px solid var(--border2);
+border-top: 1px solid var(--border2);
+border-radius: 14px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+font-family: 'Inter', sans-serif;
+margin-top: 4px;
+overflow: hidden;
+z-index: 999999;
+}
+.pac-item {
+background: transparent;
+border-top: 1px solid var(--border);
+color: var(--text);
+padding: 10px 12px;
+font-size: 13px;
+cursor: pointer;
+}
+.pac-item:first-child { border-top: none; }
+.pac-item:hover, .pac-item-selected { background: var(--surface3); }
+.pac-item-query { color: var(--text); font-size: 13px; }
+.pac-matched { color: var(--accent); font-weight: 700; }
+.pac-icon { filter: invert(1) brightness(1.6); opacity: 0.7; }
+.pac-logo:after { filter: invert(1) brightness(1.6); opacity: 0.5; }
+[data-theme="light"] .pac-icon, [data-theme="light"] .pac-logo:after { filter: none; }
+
 html { background: var(--bg); overscroll-behavior: none; }
 body {
 font-family: 'Inter', sans-serif;
@@ -162,6 +193,14 @@ letter-spacing: 0.2px;
 .btn-icon.green { color: var(--green); border-color: rgba(46,204,143,0.25); background: rgba(46,204,143,0.06); }
 .btn-icon.orange { color: var(--orange); border-color: rgba(255,140,66,0.25); background: rgba(255,140,66,0.06); }
 main { max-width: 480px; margin: 0 auto; padding: 16px 14px; }
+/* Layout desktop : sur mobile rien ne change (max-width: 480px ci-dessus reste
+   la règle par défaut). Au-delà de 900px, le conteneur s'élargit et la grille
+   de stats du dashboard passe sur 4 colonnes au lieu de rester coincée dans
+   une colonne étroite avec du vide de chaque côté. */
+@media (min-width: 900px) {
+  main { max-width: 760px; padding: 24px 20px; }
+  .stats-grid { grid-template-columns: repeat(4,1fr); }
+}
 .tabs { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; margin-bottom: 12px; }
 .tab-btn {
 border: 1px solid var(--border);
@@ -2258,11 +2297,11 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <datalist id="saved-places-list"></datalist>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:52px;" onfocus="_activeWalkStep=0">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:52px;" onfocus="_activeWalkStep=0" autocomplete="off">
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:96px;" onfocus="_activeWalkStep=1">
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:96px;" onfocus="_activeWalkStep=1" autocomplete="off">
 <button onclick="removeWalkStep(this)" class="step-remove-btn icon-btn icon-btn-danger" style="display:none;position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
@@ -4910,7 +4949,7 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}">
+  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
     <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
     <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step

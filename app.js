@@ -1888,7 +1888,7 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}">
+  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
     <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
     <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step
