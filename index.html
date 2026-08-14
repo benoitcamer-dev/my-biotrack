@@ -244,14 +244,6 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
 </div>
-<!-- Lieux enregistrés -->
-<div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-<div class="eyebrow-label">📍 Lieux enregistrés</div>
-<button onclick="openPlacesModal()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Réordonner</button>
-</div>
-<div id="walk-saved-places-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-</div>
 <div style="display:flex;gap:7px;margin-bottom:6px;align-items:center;">
 <button onclick="addWalkStep()" style="background:rgba(91,127,255,0.12);border:1px solid rgba(91,127,255,0.3);color:var(--accent);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Étape</button>
 <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto;">
@@ -263,6 +255,14 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <input id="walk-route-speed" type="number" inputmode="decimal" value="6" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
 <label style="font-size:11px;color:var(--muted);">km/h</label>
 <button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
+</div>
+<!-- Lieux enregistrés -->
+<div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+<div class="eyebrow-label">📍 Lieux enregistrés</div>
+<button onclick="openPlacesModal()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Réordonner</button>
+</div>
+<div id="walk-saved-places-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
 </div>
 <div id="walk-route-result" class="walk-result-box" style="display:none;"></div>
 <div id="walk-custom-dur-box" class="walk-custom-duration" style="display:none;">
