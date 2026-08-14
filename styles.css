@@ -1951,6 +1951,15 @@ outline: none;
 }
 .walk-addr-input:focus { border-color: var(--accent); }
 .walk-addr-input::placeholder { color: var(--muted); }
+.walk-move-btns { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; }
+.walk-move-btn {
+  width: 26px; height: 19px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--muted); cursor: pointer; padding: 0;
+  touch-action: manipulation;
+}
+.walk-move-btn .lc-icon { width: 13px; height: 13px; }
+.walk-move-btn:active:not(:disabled) { color: var(--accent); }
+.walk-move-btn:disabled { opacity: 0.25; cursor: default; }
 .walk-calc-btn {
 background: var(--accent);
 color: #fff;

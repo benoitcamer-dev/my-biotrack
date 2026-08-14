@@ -1890,7 +1890,8 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
+  row.innerHTML = `<div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
+    <input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-left:32px;padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
     <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
     <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step
@@ -1914,7 +1915,31 @@ function updateWalkStepIndices() {
     if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); }
     const removeBtn = row.querySelector('.icon-btn-danger');
     if (removeBtn) removeBtn.style.display = (rows.length > 2) ? 'block' : 'none';
+    const upBtn = row.querySelector('.walk-move-up');
+    if (upBtn) upBtn.disabled = (i === 0);
+    const downBtn = row.querySelector('.walk-move-down');
+    if (downBtn) downBtn.disabled = (i === rows.length - 1);
   });
+}
+
+// Échange le contenu (adresse + coords Google Places déjà résolues, le cas
+// échéant) entre une étape et sa voisine — permet de réordonner Départ /
+// Arrivée / étapes sans déplacer les nœuds DOM (autocomplete Google reste
+// attaché à l'input d'origine).
+function moveWalkStep(btn, dir) {
+  const row = btn.closest('.walk-addr-row');
+  const container = document.getElementById('walk-steps-container');
+  const rows = Array.from(container.querySelectorAll('.walk-addr-row'));
+  const idx = rows.indexOf(row);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= rows.length) return;
+  const inpA = rows[idx].querySelector('.walk-step-input');
+  const inpB = rows[targetIdx].querySelector('.walk-step-input');
+  if (!inpA || !inpB) return;
+  const tmp = { value: inpA.value, coords: inpA._gCoords, label: inpA._gLabel };
+  inpA.value = inpB.value; inpA._gCoords = inpB._gCoords; inpA._gLabel = inpB._gLabel;
+  inpB.value = tmp.value; inpB._gCoords = tmp.coords; inpB._gLabel = tmp.label;
+  haptic(6);
 }
 
 function getWalkSteps() {

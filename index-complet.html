@@ -2297,11 +2297,13 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <datalist id="saved-places-list"></datalist>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-right:52px;" onfocus="_activeWalkStep=0" autocomplete="off">
+<div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" disabled title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Départ…" data-step="0" style="padding-left:32px;padding-right:52px;" onfocus="_activeWalkStep=0" autocomplete="off">
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
 <div class="walk-addr-row" style="position:relative;">
-<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-right:96px;" onfocus="_activeWalkStep=1" autocomplete="off">
+<div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" disabled title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
+<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Arrivée…" data-step="1" style="padding-left:32px;padding-right:96px;" onfocus="_activeWalkStep=1" autocomplete="off">
 <button onclick="removeWalkStep(this)" class="step-remove-btn icon-btn icon-btn-danger" style="display:none;position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
 <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>
 </div>
