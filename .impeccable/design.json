@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T00:00:00.000Z",
+  "title": "Design System: LeGrosBarbu",
+  "extensions": {
+    "colorMeta": {
+      "cockpit-violet": { "role": "primary", "displayName": "Cockpit Violet", "canonical": "#7C6FFF", "tonalRamp": ["#0F0B29", "#221A5C", "#382A8F", "#4F3BC4", "#6650E8", "#7C6FFF", "#A69BFF", "#D6D1FF"] },
+      "cockpit-violet-deep": { "role": "primary", "displayName": "Cockpit Violet Deep", "canonical": "#9B5CFF", "tonalRamp": ["#180B33", "#2E1466", "#471D99", "#6027CC", "#7A3EFF", "#9B5CFF", "#BE8FFF", "#E4D3FF"] },
+      "signal-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "#5B7FFF", "tonalRamp": ["#0A1236", "#131F66", "#1D2E99", "#2E45CC", "#425FFF", "#5B7FFF", "#93ABFF", "#D2DCFF"] },
+      "ink-black": { "role": "neutral", "displayName": "Ink Black", "canonical": "#08080F", "tonalRamp": ["#000000", "#08080F", "#0F0F1A", "#16162A", "#1E1E35", "#2B2B4A", "#48486E", "#7373A0"] },
+      "panel": { "role": "neutral", "displayName": "Panel", "canonical": "#0F0F1A", "tonalRamp": ["#000000", "#08080F", "#0F0F1A", "#16162A", "#1E1E35", "#2B2B4A", "#48486E", "#7373A0"] },
+      "panel-raised": { "role": "neutral", "displayName": "Panel Raised", "canonical": "#16162A", "tonalRamp": ["#000000", "#08080F", "#0F0F1A", "#16162A", "#1E1E35", "#2B2B4A", "#48486E", "#7373A0"] },
+      "panel-elevated": { "role": "neutral", "displayName": "Panel Elevated", "canonical": "#1E1E35", "tonalRamp": ["#000000", "#08080F", "#0F0F1A", "#16162A", "#1E1E35", "#2B2B4A", "#48486E", "#7373A0"] },
+      "ink-text": { "role": "neutral", "displayName": "Ink Text", "canonical": "#EEEEFF", "tonalRamp": ["#08080F", "#2B2B4A", "#48486E", "#6B6B99", "#9494C2", "#C4C4E6", "#EEEEFF", "#FFFFFF"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "#6B6B99", "tonalRamp": ["#141425", "#232345", "#333366", "#484887", "#6B6B99", "#8F8FB8", "#B8B8D6", "#E0E0F0"] },
+      "ember-orange": { "role": "tertiary", "displayName": "Ember Orange", "canonical": "#FF8C42", "tonalRamp": ["#331B04", "#66360A", "#995110", "#CC6C18", "#FF8C42", "#FFAB74", "#FFCBA3", "#FFE8D6"] },
+      "mint-green": { "role": "tertiary", "displayName": "Mint Green", "canonical": "#2ECC8F", "tonalRamp": ["#052A1C", "#0A5438", "#107E54", "#17A870", "#2ECC8F", "#65DBAD", "#9CE9CB", "#D3F5E7"] },
+      "bloom-pink": { "role": "tertiary", "displayName": "Bloom Pink", "canonical": "#F062C0", "tonalRamp": ["#3A0A2C", "#731457", "#AD1E83", "#D63CA8", "#F062C0", "#F58FD3", "#FABCE5", "#FDE0F2"] },
+      "alert-red": { "role": "tertiary", "displayName": "Alert Red", "canonical": "#FF4D6A", "tonalRamp": ["#330F16", "#661E2B", "#992D41", "#CC3C57", "#FF4D6A", "#FF8095", "#FFB3C0", "#FFE0E6"] },
+      "favorite-gold": { "role": "tertiary", "displayName": "Favorite Gold", "canonical": "#FFD166", "tonalRamp": ["#332A0D", "#66531A", "#997D27", "#CCA635", "#FFD166", "#FFDF8F", "#FFECB8", "#FFF8E0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The one headline figure per card: the day's kcal total, calculator results. Always gradient-clipped." },
+      "headline": { "displayName": "Headline", "purpose": "Stat-box values and meal group totals." },
+      "title": { "displayName": "Title", "purpose": "Recipe names, date-nav label, section titles." },
+      "body": { "displayName": "Body", "purpose": "Entry descriptions, dialog copy, form values." },
+      "label": { "displayName": "Label", "purpose": "Uppercase wide-tracked micro-labels: section headers, stat labels, macro labels." },
+      "unit": { "displayName": "Unit", "purpose": "Gram unit mark (.unit-g): italic Georgia serif, the system's one deliberate break from Inter. See The Georgia \"g\" Rule." }
+    },
+    "shadows": [
+      { "name": "glow-accent-sm", "value": "0 0 12px rgba(124,111,255,0.4)", "purpose": "Progress bar fill glow." },
+      { "name": "glow-accent-md", "value": "0 0 20px rgba(124,111,255,0.08)", "purpose": "Active tab ambient glow." },
+      { "name": "glow-accent-focus", "value": "0 0 0 3px rgba(124,111,255,0.1)", "purpose": "Focused input ring." },
+      { "name": "glow-button-primary", "value": "0 4px 20px rgba(124,111,255,0.3)", "purpose": "Primary button rest-state glow." },
+      { "name": "glow-button-danger", "value": "0 4px 20px rgba(255,77,106,0.3)", "purpose": "Danger button rest-state glow." },
+      { "name": "overlay-lift", "value": "0 8px 32px rgba(0,0,0,0.5)", "purpose": "Dropdowns and popovers lifted above content." },
+      { "name": "sheet-lift", "value": "0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02)", "purpose": "Bottom sheets and modals." },
+      { "name": "hero-card", "value": "0 4px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)", "purpose": "The hero kcal card: grounding shadow plus a glass top-edge highlight." }
+    ],
+    "motion": [
+      { "name": "ease-sheet", "value": "cubic-bezier(0.32,1.2,0.64,1)", "purpose": "Bottom sheet slide-up and overlay transitions — a slight overshoot for a physical, springy arrival." },
+      { "name": "ease-progress", "value": "cubic-bezier(0.34,1.2,0.64,1)", "purpose": "Progress bar fill width transition." },
+      { "name": "duration-fast", "value": "0.15s-0.2s", "purpose": "Hover/focus/press micro-interactions." },
+      { "name": "duration-sheet", "value": "0.28s", "purpose": "Sheet slide-up, list item fade-up entrance." }
+    ],
+    "breakpoints": [
+      { "name": "desktop", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width violet-gradient call to action; the app's one high-emphasis button.",
+      "html": "<button class=\"ds-btn-primary\">Enregistrer</button>",
+      "css": ".ds-btn-primary { width: 100%; background: linear-gradient(135deg, var(--cockpit-violet, #7C6FFF), var(--signal-blue, #5B7FFF)); border: none; border-radius: 16px; padding: 16px; color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(124,111,255,0.3); transition: all 0.2s; } .ds-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,111,255,0.4); } .ds-btn-primary:focus-visible { outline: 2px solid #C4BEFF; outline-offset: 2px; } .ds-btn-primary:active { transform: scale(0.98) translateY(0); box-shadow: none; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive-action button; same shape/type as Primary, flat red fill.",
+      "html": "<button class=\"ds-btn-danger\">Supprimer</button>",
+      "css": ".ds-btn-danger { width: 100%; background: #FF4D6A; border: none; border-radius: 16px; padding: 16px; color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 20px rgba(255,77,106,0.3); transition: all 0.2s; } .ds-btn-danger:hover { opacity: 0.9; transform: translateY(-1px); } .ds-btn-danger:focus-visible { outline: 2px solid #FF8095; outline-offset: 2px; } .ds-btn-danger:active { transform: scale(0.98) translateY(0); box-shadow: none; }"
+    },
+    {
+      "name": "Ghost/Cancel Button",
+      "kind": "button",
+      "refersTo": "button-cancel",
+      "description": "Low-emphasis dismiss action, always paired below a Primary or Danger button.",
+      "html": "<button class=\"ds-btn-cancel\">Annuler</button>",
+      "css": ".ds-btn-cancel { width: 100%; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 16px; color: #EEEEFF; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; } .ds-btn-cancel:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); } .ds-btn-cancel:focus-visible { outline: 2px solid #C4BEFF; outline-offset: 2px; } .ds-btn-cancel:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Segmented Tabs",
+      "kind": "nav",
+      "refersTo": "tab-segmented",
+      "description": "Two-up top-level view switcher (e.g. Journal / Bilan).",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab ds-tab-active\">Journal</button><button class=\"ds-tab\">Bilan</button></div>",
+      "css": ".ds-tabs { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; } .ds-tab { border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); color: #6B6B99; padding: 14px 8px; border-radius: 16px; font-size: 14px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: all 0.2s; } .ds-tab:focus-visible { outline: 2px solid #C4BEFF; outline-offset: 2px; } .ds-tab-active { background: rgba(124,111,255,0.1); color: #EEEEFF; border-color: rgba(124,111,255,0.2); box-shadow: 0 0 20px rgba(124,111,255,0.08); }"
+    },
+    {
+      "name": "Hero Stat Card",
+      "kind": "card",
+      "refersTo": "card-stat",
+      "description": "The signature component: the day's headline number in a gradient-clipped display face over a glowing radial-lit panel, with a progress bar beneath.",
+      "html": "<div class=\"ds-hero-card\"><div class=\"ds-hero-glow\"></div><div class=\"ds-hero-number\">1 847</div><div class=\"ds-hero-label\">kcal aujourd'hui</div><div class=\"ds-hero-track\"><div class=\"ds-hero-fill\" style=\"width:62%\"></div></div></div>",
+      "css": ".ds-hero-card { position: relative; overflow: hidden; background: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%); border: 1px solid rgba(124,111,255,0.1); border-radius: 28px; padding: 24px 18px 20px; text-align: center; box-shadow: 0 4px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05); } .ds-hero-glow { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 280px; height: 280px; background: radial-gradient(circle, rgba(124,111,255,0.12) 0%, transparent 65%); pointer-events: none; } .ds-hero-number { position: relative; font-family: 'Inter', sans-serif; font-size: 60px; font-weight: 800; letter-spacing: -3px; line-height: 1; background: linear-gradient(135deg,#FFFFFF 35%,#C4BEFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; } .ds-hero-label { position: relative; font-size: 11px; font-weight: 600; color: #6B6B99; text-transform: uppercase; letter-spacing: 3px; margin-top: 4px; } .ds-hero-track { position: relative; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-top: 16px; } .ds-hero-fill { height: 100%; background: linear-gradient(90deg,#7C6FFF,#9B5CFF); border-radius: 99px; box-shadow: 0 0 12px rgba(124,111,255,0.4); }"
+    },
+    {
+      "name": "Stat Chip",
+      "kind": "card",
+      "refersTo": "card-stat",
+      "description": "Compact 2-up/4-up grid tile for a single labeled metric.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat-label\">Dépensé</div><div class=\"ds-stat-val\" style=\"color:#2ECC8F\">2 340</div></div>",
+      "css": ".ds-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 12px 14px; backdrop-filter: blur(8px); } .ds-stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #6B6B99; margin-bottom: 3px; } .ds-stat-val { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #EEEEFF; }"
+    },
+    {
+      "name": "Macro Pill",
+      "kind": "chip",
+      "refersTo": "card-stat",
+      "description": "Protein/carbs/fat readout tile — color-locked per the canonical macro mapping (violet/orange/pink).",
+      "html": "<div class=\"ds-macro ds-macro-prot\"><div class=\"ds-macro-label\">Prot.</div><div class=\"ds-macro-val\">142g</div></div>",
+      "css": ".ds-macro { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 10px 8px; text-align: center; } .ds-macro-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px; } .ds-macro-val { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: #EEEEFF; } .ds-macro-prot .ds-macro-label { color: #7C6FFF; } .ds-macro-gluc .ds-macro-label { color: #FF8C42; } .ds-macro-lip .ds-macro-label { color: #F062C0; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Primary text/search field with the system's violet glow-focus state.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Rechercher un aliment...\">",
+      "css": ".ds-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 13px 16px; font-size: 15px; color: #EEEEFF; font-family: 'Inter', sans-serif; width: 100%; outline: none; transition: all 0.2s; } .ds-input::placeholder { color: #6B6B99; } .ds-input:focus { border-color: #7C6FFF; background: rgba(124,111,255,0.06); box-shadow: 0 0 0 3px rgba(124,111,255,0.1); }"
+    },
+    {
+      "name": "Bottom Nav Item",
+      "kind": "nav",
+      "refersTo": "tab-segmented",
+      "description": "Icon+label button used in the fixed six-item bottom navigation.",
+      "html": "<button class=\"ds-navitem\"><span class=\"ds-navitem-icon\">★</span><span>Aliments</span></button>",
+      "css": ".ds-navitem { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 12px; color: #6B6B99; font-size: 11px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s; } .ds-navitem-icon { font-size: 20px; } .ds-navitem:hover { color: #7C6FFF; background: rgba(124,111,255,0.1); } .ds-navitem:focus-visible { outline: 2px solid #C4BEFF; outline-offset: 2px; } .ds-navitem:active { transform: scale(0.92); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Cockpit",
+    "overview": "LeGrosBarbu reads as a private instrument panel checked after dark: near-black ink surfaces (#08080F), glassy blurred layers, and a single electric-violet accent that lights up only what's live — the day's calorie readout, the active tab, a focused field. Nothing else competes for attention. The system is dense and fast rather than spacious: numbers sit close together, labels are small and wide-tracked, and the largest thing on any screen is always the number that matters most right now (calories, a macro total, a body-weight delta), rendered in a gradient-clipped display face with tight negative tracking that reads like a cockpit readout, not a marketing headline.\n\nDepth comes from light, not gray. Ambient violet (and occasionally orange, pink, or green) glow signals \"this is live/active/yours,\" while flat black shadows do the physical work of lifting sheets and dropdowns above the page. Corners are generous almost everywhere — this is a soft, tactile instrument panel, not a hard technical one — except where a sheet meets the bottom edge of the screen, where the rounding stops dead to say \"anchored here.\"\n\nThe app has no gamification skin: no mascots, no emoji badges, no bright primary-color reward pops. Confidence comes from precision (tabular numerals, gradient-text hero figures, a Georgia-italic \"g\" unit mark) rather than decoration.",
+    "keyCharacteristics": [
+      "Near-black ink background with a single violet-blue accent gradient — everything else is grayscale until something needs to signal state",
+      "Glow-as-elevation: colored ambient shadows for emphasis, neutral black shadows for physical lift",
+      "Dense, glassy, mobile-first single column (480px), expanding to a 4-column stat grid past 900px",
+      "Bottom sheets round only their top corners — a hard visual signature of \"anchored to the bottom edge\"",
+      "Big gradient-clipped numerals with tight negative letter-spacing for hero stats; wide-tracked uppercase micro-labels everywhere else"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Cockpit Violet is the only color that means \"primary action\" or \"brand.\" Every other hue is locked to a single semantic role (macro, sport, danger, favorite) and must not be reused as a generic accent.", "section": "colors" },
+      { "name": "The Macro-Color Rule", "body": "Protein = violet, Carbs = orange, Fat = pink is the canonical mapping (as shown on the dashboard macro pills). The meal-line macro badges currently use a second, blue/amber/orange mapping — that's drift against this rule, not a second valid system; new work should converge on the dashboard mapping.", "section": "colors" },
+      { "name": "The Gradient Numeral Rule", "body": "Any number that is the headline figure of its card (the day's kcal total, a calculator result) is rendered in the display face with the white→lavender gradient text-clip and tight negative tracking — never as flat solid text at that size.", "section": "typography" },
+      { "name": "The Georgia \"g\" Rule", "body": "Gram units (.unit-g) render in italic Georgia serif at 0.9em — a small, deliberate typographic wink that breaks from Inter only for this one unit mark, making weight values feel hand-annotated against the otherwise mechanical numerals.", "section": "typography" },
+      { "name": "The Glow-Is-Emphasis Rule", "body": "Colored shadows always mean \"live, active, or emphasized\" — never plain decoration. If a colored glow appears on a static/inactive element, that's a bug, not a style choice. Anything that needs to visually float above other content (sheet, dropdown, popover) uses the neutral black overlay-lift shadow instead, regardless of what color the element itself is.", "section": "elevation" },
+      { "name": "The Half-Round Sheet Rule", "body": "Every bottom sheet and modal rounds only its top two corners (28px 28px 0 0 / 24px 24px 0 0) and never its bottom corners — the flat bottom edge is what tells the eye \"this is anchored to the screen edge, not floating.\"", "section": "shapes" }
+    ],
+    "dos": [
+      "Do reserve Cockpit Violet for primary actions, active/live state, and protein — never as a generic decorative accent.",
+      "Do use colored ambient glow only to mean \"this is live, active, or emphasized\"; use neutral black shadow for anything physically overlaying content.",
+      "Do round bottom sheets and modals on the top corners only (28px 28px 0 0) — never all four.",
+      "Do render any card's headline figure in the gradient-clipped display face with tight negative tracking, not as flat solid text.",
+      "Do keep spacing dense (6–16px rhythm) — this is a daily-logging tool, not a landing page; don't add marketing-scale whitespace."
+    ],
+    "donts": [
+      "Don't introduce gray/neutral drop shadows on live, interactive cards — depth there comes from colored glow, not gray shadow.",
+      "Don't add bright multi-color gamification, mascots, emoji badges, or reward-pop UI — the palette stays restrained to one accent plus role-locked semantic colors.",
+      "Don't give a bottom sheet or modal rounded bottom corners — it breaks the \"anchored to the edge\" signature.",
+      "Don't invent a third macro-color mapping. Converge new work on violet/orange/pink (protein/carbs/fat); treat the existing blue/amber/orange meal-line badges as drift to fix, not a pattern to extend.",
+      "Don't use Favorite Gold as a general highlight color — it's reserved for favorites and user-created/custom items."
+    ]
+  }
+}

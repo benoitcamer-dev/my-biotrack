@@ -1,0 +1,6 @@
+# Claude Code / Impeccable skill tooling — not part of the app
+.claude/
+
+# Impeccable local/session-only files (not meant to be shared)
+.impeccable/config.local.json
+.impeccable/hook.cache.json

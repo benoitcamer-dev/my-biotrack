@@ -1,0 +1,60 @@
+{
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "styles.css"
+        ],
+        "createdAt": "2026-08-14T09:52:45.170Z",
+        "reason": "Confirmed intentional: DESIGN.md's Gradient Numeral Rule (documented during /impeccable document interview) — hero kcal number and calc-result figure are deliberately gradient-clipped, this file's only gradient-text usage."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-08-14T10:10:11.053Z",
+        "reason": "Confirmed intentional: DESIGN.md documents Inter as the project's single, deliberate typeface ('the only typeface in the system'), confirmed with the user during /impeccable document."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "files": [
+          "styles.css"
+        ],
+        "createdAt": "2026-08-14T10:10:11.146Z",
+        "reason": "Confirmed intentional: the app's consistent springy-overshoot motion signature for sheets/menus (FAB item entrance), used identically across the file; changing only one instance would break consistency, not fix a defect."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-08-14T10:10:11.236Z",
+        "reason": "Same FAB entrance bounce as styles.css keyframe, inlined per-button with staggered delays; part of the same confirmed motion signature."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.32, 1.2, 0.64, 1)",
+        "files": [
+          "styles.css"
+        ],
+        "createdAt": "2026-08-14T10:10:11.334Z",
+        "reason": "Confirmed intentional: same springy-overshoot motion signature used by all bottom sheets (modal-sheet, app-confirm-sheet) for their slide-up entrance, applied consistently across the file."
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.2, 0.64, 1)",
+        "files": [
+          "styles.css"
+        ],
+        "createdAt": "2026-08-14T10:10:11.427Z",
+        "reason": "Confirmed intentional: same springy-overshoot motion signature applied to the kcal/progress-bar fill transition, consistent with the app's sheet and FAB entrance easing."
+      }
+    ]
+  }
+}

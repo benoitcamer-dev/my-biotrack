@@ -1329,7 +1329,7 @@ const isSport = cat === 'Sport', isDrink = cat === 'Boissons';
 const pr2 = document.getElementById('drink-portions-row'); if (pr2 && !isDrink) pr2.style.display = 'none';
 document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
 resetModalForm();
-document.getElementById('modal-title').textContent = isSport ? '🔥 Activité physique' : '+ ' + cat;
+document.getElementById('modal-title').innerHTML = isSport ? '<i data-lucide="flame" class="lc-icon-sm"></i> Activité physique' : '+ ' + cat;
 _currentDrinkUnit = 'ml';
 document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
 document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
@@ -1408,7 +1408,7 @@ function showAllSports() {
   div.innerHTML = `
     <div style="padding:10px 8px 6px;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;">
-        <button onclick="selectBikeModeQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚴 Vélo</button>
+        <button onclick="selectBikeModeQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;justify-content:center;gap:5px;"><i data-lucide="bike" class="lc-icon-sm"></i>Vélo</button>
         <button onclick="selectWalkRouteQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Itinéraire</button>
         <button onclick="selectWalkSimpleQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Simple</button>
       </div>
@@ -1440,7 +1440,7 @@ const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
 document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
-document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
@@ -3114,13 +3114,13 @@ document.getElementById('bilan-summary').innerHTML = `
     <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">
       🔴 ${daysOver} jour${daysOver>1?'s':''} au-dessus
     </div>
-    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:5px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
+    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="dumbbell" class="lc-icon-sm"></i>${daysProtOk}j objectif prot. atteint</div>` : ''}
   </div>
 
   ${totalSportKcal > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
-    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;">🚴 <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${fmtNum(totalBikeKcal)}</strong> kcal</div>` : ''}
+    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="bike" class="lc-icon-sm"></i><strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${fmtNum(totalBikeKcal)}</strong> kcal</div>` : ''}
     ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${fmtNum(totalWalkKcal)}</strong> kcal</div>` : ''}
-    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total : <strong>${fmtNum(totalSportKcal)}</strong> kcal</div>
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="flame" class="lc-icon-sm"></i>Total : <strong>${fmtNum(totalSportKcal)}</strong> kcal</div>
   </div>` : ''}
 </div>`;
 
@@ -3152,8 +3152,8 @@ if (bilanRange === 'week') {
 <div class="day-line-bal ${balClass}">${bal >= 0 ? '+' : ''}${bal} kcal</div>
 </div>
 <div class="day-line-details">
-<div class="day-line-item">🍽️ Ingéré : <span>${v.food} kcal</span></div>
-<div class="day-line-item">🔥 Dépensé : <span>${bmr + v.sport} kcal</span></div>
+<div class="day-line-item"><i data-lucide="utensils" class="lc-icon-sm"></i> Ingéré : <span>${v.food} kcal</span></div>
+<div class="day-line-item"><i data-lucide="flame" class="lc-icon-sm"></i> Dépensé : <span>${bmr + v.sport} kcal</span></div>
 </div>
 <div class="day-line-macros">
 <div class="day-line-macro p">P : <span>${Math.round(v.prot)}&nbsp;g</span></div>
@@ -4087,11 +4087,11 @@ function _moveEntry(id) {
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
-        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
-        <option value="Déjeuner">🍽️ Déjeuner</option>
-        <option value="Dîner">🌙 Dîner</option>
-        <option value="Snack">🍎 Snack</option>
-        <option value="Boissons">🥤 Boissons</option>
+        <option value="Petit-déjeuner">Petit-déjeuner</option>
+        <option value="Déjeuner">Déjeuner</option>
+        <option value="Dîner">Dîner</option>
+        <option value="Snack">Snack</option>
+        <option value="Boissons">Boissons</option>
       </select>
     </div>
     <div style="margin-bottom:16px;">
@@ -4144,11 +4144,11 @@ function _copyEntry(id) {
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="copy-entry-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
-        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
-        <option value="Déjeuner">🍽️ Déjeuner</option>
-        <option value="Dîner">🌙 Dîner</option>
-        <option value="Snack">🍎 Snack</option>
-        <option value="Boissons">🥤 Boissons</option>
+        <option value="Petit-déjeuner">Petit-déjeuner</option>
+        <option value="Déjeuner">Déjeuner</option>
+        <option value="Dîner">Dîner</option>
+        <option value="Snack">Snack</option>
+        <option value="Boissons">Boissons</option>
       </select>
     </div>
     <div style="margin-bottom:16px;">
@@ -5819,6 +5819,11 @@ function applyTheme(l) {
   localStorage.setItem('theme', l ? 'light' : 'dark');
   const b = document.getElementById('theme-toggle-btn');
   if (b) b.textContent = l ? 'ON' : 'OFF';
+  // Icône du bouton thème dans le header : soleil en clair, lune en sombre.
+  // On remplace le nœud <i> (pas juste l'attribut data-lucide) pour que le
+  // MutationObserver qui rend les icônes Lucide détecte le changement.
+  const icon = document.getElementById('theme-btn-icon');
+  if (icon) icon.outerHTML = `<i data-lucide="${l ? 'sun' : 'moon'}" class="lc-icon-sm" id="theme-btn-icon"></i>`;
 }
 function toggleTheme() {
   applyTheme(document.documentElement.getAttribute('data-theme') !== 'light');
@@ -5987,7 +5992,7 @@ function renderBilanChart(values, goal, range) {
     return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${fmtNum(d.food)}</text>` : ''}
 </g>`;
   }).join('');
@@ -6002,7 +6007,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
 
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
-    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" class="lc-icon-sm"></i>Calories ingérées / jour${subtitle}</div>
     <svg id="bilan-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
@@ -6156,7 +6161,7 @@ function renderProtChart(values, protGoal, range) {
     return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
-${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${d.prot}</text>` : ''}
 </g>`;
   }).join('');
