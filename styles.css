@@ -12,6 +12,9 @@ button, a, [onclick], .result-item, .cal-day, .entry-action, .fav-link-btn {
 --glow-accent: rgba(124,111,255,0.15);
 --glow-green: rgba(46,204,143,0.15);
 --glow-danger: rgba(255,77,106,0.15);
+--accent2-bg-soft: rgba(155,92,255,0.15); --accent2-border-soft: rgba(155,92,255,0.4);
+--orange-bg-soft: rgba(255,140,66,0.15); --orange-border-soft: rgba(255,140,66,0.4);
+--green-bg-soft: rgba(46,204,143,0.15); --green-border-soft: rgba(46,204,143,0.4);
 --gradient-main: linear-gradient(135deg, #7C6FFF, #5B7FFF);
 --gradient-surface: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%);
 }
@@ -24,6 +27,9 @@ button, a, [onclick], .result-item, .cal-day, .entry-action, .fav-link-btn {
 --glow-accent: rgba(91,79,232,0.1);
 --glow-green: rgba(22,163,74,0.1);
 --glow-danger: rgba(220,38,38,0.1);
+--accent2-bg-soft: rgba(123,63,228,0.12); --accent2-border-soft: rgba(123,63,228,0.35);
+--orange-bg-soft: rgba(232,98,10,0.12); --orange-border-soft: rgba(232,98,10,0.35);
+--green-bg-soft: rgba(22,163,74,0.12); --green-border-soft: rgba(22,163,74,0.35);
 --gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
 --gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
 }
