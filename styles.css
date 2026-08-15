@@ -228,6 +228,13 @@ font-size: 14px;
 cursor: pointer;
 transition: all 0.15s;
 flex-shrink: 0;
+/* Cible tactile 44px min (utilisé tous les jours pour changer de date) — le
+   padding seul ne suffisait pas (~29px de haut avant), audit mobile du 15/08/2026. */
+min-width: 44px;
+min-height: 44px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
 }
 .date-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 .date-nav-center { flex: 1; text-align: center; cursor: pointer; position: relative; }
