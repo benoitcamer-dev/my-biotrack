@@ -4070,7 +4070,7 @@ loadData();
 if (currentPage === 'bilan') loadBilan();
 }
 ['modal-add', 'modal-settings', 'modal-recipe-link', 'modal-recipe-editor', 'modal-recipe-picker', 'modal-custom-food', 'modal-aliments', 'modal-favs-quick', 'modal-weight', 'modal-sport-favs', 'modal-recipe-date-meal', 'modal-sport-fav-date', 'modal-edit-weight', 'modal-recipes', 'modal-places', 'modal-copy-meal'].forEach(id => {
-const el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
+const el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { if (e.target === this) { blurActiveAddressInput(); this.classList.remove('open'); } });
 });
 document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
 function showPage(page) {
@@ -4095,7 +4095,7 @@ function openPlacesModal() {
   document.getElementById('modal-places').classList.add('open');
   if (GMAPS_API_KEY && _googleMapsReady) setTimeout(() => _attachPlacesAutocomplete(), 100);
 }
-function closePlacesModal() { document.getElementById('modal-places').classList.remove('open'); }
+function closePlacesModal() { blurActiveAddressInput(); document.getElementById('modal-places').classList.remove('open'); }
 
 function renderPlacesList() {
   const el = document.getElementById('places-list');
@@ -4419,6 +4419,7 @@ const _fab = document.getElementById('fab-btn'); if (_fab) _fab.style.display = 
 // Pas d'autofocus — évite l'ouverture automatique du clavier sur mobile
 }
 function closeModal() {
+  blurActiveAddressInput();
   document.getElementById('modal-add').classList.remove('open');
   document.body.classList.remove('modal-open');
   const _fab = document.getElementById('fab-btn'); if (_fab) _fab.style.display = '';
@@ -5077,20 +5078,28 @@ function _attachPlacesAutocomplete() {
 }
 
 // Le dropdown de suggestions Google (.pac-container) est positionné en absolute
-// sur <body> au moment où il s'ouvre, et ne se repositionne QUE sur le scroll de
-// window/visualViewport — jamais sur le scroll d'un ancêtre (ex: .modal-sheet/
-// .settings-sheet qui scrollent en interne). Résultat : la liste de suggestions
-// reste figée à l'écran, détachée du champ, quand on scrolle dans la modale.
-// Fix : fermer (blur) le champ actif dès que son conteneur scrollable défile,
-// ce qui referme le dropdown Google avec lui.
-document.addEventListener('scroll', (e) => {
-  const t = e.target;
-  if (!t || !t.classList) return;
-  if (!t.classList.contains('modal-sheet') && !t.classList.contains('settings-sheet')) return;
+// sur <body>, hors du DOM de la modale, et ne se referme jamais tout seul quand
+// la modale disparaît : tant que le champ d'adresse (.walk-step-input/
+// .walk-places-input) qui l'a ouvert garde le focus, il reste orphelin et
+// flotte par-dessus l'écran suivant. Utilitaire centralisé : blur le champ actif
+// s'il s'agit d'un champ d'adresse, ce qui referme le dropdown Google avec lui.
+// Utilisé (1) sur le scroll d'un conteneur interne de modale (le dropdown ne suit
+// que le scroll de window/visualViewport, jamais celui d'un ancêtre qui scrolle
+// en interne) et (2) dans toutes les fonctions de fermeture de modale susceptibles
+// de contenir un tel champ (closeModal, closePlacesModal, closeSportFavsModal),
+// pour couvrir aussi la fermeture directe (bouton Valider/Fermer/×, swipe-to-close,
+// clic sur l'overlay) sans passer par un scroll préalable.
+function blurActiveAddressInput() {
   const active = document.activeElement;
   if (active && active.classList && (active.classList.contains('walk-step-input') || active.classList.contains('walk-places-input'))) {
     active.blur();
   }
+}
+document.addEventListener('scroll', (e) => {
+  const t = e.target;
+  if (!t || !t.classList) return;
+  if (!t.classList.contains('modal-sheet') && !t.classList.contains('settings-sheet')) return;
+  blurActiveAddressInput();
 }, true);
 
 // Override geocodeAddress to use Google if available
@@ -7524,7 +7533,7 @@ renderSportFavsContent();
 document.getElementById('modal-sport-favs').classList.add('open');
 document.body.classList.add('modal-open');
 }
-function closeSportFavsModal() { document.getElementById('modal-sport-favs').classList.remove('open'); document.body.classList.remove('modal-open'); }
+function closeSportFavsModal() { blurActiveAddressInput(); document.getElementById('modal-sport-favs').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function switchSportTab(tab) { currentSportTab = tab; renderSportFavsTabBtns(); renderSportFavsContent(); }
 function renderSportFavsTabBtns() {
 document.getElementById('sport-tab-walk').classList.toggle('active', currentSportTab === 'walk');
