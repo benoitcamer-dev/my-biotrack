@@ -1190,7 +1190,7 @@ function openAddPlaceForm() {
   _editingPlaceIdx = -1;
   document.getElementById('place-form-name').value = '';
   document.getElementById('place-form-addr').value = '';
-  document.getElementById('place-form-home').checked = false;
+  const homeEl = document.getElementById('place-form-home'); if (homeEl) homeEl.checked = false;
   document.getElementById('place-form').style.display = 'block';
   setTimeout(() => document.getElementById('place-form-name').focus(), 100);
 }
@@ -1199,7 +1199,7 @@ function openEditPlaceForm(i) {
   _editingPlaceIdx = i;
   document.getElementById('place-form-name').value = savedPlaces[i].name;
   document.getElementById('place-form-addr').value = savedPlaces[i].address;
-  document.getElementById('place-form-home').checked = !!savedPlaces[i].home;
+  const homeEl = document.getElementById('place-form-home'); if (homeEl) homeEl.checked = !!savedPlaces[i].home;
   document.getElementById('place-form').style.display = 'block';
   setTimeout(() => document.getElementById('place-form-name').focus(), 100);
 }
@@ -1209,7 +1209,7 @@ function closePlaceForm() {
   document.getElementById('place-form').style.display = 'none';
   document.getElementById('place-form-name').value = '';
   document.getElementById('place-form-addr').value = '';
-  document.getElementById('place-form-home').checked = false;
+  const homeEl = document.getElementById('place-form-home'); if (homeEl) homeEl.checked = false;
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
 }
@@ -1217,7 +1217,11 @@ function closePlaceForm() {
 async function savePlace() {
   const name = document.getElementById('place-form-name').value.trim();
   const address = document.getElementById('place-form-addr').value.trim();
-  const isHome = document.getElementById('place-form-home').checked;
+  // ?? plutôt qu'un simple || : si la checkbox est absente du DOM (HTML pas encore
+  // synchronisé avec ce app.js après déploiement), on garde l'état "domicile" existant
+  // du lieu édité au lieu de l'effacer silencieusement.
+  const homeElSave = document.getElementById('place-form-home');
+  const isHome = homeElSave ? homeElSave.checked : (_editingPlaceIdx >= 0 ? !!savedPlaces[_editingPlaceIdx].home : false);
   if (!name || !address) { showToast("Remplis le nom et l'adresse.", 'error'); return; }
   // Un seul lieu "domicile" à la fois : on désélectionne les autres avant d'enregistrer celui-ci.
   if (isHome) savedPlaces.forEach(p => { delete p.home; });
