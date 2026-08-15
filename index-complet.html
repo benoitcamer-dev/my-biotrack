@@ -3965,7 +3965,7 @@ const favFoods = foods.filter(f => favoriteIds.includes(f.id));
 const otherFoods = foods.filter(f => !favoriteIds.includes(f.id));
 let html = '';
 if (favFoods.length && otherFoods.length && !q) {
-  html += `<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;padding:4px 4px 8px;">⭐ Favoris</div>`;
+  html += `<div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;padding:4px 4px 8px;display:flex;align-items:center;gap:4px;"><i data-lucide="star" class="lc-icon-sm"></i>Favoris</div>`;
   html += favFoods.map(f => renderAlimentItem(f, true)).join('');
   html += `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:12px 4px 8px;">Tous les aliments</div>`;
   html += otherFoods.map(f => renderAlimentItem(f, false)).join('');
@@ -3991,7 +3991,7 @@ return `<div class="food-item">
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')">${isFav ? '⭐' : '☆'}</button>
+<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')"><i data-lucide="star" class="lc-icon-sm" style="${isFav ? 'fill:currentColor' : ''}"></i></button>
 <button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();closeAlimentsModal();openCustomFoodModal(\'\',\'${f.id}\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteCustomFood(\'${f.id}\')',danger:true}])">⋯</button>
 </div>
 </div>`;
@@ -4583,8 +4583,8 @@ const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
-document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
-document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
@@ -4607,7 +4607,7 @@ const quickBtns = `<div style="display:flex;gap:6px;padding:8px 4px;border-botto
     <div class="result-name" style="color:var(--accent);display:flex;align-items:center;gap:6px;"><i data-lucide="book-open" class="lc-icon-sm"></i> Recettes</div>
   </div>
   <div class="result-item" onclick="openAlimentsFromAdd()" style="flex:1;min-width:120px;background:rgba(255,193,7,0.08);">
-    <div class="result-name" style="color:#fbbf24;">⭐ Aliments</div>
+    <div class="result-name" style="color:#fbbf24;display:flex;align-items:center;gap:6px;"><i data-lucide="star" class="lc-icon-sm"></i> Aliments</div>
   </div>
 </div>`;
 div.innerHTML = quickBtns + DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
@@ -4982,7 +4982,7 @@ if (!walkFavorites.length) { el.innerHTML = emptyStateHTML('route', 'Aucun traje
 el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadWalkFav(${i})">
-<div class="sport-fav-name">⭐ ${f.name}</div>
+<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div>
 <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
 </div>
 <button onclick="event.stopPropagation();deleteWalkFav(${i})" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
@@ -5001,7 +5001,7 @@ routeBaseDuration = f.duration;
 currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
 currentWalkFavName = f.name;
 document.getElementById('walk-route-result').style.display = 'block';
-document.getElementById('walk-route-result').innerHTML = `⭐ <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
+document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'none';
@@ -5371,7 +5371,7 @@ el.style.display = 'block';
 const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadBikeFav(${i})">
-<div class="sport-fav-name">⭐ ${f.name}</div>
+<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div>
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
@@ -5380,10 +5380,10 @@ const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class=
 </div>
 </div>`).join('') : '';
 el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;" id="bike-favs-drag-list">
-<div class="sport-fav-title">⭐ Sorties favorites</div>
+<div class="sport-fav-title"><i data-lucide="star" class="lc-icon-sm"></i> Sorties favorites</div>
 ${listHTML}
 </div>
-<button class="walk-fav-btn" onclick="saveBikeFav()">⭐ Sauvegarder cette sortie</button>`;
+<button class="walk-fav-btn" onclick="saveBikeFav()"><i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder cette sortie</button>`;
 initTouchReorder(el, bikeFavorites, () => { saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); });
 }
 function loadBikeFav(i) {
@@ -7826,7 +7826,7 @@ routeBaseDuration = f.duration;
 currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
 currentWalkFavName = f.name;
 document.getElementById('walk-route-result').style.display = 'block';
-document.getElementById('walk-route-result').innerHTML = `⭐ <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
+document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'inline-block';
@@ -8577,7 +8577,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-result').style.display = 'block';
       document.getElementById('ai-add-btn').textContent = '✓ Ajouter l\'activité';
       document.getElementById('ai-save-fav-btn').style.display = 'block';
-      document.getElementById('ai-save-fav-btn').textContent = p.is_walk ? '⭐ Sauvegarder trajet marche' : '⭐ Sauvegarder en favori';
+      document.getElementById('ai-save-fav-btn').innerHTML = p.is_walk ? '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder trajet marche' : '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder en favori';
       // Show save-place button for walk routes
       const spBtn = document.getElementById('ai-save-place-btn');
       if (spBtn) spBtn.style.display = p.is_walk && p.walk_steps && p.walk_steps.length ? 'block' : 'none';
@@ -8862,7 +8862,7 @@ async function saveAIEntryAsFavorite() {
       saveSettingsLocal(); pushSettingsRemote();
       btn.textContent = '✅ Favori enregistré !';
       btn.style.background = 'rgba(61,214,140,0.15)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(61,214,140,0.3)';
-      setTimeout(() => { btn.textContent = '⭐ Sauvegarder en favori'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; btn.disabled = false; }, 2500);
+      setTimeout(() => { btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder en favori'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; btn.disabled = false; }, 2500);
     }
     return;
   }
@@ -8881,7 +8881,7 @@ async function saveAIEntryAsFavorite() {
   let foodId = existing ? existing.id : null;
   if (!foodId) {
     const { data: inserted, error } = await sb.from('custom_foods').insert([{ user_id: user.id, name, kcal_100, prot_100, gluc_100, lip_100 }]).select().single();
-    if (error || !inserted) { btn.textContent = '⭐ Sauvegarder en favori'; btn.disabled = false; showToast('Erreur : ' + (error?.message || 'inconnue'), 'error'); return; }
+    if (error || !inserted) { btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder en favori'; btn.disabled = false; showToast('Erreur : ' + (error?.message || 'inconnue'), 'error'); return; }
     foodId = inserted.id;
     await loadCustomFoods();
   }
@@ -8891,7 +8891,7 @@ async function saveAIEntryAsFavorite() {
   }
   btn.textContent = '✅ Favori enregistré !';
   btn.style.background = 'rgba(61,214,140,0.15)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(61,214,140,0.3)';
-  setTimeout(() => { btn.textContent = '⭐ Sauvegarder en favori'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; btn.disabled = false; }, 2500);
+  setTimeout(() => { btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder en favori'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; btn.disabled = false; }, 2500);
   if (!existing) openDoseForm(foodId, name);
 }
 
@@ -8913,7 +8913,7 @@ function openAIWalkFavForm(p) {
   form.id = formId;
   form.style.cssText = 'background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-top:10px;';
   form.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⭐ Sauvegarder comme trajet favori</div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><i data-lucide="star" class="lc-icon-sm"></i>Sauvegarder comme trajet favori</div>
     <div class="setting-row" style="margin-bottom:8px;">
       <label style="font-size:11px;">Nom du trajet</label>
       <input id="ai-wf-name" class="text-input" type="text" value="${defaultName}" style="font-size:12px;">
@@ -8943,7 +8943,7 @@ function confirmAIWalkFav() {
   const btn = document.getElementById('ai-save-fav-btn');
   btn.textContent = '✅ Trajet enregistré !';
   btn.style.background = 'rgba(61,214,140,0.15)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(61,214,140,0.3)';
-  setTimeout(() => { btn.textContent = '⭐ Sauvegarder trajet marche'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; }, 2500);
+  setTimeout(() => { btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder trajet marche'; btn.style.background = 'rgba(245,200,66,0.15)'; btn.style.color = 'var(--gold)'; btn.style.borderColor = 'rgba(245,200,66,0.3)'; }, 2500);
 }
 
 document.getElementById('ai-btn').addEventListener('touchend', function(e) {
@@ -9434,7 +9434,7 @@ function openAddFavFromAliments() {
     switchAlimentsTab('all');
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:11px;color:var(--gold);text-align:center;padding:6px;margin-bottom:8px;background:rgba(245,200,66,0.08);border-radius:8px;';
-    hint.textContent = "⭐ Clique sur l'étoile d'un aliment pour l'ajouter aux favoris";
+    hint.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i> Clique sur l\'étoile d\'un aliment pour l\'ajouter aux favoris';
     hint.id = 'fav-hint';
     const list = document.getElementById('aliments-list');
     if (!document.getElementById('fav-hint') && list) {
@@ -9446,7 +9446,7 @@ function openAddFavFromAliments() {
   }
 }
 
-// Toggle favori depuis le journal (⭐/☆)
+// Toggle favori depuis le journal (icône étoile pleine/contour)
 async function toggleEntryFavorite(entryId, btn) {
   const entry = currentEntries.find(e => e.id === entryId);
   if (!entry || entry.type !== 'food') return;
@@ -9468,7 +9468,7 @@ async function toggleEntryFavorite(entryId, btn) {
     // Remove from favorites (keep the custom food)
     await sb.from('favorites').delete().eq('user_id', user.id).eq('food_id', foodId);
     favoriteIds = favoriteIds.filter(x => x !== foodId);
-    btn.textContent = '☆';
+    btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i>'; // contour (non rempli) = pas favori
     btn.title = 'Ajouter aux favoris';
   } else {
     // Add to custom foods if needed, then favorite
@@ -9485,13 +9485,13 @@ async function toggleEntryFavorite(entryId, btn) {
       const { data: inserted, error } = await sb.from('custom_foods').insert([{
         user_id: user.id, name, kcal_100, prot_100, gluc_100, lip_100
       }]).select().single();
-      if (error || !inserted) { btn.textContent = '☆'; btn.disabled = false; return; }
+      if (error || !inserted) { btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i>'; btn.disabled = false; return; }
       foodId = inserted.id;
       await loadCustomFoods();
     }
     await sb.from('favorites').insert([{ user_id: user.id, food_id: foodId }]);
     favoriteIds.push(foodId);
-    btn.textContent = '⭐';
+    btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm" style="fill:currentColor"></i>'; // rempli = favori
     btn.title = 'Retirer des favoris';
     btn.disabled = false;
     // Open dose form if it's a new food
