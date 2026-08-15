@@ -140,6 +140,9 @@ if ('serviceWorker' in navigator) {
 <div id="place-form" style="display:none;margin-top:12px;background:var(--surface2);border-radius:12px;padding:12px;">
 <div class="setting-row"><label>Nom court</label><input id="place-form-name" class="text-input" type="text" placeholder="Ex: Gym, Affreux Jojo…"></div>
 <div class="setting-row"><label>Adresse complète</label><input id="place-form-addr" class="text-input walk-places-input" type="text" placeholder="Ex: 61 Rue de la Part-Dieu, Lyon" autocomplete="off"></div>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-top:8px;">
+<input type="checkbox" id="place-form-home" style="accent-color:var(--accent);"> <i data-lucide="home" class="lc-icon-sm"></i> Domicile (pré-remplit le départ en itinéraire marche)
+</label>
 <div style="display:flex;gap:8px;margin-top:8px;">
 <button class="btn-cancel" style="flex:1;" onclick="closePlaceForm()">Annuler</button>
 <button class="btn-primary" style="flex:2;" onclick="savePlace()">✓ Enregistrer</button>

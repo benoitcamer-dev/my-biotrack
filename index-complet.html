@@ -2202,6 +2202,9 @@ if ('serviceWorker' in navigator) {
 <div id="place-form" style="display:none;margin-top:12px;background:var(--surface2);border-radius:12px;padding:12px;">
 <div class="setting-row"><label>Nom court</label><input id="place-form-name" class="text-input" type="text" placeholder="Ex: Gym, Affreux Jojo…"></div>
 <div class="setting-row"><label>Adresse complète</label><input id="place-form-addr" class="text-input walk-places-input" type="text" placeholder="Ex: 61 Rue de la Part-Dieu, Lyon" autocomplete="off"></div>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-top:8px;">
+<input type="checkbox" id="place-form-home" style="accent-color:var(--accent);"> <i data-lucide="home" class="lc-icon-sm"></i> Domicile (pré-remplit le départ en itinéraire marche)
+</label>
 <div style="display:flex;gap:8px;margin-top:8px;">
 <button class="btn-cancel" style="flex:1;" onclick="closePlaceForm()">Annuler</button>
 <button class="btn-primary" style="flex:2;" onclick="savePlace()">✓ Enregistrer</button>
@@ -4106,7 +4109,7 @@ function renderPlacesList() {
   el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;touch-action:pan-y;">
 <span class="place-drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:8px 6px 8px 0;touch-action:none;flex-shrink:0;">⠿</span>
 <div class="food-item-main" style="flex:1;">
-<div class="food-item-name" style="display:flex;align-items:center;gap:6px;"><i data-lucide="map-pin" class="lc-icon-sm"></i> ${p.name}</div>
+<div class="food-item-name" style="display:flex;align-items:center;gap:6px;"><i data-lucide="${p.home ? 'home' : 'map-pin'}" class="lc-icon-sm"></i> ${p.name}${p.home ? ' <span style="font-size:10px;font-weight:700;color:var(--accent);">· Domicile</span>' : ''}</div>
 <div class="food-item-meta">${p.address}</div>
 ${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
@@ -4253,6 +4256,7 @@ function openAddPlaceForm() {
   _editingPlaceIdx = -1;
   document.getElementById('place-form-name').value = '';
   document.getElementById('place-form-addr').value = '';
+  document.getElementById('place-form-home').checked = false;
   document.getElementById('place-form').style.display = 'block';
   setTimeout(() => document.getElementById('place-form-name').focus(), 100);
 }
@@ -4261,6 +4265,7 @@ function openEditPlaceForm(i) {
   _editingPlaceIdx = i;
   document.getElementById('place-form-name').value = savedPlaces[i].name;
   document.getElementById('place-form-addr').value = savedPlaces[i].address;
+  document.getElementById('place-form-home').checked = !!savedPlaces[i].home;
   document.getElementById('place-form').style.display = 'block';
   setTimeout(() => document.getElementById('place-form-name').focus(), 100);
 }
@@ -4270,6 +4275,7 @@ function closePlaceForm() {
   document.getElementById('place-form').style.display = 'none';
   document.getElementById('place-form-name').value = '';
   document.getElementById('place-form-addr').value = '';
+  document.getElementById('place-form-home').checked = false;
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
 }
@@ -4277,7 +4283,10 @@ function closePlaceForm() {
 async function savePlace() {
   const name = document.getElementById('place-form-name').value.trim();
   const address = document.getElementById('place-form-addr').value.trim();
+  const isHome = document.getElementById('place-form-home').checked;
   if (!name || !address) { showToast("Remplis le nom et l'adresse.", 'error'); return; }
+  // Un seul lieu "domicile" à la fois : on désélectionne les autres avant d'enregistrer celui-ci.
+  if (isHome) savedPlaces.forEach(p => { delete p.home; });
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Géocodage…'; btn.disabled = true; }
   // Geocode address to store coords (with timeout)
@@ -4289,13 +4298,13 @@ async function savePlace() {
   } catch(e) {
     if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
     if (await showConfirm('Géocodage échoué. Enregistrer sans coordonnées GPS ?')) {
-      const place = { name, address, coords: null, resolvedLabel: null };
+      const place = { name, address, coords: null, resolvedLabel: null, home: isHome };
       if (_editingPlaceIdx >= 0) { savedPlaces[_editingPlaceIdx] = place; } else { savedPlaces.push(place); }
       saveSettingsLocal(); pushSettingsRemote(); closePlaceForm(); renderPlacesList(); updateKnownPlaces();
     }
     return;
   }
-  const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
+  const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null, home: isHome };
   // Show resolved address for confirmation
   if (result) {
     const confirmed = await showConfirm(`Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
@@ -4878,10 +4887,23 @@ document.getElementById('speed-row').style.display = 'grid'; // always visible
 document.getElementById('sport-favs-section').style.display = 'none';
 if (mode === 'route') {
   renderSavedPlacesChips();
+  prefillHomeDeparture();
   if (GMAPS_API_KEY && _googleMapsReady) {
     setTimeout(() => _attachPlacesAutocomplete(), 50);
   }
 }
+}
+// Pré-remplit le champ Départ avec l'adresse marquée comme domicile dans "Mes lieux"
+// (checkbox du formulaire d'ajout/édition), uniquement si le champ est encore vide —
+// ne doit jamais écraser une saisie déjà en cours.
+function prefillHomeDeparture() {
+  const home = savedPlaces.find(p => p.home);
+  if (!home) return;
+  const dep = document.querySelector('.walk-step-input[data-step="0"]');
+  if (dep && !dep.value.trim()) {
+    dep.value = home.address;
+    dep.dispatchEvent(new Event('input'));
+  }
 }
 function renderWalkFavsInModal() {
 const el = document.getElementById('walk-favs-list');
