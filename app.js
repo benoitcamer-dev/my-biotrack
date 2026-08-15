@@ -3792,7 +3792,7 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
     // son propre geste de swipe copier/supprimer, cf initEntrySwipe — sans cette
     // exclusion les deux systèmes captaient le même geste en même temps et un
     // swipe pour copier/supprimer changeait aussi le jour.
-    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item')) return;
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item, #fab-menu')) return;
     if (currentPage !== 'journal') return;
     _jStartX = e.touches[0].clientX;
     _jStartY = e.touches[0].clientY;
@@ -3802,7 +3802,7 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
   document.addEventListener('touchend', e => {
     if (!_jSwiping) return;
     _jSwiping = false;
-    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item')) return;
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item, #fab-menu')) return;
     if (currentPage !== 'journal') return;
     const dx = e.changedTouches[0].clientX - _jStartX;
     const dy = e.changedTouches[0].clientY - _jStartY;
@@ -6604,6 +6604,31 @@ function showConfirm(message, opts = {}) {
   window.addEventListener('online', hideOfflineToast);
   if (!navigator.onLine) showOfflineToast();
 })();
+
+// ── Bannière "nouvelle version dispo" ────────────────────────────────────────
+// Le service worker (network-first, voir sw.js) récupère automatiquement le
+// nouveau code au prochain rechargement, mais un onglet resté ouvert continue
+// d'exécuter l'ancien app.js déjà chargé en mémoire tant qu'on ne recharge pas.
+// 'controllerchange' se déclenche quand un nouveau SW prend le contrôle
+// (skipWaiting côté sw.js) — on propose alors explicitement de recharger.
+function showUpdateBanner() {
+  if (document.getElementById('update-banner')) return;
+  const bar = document.createElement('div');
+  bar.id = 'update-banner';
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--accent);color:#fff;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,0.3);';
+  bar.innerHTML = `<span>Nouvelle version disponible</span><button style="background:#fff;color:var(--accent);border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;">Actualiser</button>`;
+  bar.querySelector('button').onclick = () => location.reload();
+  document.body.appendChild(bar);
+}
+if ('serviceWorker' in navigator) {
+  // Capturé avant tout événement : si un SW contrôlait déjà cette page au chargement,
+  // un futur 'controllerchange' est une vraie mise à jour. Sinon (premier
+  // enregistrement, ou cache/SW tout juste réinitialisés) ce serait un faux positif.
+  const hadControllerAtLoad = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadControllerAtLoad) showUpdateBanner();
+  });
+}
 
 // ── Clavier mobile : remonte le modal-add au-dessus du clavier ──
 (function() {

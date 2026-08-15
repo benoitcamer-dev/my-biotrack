@@ -1561,7 +1561,10 @@ body.modal-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 11px;
+  /* 9px → 12px : compromis densité/confort tactile pour les boutons copier/
+     supprimer au swipe (qui suivent cette hauteur), sans viser les 44px pleins
+     qui rendraient le journal nettement moins dense. À ajuster si besoin. */
+  padding: 12px 11px;
   gap: 8px;
 }
 .entry-swipe-actions { }
