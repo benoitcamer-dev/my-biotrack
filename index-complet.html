@@ -724,6 +724,11 @@ border-radius: 9px;
 padding: 7px 9px;
 font-size: 11px;
 cursor: pointer;
+/* Cible tactile 44px min — audit mobile du 15/08/2026. */
+min-height: 44px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
 }
 .recipe-btn.primary,.nav-btn.primary {
 background: var(--accent);
@@ -746,6 +751,11 @@ padding: 9px 6px;
 font-size: 11px;
 font-weight: 700;
 cursor: pointer;
+/* Cible tactile 44px min — audit mobile du 15/08/2026. */
+min-height: 44px;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 .range-btn.active {
 background: rgba(91,127,255,0.14);
@@ -1113,7 +1123,10 @@ display: none;
 background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 10px;
-padding: 7px 13px;
+/* Padding vertical porté à 13px (au lieu de 7px) pour une cible tactile ~44px —
+   en padding symétrique plutôt qu'un min-height, pour rester centré correctement
+   même quand le display effectif (inline-block) est fixé en JS. Audit du 15/08/2026. */
+padding: 13px 13px;
 margin: 0;
 font-size: 12px;
 font-weight: 600;
