@@ -1338,6 +1338,10 @@ currentCat = cat;
 const isSport = cat === 'Sport', isDrink = cat === 'Boissons';
 const pr2 = document.getElementById('drink-portions-row'); if (pr2 && !isDrink) pr2.style.display = 'none';
 document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
+// Sport (marche/vélo) peut afficher un formulaire plus long que la hauteur visible
+// (itinéraire multi-étapes, favoris...) — le footer collant recouvrirait alors des
+// champs pas encore scrollés. Voir commentaire CSS de .static-footer.
+document.querySelector('#modal-add .modal-sheet').classList.toggle('static-footer', isSport);
 resetModalForm();
 const _modalTitleEl = document.getElementById('modal-title');
 if (isSport) _modalTitleEl.innerHTML = '<i data-lucide="activity" class="lc-icon-sm"></i> Activité physique';

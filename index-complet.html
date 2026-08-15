@@ -910,6 +910,17 @@ padding: 12px 18px 40px;
 border-top: 1px solid var(--border);
 }
 [data-theme="light"] .modal-sticky-footer { background: #FFFFFF; }
+/* Le footer collant (Valider/kcal) est pensé pour rester visible pendant qu'on
+   scrolle une longue liste de résultats (recherche d'aliments). Pour les contenus
+   verticalement longs mais faits de champs de formulaire (ex: itinéraire marche
+   avec plusieurs étapes) ça se retourne contre l'utilisateur : au tout premier
+   affichage, sticky se plaque déjà en bas du viewport visible et recouvre les
+   champs qui n'ont pas encore eu l'occasion de défiler dessous — inutilisables
+   tant qu'on n'a pas deviné qu'il faut scroller. `.static-footer` (posée sur
+   `.modal-sheet` via JS selon la catégorie ouverte) repasse le footer en flux
+   normal : plus de recouvrement, on scrolle jusqu'à lui comme n'importe quel
+   bouton de fin de formulaire. */
+.modal-sheet.static-footer .modal-sticky-footer { position: static; }
 
 /* ── Icônes (Lucide) ─────────────────────────────────────────────────────── */
 .lc-icon, [data-lucide] { width: 16px; height: 16px; stroke-width: 2.1; vertical-align: -3px; flex-shrink: 0; }
@@ -4404,6 +4415,10 @@ currentCat = cat;
 const isSport = cat === 'Sport', isDrink = cat === 'Boissons';
 const pr2 = document.getElementById('drink-portions-row'); if (pr2 && !isDrink) pr2.style.display = 'none';
 document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
+// Sport (marche/vélo) peut afficher un formulaire plus long que la hauteur visible
+// (itinéraire multi-étapes, favoris...) — le footer collant recouvrirait alors des
+// champs pas encore scrollés. Voir commentaire CSS de .static-footer.
+document.querySelector('#modal-add .modal-sheet').classList.toggle('static-footer', isSport);
 resetModalForm();
 document.getElementById('modal-title').textContent = isSport ? '🔥 Activité physique' : '+ ' + cat;
 _currentDrinkUnit = 'ml';
