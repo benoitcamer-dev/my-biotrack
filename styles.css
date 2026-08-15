@@ -458,6 +458,13 @@ display: block;
 margin-bottom: 3px;
 }
 .flex-center-gap8 { display: flex; align-items: center; gap: 8px; }
+/* Cible tactile 44px min, à ajouter (pas remplacer) sur un élément cliquable dont
+   le padding naturel ne suffit pas — évite de recalculer un padding par composant
+   à chaque bouton trouvé trop petit à l'audit (voir historique, plusieurs fois de
+   suite le 15-16/08/2026). display:inline-flex par défaut ; passer .tap-target-block
+   si l'élément doit rester en flux block (ex: à l'intérieur d'un form.innerHTML). */
+.tap-target { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+.tap-target-block { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
 .eyebrow-label {
 font-size: 9px;
 font-weight: 700;
@@ -519,6 +526,11 @@ cursor: pointer;
 white-space: nowrap;
 overflow: hidden;
 text-overflow: ellipsis;
+/* Cible tactile 44px min sans agrandir visuellement la ligne : padding qui étend
+   la zone cliquable, marge négative égale qui annule son effet sur la mise en
+   page (le flex parent centre le contenu, donc rien ne se déplace). */
+padding: 11px 0;
+margin: -11px 0;
 }
 .entry-group-actions { 
 display: flex; align-items: center; gap: 5px; 

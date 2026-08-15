@@ -864,7 +864,7 @@ return `<div class="food-item">
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
 <div class="food-item-actions">
-<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')"><i data-lucide="star" class="lc-icon-sm" style="${isFav ? 'fill:currentColor' : ''}"></i></button>
+<button class="food-btn" style="color:${isFav ? 'var(--accent)' : 'var(--muted)'};" aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" onclick="event.stopPropagation();toggleFavFromAliments('${f.id}')"><i data-lucide="star" class="lc-icon-sm" style="${isFav ? 'fill:currentColor' : ''}"></i></button>
 <button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();closeAlimentsModal();openCustomFoodModal(\'\',\'${f.id}\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteCustomFood(\'${f.id}\')',danger:true}])">⋯</button>
 </div>
 </div>`;
@@ -1842,6 +1842,8 @@ if (mode === 'route') {
 // ne doit jamais écraser une saisie déjà en cours.
 function prefillHomeDeparture() {
   const home = savedPlaces.find(p => p.home);
+  const hint = document.getElementById('walk-home-hint');
+  if (hint) hint.style.display = home ? 'none' : 'block';
   if (!home) return;
   const dep = document.querySelector('.walk-step-input[data-step="0"]');
   if (dep && !dep.value.trim()) {
@@ -5301,7 +5303,7 @@ Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
 REPAS COMPOSE ou PLUSIEURS BOISSONS : si l utilisateur mentionne plusieurs aliments OU plusieurs boissons, les lister TOUS dans la note. Ne jamais en oublier. Estime chaque item separement, calcule kcal_per_100g = SOMME_KCAL / qty_g * 100.
-Portions realistes : une sauce d accompagnement = 30-50g par sauce. Une portion de frites = 150-200g. Une portion de viande kebab = 150-200g. Un verre de cocktail = 150-200ml. Un shot = 4cl.
+Portions realistes : une sauce d accompagnement = 30-50g par sauce. Une portion de frites = 150-200g. Une portion de viande kebab = 150-200g. Un verre de cocktail = 150-200ml. Un shot = 4cl. Une biere mentionnee SANS quantite/format precise (pas de "canette", "bouteille", "demi", "33cl"...) = 1 pinte = 50cl par defaut.
 FORMAT NOTE STRICT — chaque ingredient/boisson sur une ligne, separees par |, UNIQUEMENT ce format : "NomItem Xg/ml → YYkcal · ZZZkcal/100g". Pas de macros dans la note. Pas de repetition. TOTAL a la fin.
 Exemple note boissons : "Aperol Spritz 180ml → 150kcal · 83kcal/100g | Mai Thai 150ml → 210kcal · 140kcal/100g | Chartreuse 4cl → 52kcal · 130kcal/100ml | Kombucha 250ml → 45kcal · 18kcal/100g | TOTAL : 457kcal"
 Exemple note repas : "Viande kebab 180g → 396kcal · 220kcal/100g | Naan fromage 200g → 580kcal · 290kcal/100g | TOTAL : 976kcal"
@@ -6346,6 +6348,7 @@ async function toggleEntryFavorite(entryId, btn) {
     favoriteIds = favoriteIds.filter(x => x !== foodId);
     btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm"></i>'; // contour (non rempli) = pas favori
     btn.title = 'Ajouter aux favoris';
+    btn.setAttribute('aria-label', 'Ajouter aux favoris');
   } else {
     // Add to custom foods if needed, then favorite
     btn.textContent = '⏳';
@@ -6369,6 +6372,7 @@ async function toggleEntryFavorite(entryId, btn) {
     favoriteIds.push(foodId);
     btn.innerHTML = '<i data-lucide="star" class="lc-icon-sm" style="fill:currentColor"></i>'; // rempli = favori
     btn.title = 'Retirer des favoris';
+    btn.setAttribute('aria-label', 'Retirer des favoris');
     btn.disabled = false;
     // Open dose form if it's a new food
     if (!existing) openDoseForm(foodId, name);

@@ -132,7 +132,7 @@ if ('serviceWorker' in navigator) {
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="map-pin" class="lc-icon-lg"></i> Mes lieux</div>
-<button class="modal-close" onclick="closePlacesModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closePlacesModal()">×</button>
 </div>
 <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Ces lieux sont utilisables comme raccourcis dans l'IA et le formulaire itinéraire.</div>
 <div id="places-list"></div>
@@ -157,7 +157,7 @@ if ('serviceWorker' in navigator) {
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="book-open" class="lc-icon-lg"></i> Recettes</div>
-<button class="modal-close" onclick="closeRecipesModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeRecipesModal()">×</button>
 </div>
 <div class="recipe-form">
 <div class="recipes-tools">
@@ -196,7 +196,7 @@ if ('serviceWorker' in navigator) {
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title" id="modal-title">Ajouter</div>
-<button class="modal-close" onclick="closeModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeModal()">×</button>
 </div>
 <div style="margin-bottom:10px;">
   <input type="date" id="in-entry-date"
@@ -218,8 +218,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i data-lucide="book-open" class="lc-icon-sm"></i> Ajouter une recette</button>
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()"><i data-lucide="star" class="lc-icon-sm"></i> Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
-<button id="ai-btn" class="fav-link-btn" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
-<button id="gfit-sync-btn" class="fav-link-btn" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;"><i data-lucide="smartphone" class="lc-icon-sm"></i> Google Fit</button>
+<button id="ai-btn" class="fav-link-btn tap-target" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
+<button id="gfit-sync-btn" class="fav-link-btn tap-target-block" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;"><i data-lucide="smartphone" class="lc-icon-sm"></i> Google Fit</button>
 <div id="gfit-sync-result" style="display:none;width:100%;font-size:12px;color:#34d399;padding:4px 2px;"></div>
 </div>
 <!-- SPORT FAVS (marche + vélo) -->
@@ -236,6 +236,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="walk-simple-section"></div>
 <div id="walk-route-section" style="display:none;">
 <datalist id="saved-places-list"></datalist>
+<div id="walk-home-hint" style="display:none;font-size:11px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;" onclick="openPlacesModal()"><i data-lucide="home" class="lc-icon-sm"></i> Définis ton domicile dans Mes lieux pour pré-remplir le départ automatiquement</div>
 <div id="walk-steps-container">
 <div class="walk-addr-row" style="position:relative;">
 <div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" disabled title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
@@ -324,7 +325,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">⚙️ Réglages</div>
-<button class="modal-close" onclick="closeSettings()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeSettings()">×</button>
 </div>
 <div class="bmr-result-box">
 <div class="bmr-item">
@@ -376,12 +377,12 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="setting-row">
 <label style="display:flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> Clé API Gemini (IA)</label>
 <input id="s-gemini" type="text" placeholder="AIzaSy..." style="font-size:11px;">
-<button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;"><i data-lucide="search" class="lc-icon-sm"></i> Lister les modèles disponibles</button>
+<button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:13px 10px;font-size:11px;cursor:pointer;"><i data-lucide="search" class="lc-icon-sm"></i> Lister les modèles disponibles</button>
 <div id="gemini-models-list" style="font-size:10px;color:var(--muted);margin-top:6px;max-height:120px;overflow-y:auto;"></div>
 </div>
 <div class="setting-row" style="display:flex;align-items:center;justify-content:space-between;">
 <label style="margin-bottom:0;">☀️ Thème clair</label>
-<button id="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 16px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700;">OFF</button>
+<button id="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:13px 16px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700;">OFF</button>
 </div>
 <button class="btn-primary" onclick="saveAndCloseSettings()">✓ Enregistrer</button>
 <button class="btn-cancel" onclick="closeSettings()">Annuler</button>
@@ -401,7 +402,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title" id="recipe-link-title">Ajouter à une recette</div>
-<button class="modal-close" onclick="closeRecipeLinkModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeRecipeLinkModal()">×</button>
 </div>
 <div id="recipe-link-content"></div>
 </div>
@@ -412,7 +413,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title" id="recipe-editor-title">Nouvelle recette</div>
-<button class="modal-close" onclick="closeRecipeEditor()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeRecipeEditor()">×</button>
 </div>
 <div class="setting-row">
 <label>Nom de la recette</label>
@@ -473,7 +474,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="book-open" class="lc-icon-lg"></i> Choisir une recette</div>
-<button class="modal-close" onclick="closeRecipePicker()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeRecipePicker()">×</button>
 </div>
 <div id="recipe-picker-list" style="margin-bottom:8px;"></div>
 <div style="position:relative;margin-bottom:10px;">
@@ -488,7 +489,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title" id="custom-food-title">✨ Nouvel aliment</div>
-<button class="modal-close" onclick="closeCustomFoodModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeCustomFoodModal()">×</button>
 </div>
 <div class="custom-food-info">Valeurs pour 100g · ☁️ Synchronisé sur tous tes appareils (PC &amp; tél) automatiquement.</div>
 <div class="setting-row">
@@ -546,7 +547,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Mes aliments</div>
-<button class="modal-close" onclick="closeAlimentsModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeAlimentsModal()">×</button>
 </div>
 
 <div style="position:relative;margin-bottom:8px;">
@@ -573,7 +574,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Favoris</div>
-<button class="modal-close" onclick="closeFavoritesQuickModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeFavoritesQuickModal()">×</button>
 </div>
 <div class="helper-line" style="margin-bottom:12px;">Sélectionne un aliment favori.</div>
 <div id="favs-quick-list"></div>
@@ -585,7 +586,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">⚖️ Suivi du poids</div>
-<button class="modal-close" onclick="closeWeightModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeWeightModal()">×</button>
 </div>
 <div class="weight-form">
 <div class="weight-inputs">
@@ -741,7 +742,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Sports favoris</div>
-<button class="modal-close" onclick="closeSportFavsModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeSportFavsModal()">×</button>
 </div>
 <div class="aliments-tabs">
 <div class="aliments-tab active" id="sport-tab-walk" onclick="switchSportTab('walk')">🚶 Marche</div>
@@ -758,7 +759,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">Choisir jour et repas</div>
-<button class="modal-close" onclick="closeRecipeDateMealModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeRecipeDateMealModal()">×</button>
 </div>
 <div class="date-nav" style="margin-bottom: 12px;">
 <button class="date-nav-btn" onclick="moveRecipeDateMeal(-1)">←</button>
@@ -795,7 +796,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">Choisir le jour</div>
-<button class="modal-close" onclick="closeSportFavDateModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeSportFavDateModal()">×</button>
 </div>
 <div class="date-nav" style="margin-bottom: 12px;">
 <button class="date-nav-btn" onclick="moveSportFavDate(-1)">←</button>
@@ -826,7 +827,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">Modifier le poids</div>
-<button class="modal-close" onclick="closeEditWeightModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeEditWeightModal()">×</button>
 </div>
 <div class="weight-form">
 <div class="weight-inputs">
@@ -849,7 +850,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="camera" class="lc-icon-lg"></i> Scanner un code-barres</div>
-<button class="modal-close" onclick="closeBarcodeScanner()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeBarcodeScanner()">×</button>
 </div>
 <div id="barcode-camera-wrap" style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:12px;">
 <video id="barcode-video" style="width:100%;height:100%;object-fit:cover;" playsinline autoplay muted></video>
@@ -887,7 +888,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title">📋 Copier ce repas</div>
-<button class="modal-close" onclick="closeCopyMealModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeCopyMealModal()">×</button>
 </div>
 <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Vers quel repas / jour ?</div>
 <div class="setting-row">
@@ -918,7 +919,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-handle"></div>
 <div class="modal-title-row">
 <div class="modal-title flex-center-gap8"><i data-lucide="bot" class="lc-icon-lg"></i> Assistant IA</div>
-<button class="modal-close" onclick="closeAIModal()">×</button>
+<button class="modal-close" aria-label="Fermer" onclick="closeAIModal()">×</button>
 </div>
 <div style="margin-bottom:12px;">
 <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Décris ce que tu as mangé ou ton activité.</div>
