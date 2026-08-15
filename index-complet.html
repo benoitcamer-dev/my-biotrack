@@ -6913,8 +6913,11 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
   const THRESHOLD = 60;
 
   document.addEventListener('touchstart', e => {
-    // Ignorer si on est dans un modal ou popup
-    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup')) return;
+    // Ignorer si on est dans un modal, une popup, ou une entrée du journal (qui a
+    // son propre geste de swipe copier/supprimer, cf initEntrySwipe — sans cette
+    // exclusion les deux systèmes captaient le même geste en même temps et un
+    // swipe pour copier/supprimer changeait aussi le jour.
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item')) return;
     if (currentPage !== 'journal') return;
     _jStartX = e.touches[0].clientX;
     _jStartY = e.touches[0].clientY;
@@ -6924,7 +6927,7 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
   document.addEventListener('touchend', e => {
     if (!_jSwiping) return;
     _jSwiping = false;
-    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup')) return;
+    if (e.target.closest('.modal-overlay, .modal-sheet, .entry-detail-popup, .ctx-popup, .entry-item')) return;
     if (currentPage !== 'journal') return;
     const dx = e.changedTouches[0].clientX - _jStartX;
     const dy = e.changedTouches[0].clientY - _jStartY;
