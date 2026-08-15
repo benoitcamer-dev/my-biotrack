@@ -19,8 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 button, a, [onclick], .result-item, .cal-day, .entry-action, .fav-link-btn {
   touch-action: manipulation;
 }
@@ -34,6 +33,9 @@ button, a, [onclick], .result-item, .cal-day, .entry-action, .fav-link-btn {
 --glow-accent: rgba(124,111,255,0.15);
 --glow-green: rgba(46,204,143,0.15);
 --glow-danger: rgba(255,77,106,0.15);
+--accent2-bg-soft: rgba(155,92,255,0.15); --accent2-border-soft: rgba(155,92,255,0.4);
+--orange-bg-soft: rgba(255,140,66,0.15); --orange-border-soft: rgba(255,140,66,0.4);
+--green-bg-soft: rgba(46,204,143,0.15); --green-border-soft: rgba(46,204,143,0.4);
 --gradient-main: linear-gradient(135deg, #7C6FFF, #5B7FFF);
 --gradient-surface: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%);
 }
@@ -46,6 +48,9 @@ button, a, [onclick], .result-item, .cal-day, .entry-action, .fav-link-btn {
 --glow-accent: rgba(91,79,232,0.1);
 --glow-green: rgba(22,163,74,0.1);
 --glow-danger: rgba(220,38,38,0.1);
+--accent2-bg-soft: rgba(123,63,228,0.12); --accent2-border-soft: rgba(123,63,228,0.35);
+--orange-bg-soft: rgba(232,98,10,0.12); --orange-border-soft: rgba(232,98,10,0.35);
+--green-bg-soft: rgba(22,163,74,0.12); --green-border-soft: rgba(22,163,74,0.35);
 --gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
 --gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
 }
@@ -187,6 +192,9 @@ cursor: pointer;
 transition: all 0.2s;
 white-space: nowrap;
 letter-spacing: 0.2px;
+display: inline-flex;
+align-items: center;
+gap: 6px;
 }
 .btn-icon:hover { color: var(--text); background: rgba(255,255,255,0.08); border-color: var(--border2); }
 .btn-icon.gold { color: var(--gold); border-color: rgba(255,209,102,0.25); background: rgba(255,209,102,0.06); }
@@ -413,6 +421,9 @@ text-transform: uppercase;
 letter-spacing: 1.5px;
 color: var(--muted);
 margin-bottom: 3px;
+display: flex;
+align-items: center;
+gap: 4px;
 }
 .stat-box .s-val {
 font-family: 'Inter', sans-serif;
@@ -1365,6 +1376,9 @@ color: var(--muted);
 text-transform: uppercase;
 letter-spacing: 1.5px;
 margin-bottom: 3px;
+display: flex;
+align-items: center;
+gap: 3px;
 }
 .bmr-item .b-val {
 font-family: 'Inter', sans-serif;
@@ -1997,6 +2011,15 @@ outline: none;
 }
 .walk-addr-input:focus { border-color: var(--accent); }
 .walk-addr-input::placeholder { color: var(--muted); }
+.walk-move-btns { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; }
+.walk-move-btn {
+  width: 26px; height: 19px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--muted); cursor: pointer; padding: 0;
+  touch-action: manipulation;
+}
+.walk-move-btn .lc-icon { width: 13px; height: 13px; }
+.walk-move-btn:active:not(:disabled) { color: var(--accent); }
+.walk-move-btn:disabled { opacity: 0.25; cursor: default; }
 .walk-calc-btn {
 background: var(--accent);
 color: #fff;
@@ -2150,7 +2173,7 @@ if ('serviceWorker' in navigator) {
 </div>
 <div class="header-btns">
 <button onclick="location.reload(true);" style="background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.25);color:var(--accent);border-radius:12px;padding:9px 12px;font-size:16px;cursor:pointer;" title="Actualiser">🔄</button>
-<button class="btn-icon" onclick="toggleTheme()" id="theme-btn" style="font-size:16px;padding:8px 10px;">🌙</button>
+<button class="btn-icon" onclick="toggleTheme()" id="theme-btn" style="padding:8px 10px;" title="Changer de thème"><i data-lucide="moon" class="lc-icon-sm" id="theme-btn-icon"></i></button>
 <button class="btn-icon" onclick="logout()" style="font-size:13px;">↪</button>
 </div>
 </header>
@@ -2197,17 +2220,17 @@ if ('serviceWorker' in navigator) {
 <div class="progress-labels"><span id="progress-eaten">0 mangé</span><span id="progress-goal">— objectif</span></div>
 </div>
 <div class="stats-grid">
-<div class="stat-box ingere"><div class="s-label">🍽️ Ingérées</div><div class="s-val" id="stat-in">0</div></div>
-<div class="stat-box depense"><div class="s-label">🔥 Dépensées</div><div class="s-val" id="stat-out">—</div></div>
-<div class="stat-box bmr"><div class="s-label">🫀 Métabolisme</div><div class="s-val" id="stat-bmr">—</div></div>
-<div class="stat-box sport"><div class="s-label">🚴 Sport</div><div class="s-val" id="stat-sport">0</div></div>
+<div class="stat-box ingere"><div class="s-label"><i data-lucide="utensils" class="lc-icon-sm"></i>Ingérées</div><div class="s-val" id="stat-in">0</div></div>
+<div class="stat-box depense"><div class="s-label"><i data-lucide="flame" class="lc-icon-sm"></i>Dépensées</div><div class="s-val" id="stat-out">—</div></div>
+<div class="stat-box bmr"><div class="s-label"><i data-lucide="heart-pulse" class="lc-icon-sm"></i>Métabolisme</div><div class="s-val" id="stat-bmr">—</div></div>
+<div class="stat-box sport"><div class="s-label"><i data-lucide="activity" class="lc-icon-sm"></i>Sport</div><div class="s-val" id="stat-sport">0</div></div>
 </div>
 <div class="stat-box bilan" style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;">
-<div class="s-label">📊 Bilan</div><div class="s-val" id="stat-bilan">—</div>
+<div class="s-label"><i data-lucide="bar-chart-3" class="lc-icon-sm"></i>Bilan</div><div class="s-val" id="stat-bilan">—</div>
 </div>
 <div id="prot-goal-bar-wrap" style="display:none;margin-top:14px;margin-bottom:2px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px 14px;">
 <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">💪 Protéines</span>
+<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="dumbbell" class="lc-icon-sm"></i>Protéines</span>
 <span id="prot-goal-label" style="font-size:15px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text);font-variant-numeric:tabular-nums;">0 / 0 g</span>
 </div>
 <div class="progress-bar-bg">
@@ -2275,7 +2298,7 @@ if ('serviceWorker' in navigator) {
 </div>
 </div>
 <section class="page" id="page-bilan">
-<div class="section-label">📊 Bilan</div>
+<div class="section-label" style="display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" class="lc-icon-sm"></i>Bilan</div>
 <div class="range-tabs">
 <button class="range-btn active" id="range-week" onclick="setBilanRange('week')">Semaine</button>
 <button class="range-btn" id="range-month" onclick="setBilanRange('month')">Mois</button>
@@ -2429,7 +2452,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div class="bmr-result-box">
 <div class="bmr-item">
-<div class="b-label">🫀 Métabolisme de base</div>
+<div class="b-label"><i data-lucide="heart-pulse" class="lc-icon-sm"></i>Métabolisme de base</div>
 <div class="b-val" id="bmr-live">—</div>
 <div style="font-size:8px;color:var(--muted);margin-top:1px;">kcal/jour</div>
 </div>
@@ -2444,7 +2467,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <input id="s-goal" type="number" inputmode="decimal" placeholder="2300" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
-<label>💪 Objectif protéines (g/jour) <span style="font-size:12px;color:var(--muted);">— laisser 0 pour ne pas afficher</span></label>
+<label style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;"><i data-lucide="dumbbell" class="lc-icon-sm"></i>Objectif protéines (g/jour) <span style="font-size:12px;color:var(--muted);">— laisser 0 pour ne pas afficher</span></label>
 <input id="s-prot-goal" type="number" inputmode="decimal" placeholder="0" oninput="onSettingChange()">
 </div>
 <div class="setting-row">
@@ -2471,7 +2494,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
 <label style="margin-top:10px;display:block;">🗺️ Google Maps (Clé API)</label>
 <input id="s-gmaps-key" type="text" placeholder="Colle ta clé API Google Maps ici" style="font-size:11px;">
-<button onclick="syncGoogleFit(false)" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;">🏃 Connecter / Sync Google Fit</button>
+<button onclick="syncGoogleFit(false)" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><i data-lucide="activity" class="lc-icon-sm"></i>Connecter / Sync Google Fit</button>
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
 </div>
 <div class="setting-row">
@@ -2617,7 +2640,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="input-box" style="margin:0;">
 <label>Unité</label>
-<select id="cf-unit" onchange="onCFUnitChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text);outline:none;">
+<select id="cf-unit" onchange="onCFUnitChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);outline:none;">
 <option value="g">g</option>
 <option value="ml">ml</option>
 <option value="cl">cl</option>
@@ -2761,7 +2784,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <!-- SOMMEIL -->
 <div style="margin-top:24px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <div style="font-size:15px;font-weight:700;color:var(--text);">🌙 Suivi du sommeil</div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;"><i data-lucide="moon" class="lc-icon-sm"></i>Suivi du sommeil</div>
   </div>
 
   <!-- Stats moyennes -->
@@ -2846,7 +2869,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="aliments-tabs">
 <div class="aliments-tab active" id="sport-tab-walk" onclick="switchSportTab('walk')">🚶 Marche</div>
-<div class="aliments-tab" id="sport-tab-bike" onclick="switchSportTab('bike')">🚴 Vélo</div>
+<div class="aliments-tab" id="sport-tab-bike" onclick="switchSportTab('bike')"><i data-lucide="bike" class="lc-icon-sm"></i> Vélo</div>
 </div>
 <div id="sport-favs-content"></div>
 <button class="btn-primary" style="margin-top:12px;" onclick="openCreateWalkFav()">+ Créer un trajet marche</button>
@@ -2880,10 +2903,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="section-label">Repas</div>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
 <button class="btn-icon" onclick="selectRecipeMeal('Petit-déjeuner')">🥐 Petit-déjeuner</button>
-<button class="btn-icon" onclick="selectRecipeMeal('Déjeuner')">🍽️ Déjeuner</button>
-<button class="btn-icon" onclick="selectRecipeMeal('Dîner')">🌙 Dîner</button>
-<button class="btn-icon" onclick="selectRecipeMeal('Snack')">🍎 Snack</button>
-<button class="btn-icon" onclick="selectRecipeMeal('Boissons')">🥤 Boissons</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Déjeuner')"><i data-lucide="utensils" class="lc-icon-sm"></i>Déjeuner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Dîner')"><i data-lucide="moon" class="lc-icon-sm"></i>Dîner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Snack')"><i data-lucide="apple" class="lc-icon-sm"></i>Snack</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Boissons')"><i data-lucide="cup-soda" class="lc-icon-sm"></i>Boissons</button>
 </div>
 <input type="hidden" id="recipe-date-meal-rid">
 <input type="hidden" id="recipe-date-meal-date" value="">
@@ -3038,13 +3061,13 @@ Oui si nécessaire
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
   <div style="display:flex;gap:6px;flex:1;min-width:0;">
     <select id="ai-target-cat" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 8px;font-size:11px;color:var(--text);font-family:'Inter',sans-serif;outline:none;flex:1;min-width:0;">
-      <option value="">🍽️ Auto</option>
-      <option value="Petit-déjeuner">🥐 Petit-déj.</option>
-      <option value="Déjeuner">🍽️ Déjeuner</option>
-      <option value="Dîner">🌙 Dîner</option>
-      <option value="Snack">🍎 Snack</option>
-      <option value="Boissons">🥤 Boissons</option>
-      <option value="Sport">🏃 Sport</option>
+      <option value="">Auto</option>
+      <option value="Petit-déjeuner">Petit-déj.</option>
+      <option value="Déjeuner">Déjeuner</option>
+      <option value="Dîner">Dîner</option>
+      <option value="Snack">Snack</option>
+      <option value="Boissons">Boissons</option>
+      <option value="Sport">Sport</option>
     </select>
     <input type="date" id="ai-target-date" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 8px;font-size:11px;color:var(--muted);font-family:'Inter',sans-serif;outline:none;flex:1;min-width:0;" oninput="this.style.color='var(--text)'">
   </div>
@@ -3102,8 +3125,7 @@ Oui si nécessaire
 <button class="btn-cancel" id="auth-toggle-btn" onclick="toggleAuthMode()" style="margin-top:6px">Pas encore de compte ? S'inscrire</button>
 </div>
 </div>
-<script>
-// Hauteur réelle visible (hors clavier virtuel) — évite le bandeau noir sous les modales
+<script>// Hauteur réelle visible (hors clavier virtuel) — évite le bandeau noir sous les modales
 // quand le clavier s'ouvre : position:fixed + inset:0 ne se redimensionne pas tout seul.
 function _setAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -4448,7 +4470,9 @@ document.getElementById('macro-fields').style.display = (isSport || isDrink) ? '
 // champs pas encore scrollés. Voir commentaire CSS de .static-footer.
 document.querySelector('#modal-add .modal-sheet').classList.toggle('static-footer', isSport);
 resetModalForm();
-document.getElementById('modal-title').textContent = isSport ? '🔥 Activité physique' : '+ ' + cat;
+const _modalTitleEl = document.getElementById('modal-title');
+if (isSport) _modalTitleEl.innerHTML = '<i data-lucide="activity" class="lc-icon-sm"></i> Activité physique';
+else _modalTitleEl.textContent = '+ ' + cat;
 _currentDrinkUnit = 'ml';
 document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
 document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
@@ -4528,7 +4552,7 @@ function showAllSports() {
   div.innerHTML = `
     <div style="padding:10px 8px 6px;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;">
-        <button onclick="selectBikeModeQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚴 Vélo</button>
+        <button onclick="selectBikeModeQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(124,92,250,0.12);border:1px solid rgba(124,92,250,0.3);color:#a78bfa;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;justify-content:center;gap:5px;"><i data-lucide="bike" class="lc-icon-sm"></i>Vélo</button>
         <button onclick="selectWalkRouteQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Itinéraire</button>
         <button onclick="selectWalkSimpleQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Simple</button>
       </div>
@@ -4560,7 +4584,7 @@ const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
 document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
-document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title">🚴 Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name">⭐ ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
@@ -5021,7 +5045,8 @@ function addWalkStep() {
   const row = document.createElement('div');
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
-  row.innerHTML = `<input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
+  row.innerHTML = `<div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
+    <input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-left:32px;padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
     <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
     <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step
@@ -5045,7 +5070,31 @@ function updateWalkStepIndices() {
     if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); }
     const removeBtn = row.querySelector('.icon-btn-danger');
     if (removeBtn) removeBtn.style.display = (rows.length > 2) ? 'block' : 'none';
+    const upBtn = row.querySelector('.walk-move-up');
+    if (upBtn) upBtn.disabled = (i === 0);
+    const downBtn = row.querySelector('.walk-move-down');
+    if (downBtn) downBtn.disabled = (i === rows.length - 1);
   });
+}
+
+// Échange le contenu (adresse + coords Google Places déjà résolues, le cas
+// échéant) entre une étape et sa voisine — permet de réordonner Départ /
+// Arrivée / étapes sans déplacer les nœuds DOM (autocomplete Google reste
+// attaché à l'input d'origine).
+function moveWalkStep(btn, dir) {
+  const row = btn.closest('.walk-addr-row');
+  const container = document.getElementById('walk-steps-container');
+  const rows = Array.from(container.querySelectorAll('.walk-addr-row'));
+  const idx = rows.indexOf(row);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= rows.length) return;
+  const inpA = rows[idx].querySelector('.walk-step-input');
+  const inpB = rows[targetIdx].querySelector('.walk-step-input');
+  if (!inpA || !inpB) return;
+  const tmp = { value: inpA.value, coords: inpA._gCoords, label: inpA._gLabel };
+  inpA.value = inpB.value; inpA._gCoords = inpB._gCoords; inpA._gLabel = inpB._gLabel;
+  inpB.value = tmp.value; inpB._gCoords = tmp.coords; inpB._gLabel = tmp.label;
+  haptic(6);
 }
 
 function getWalkSteps() {
@@ -6255,13 +6304,13 @@ document.getElementById('bilan-summary').innerHTML = `
     <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">
       🔴 ${daysOver} jour${daysOver>1?'s':''} au-dessus
     </div>
-    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:5px 10px;">💪 ${daysProtOk}j objectif prot. atteint</div>` : ''}
+    ${daysProtOk !== null ? `<div style="background:rgba(124,92,250,0.1);border:1px solid rgba(124,92,250,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="dumbbell" class="lc-icon-sm"></i>${daysProtOk}j objectif prot. atteint</div>` : ''}
   </div>
 
   ${totalSportKcal > 0 ? `<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
-    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;">🚴 <strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${fmtNum(totalBikeKcal)}</strong> kcal</div>` : ''}
+    ${totalBikeSessions > 0 ? `<div style="background:rgba(91,127,255,0.1);border:1px solid rgba(91,127,255,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="bike" class="lc-icon-sm"></i><strong>${totalBikeSessions}</strong> séance${totalBikeSessions>1?'s':''} · <strong>${fmtNum(totalBikeKcal)}</strong> kcal</div>` : ''}
     ${totalWalkKcal > 0 ? `<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);border-radius:8px;padding:5px 10px;">🚶 <strong>${fmtNum(totalWalkKcal)}</strong> kcal</div>` : ''}
-    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;">🔥 Total : <strong>${fmtNum(totalSportKcal)}</strong> kcal</div>
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="flame" class="lc-icon-sm"></i>Total : <strong>${fmtNum(totalSportKcal)}</strong> kcal</div>
   </div>` : ''}
 </div>`;
 
@@ -6293,8 +6342,8 @@ if (bilanRange === 'week') {
 <div class="day-line-bal ${balClass}">${bal >= 0 ? '+' : ''}${bal} kcal</div>
 </div>
 <div class="day-line-details">
-<div class="day-line-item">🍽️ Ingéré : <span>${v.food} kcal</span></div>
-<div class="day-line-item">🔥 Dépensé : <span>${bmr + v.sport} kcal</span></div>
+<div class="day-line-item"><i data-lucide="utensils" class="lc-icon-sm"></i> Ingéré : <span>${v.food} kcal</span></div>
+<div class="day-line-item"><i data-lucide="flame" class="lc-icon-sm"></i> Dépensé : <span>${bmr + v.sport} kcal</span></div>
 </div>
 <div class="day-line-macros">
 <div class="day-line-macro p">P : <span>${Math.round(v.prot)}&nbsp;g</span></div>
@@ -7228,11 +7277,11 @@ function _moveEntry(id) {
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
-        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
-        <option value="Déjeuner">🍽️ Déjeuner</option>
-        <option value="Dîner">🌙 Dîner</option>
-        <option value="Snack">🍎 Snack</option>
-        <option value="Boissons">🥤 Boissons</option>
+        <option value="Petit-déjeuner">Petit-déjeuner</option>
+        <option value="Déjeuner">Déjeuner</option>
+        <option value="Dîner">Dîner</option>
+        <option value="Snack">Snack</option>
+        <option value="Boissons">Boissons</option>
       </select>
     </div>
     <div style="margin-bottom:16px;">
@@ -7285,11 +7334,11 @@ function _copyEntry(id) {
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="copy-entry-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
-        <option value="Petit-déjeuner">🥐 Petit-déjeuner</option>
-        <option value="Déjeuner">🍽️ Déjeuner</option>
-        <option value="Dîner">🌙 Dîner</option>
-        <option value="Snack">🍎 Snack</option>
-        <option value="Boissons">🥤 Boissons</option>
+        <option value="Petit-déjeuner">Petit-déjeuner</option>
+        <option value="Déjeuner">Déjeuner</option>
+        <option value="Dîner">Dîner</option>
+        <option value="Snack">Snack</option>
+        <option value="Boissons">Boissons</option>
       </select>
     </div>
     <div style="margin-bottom:16px;">
@@ -8960,6 +9009,11 @@ function applyTheme(l) {
   localStorage.setItem('theme', l ? 'light' : 'dark');
   const b = document.getElementById('theme-toggle-btn');
   if (b) b.textContent = l ? 'ON' : 'OFF';
+  // Icône du bouton thème dans le header : soleil en clair, lune en sombre.
+  // On remplace le nœud <i> (pas juste l'attribut data-lucide) pour que le
+  // MutationObserver qui rend les icônes Lucide détecte le changement.
+  const icon = document.getElementById('theme-btn-icon');
+  if (icon) icon.outerHTML = `<i data-lucide="${l ? 'sun' : 'moon'}" class="lc-icon-sm" id="theme-btn-icon"></i>`;
 }
 function toggleTheme() {
   applyTheme(document.documentElement.getAttribute('data-theme') !== 'light');
@@ -9128,7 +9182,7 @@ function renderBilanChart(values, goal, range) {
     return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
-${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${fmtNum(d.food)}</text>` : ''}
 </g>`;
   }).join('');
@@ -9143,7 +9197,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
 
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
-    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;">📊 Calories ingérées / jour${subtitle}</div>
+    <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" class="lc-icon-sm"></i>Calories ingérées / jour${subtitle}</div>
     <svg id="bilan-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
@@ -9297,7 +9351,7 @@ function renderProtChart(values, protGoal, range) {
     return `<g onclick="goToJournalDate('${d.navDate}')" style="cursor:pointer;">
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
-${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Plus Jakarta Sans" pointer-events="none">${d.label}</text>` : ''}
+${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
 ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${d.prot}</text>` : ''}
 </g>`;
   }).join('');
@@ -9869,7 +9923,7 @@ document.addEventListener('touchmove', (e) => {
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;align-items:end;margin-bottom:14px;">
 <div class="input-box" style="margin:0;"><label>Quantité</label><input id="dose-fav-qty" type="number" inputmode="decimal" value="100" min="0.1" step="0.1"></div>
 <div class="input-box" style="margin:0;"><label>Unité</label>
-<select id="dose-fav-unit" onchange="onDoseFavUnitChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text);outline:none;">
+<select id="dose-fav-unit" onchange="onDoseFavUnitChange()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 10px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);outline:none;">
 <option value="g">g</option><option value="ml">ml</option><option value="cl">cl</option>
 <option value="cac">c. à café</option><option value="cas">c. à soupe</option><option value="portion">portion</option>
 </select></div>
@@ -9888,11 +9942,11 @@ document.addEventListener('touchmove', (e) => {
 <!-- FAB -->
 <div id="fab-menu" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
 <button onclick="event.stopPropagation();openModal('Petit-déjeuner');closeFab()" style="background:rgba(255,209,102,0.18);border:2px solid rgba(255,209,102,0.4);border-radius:32px;padding:20px 32px;color:#FFD166;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🥐</span><span style="font-size:20px;font-weight:800;">Petit-déjeuner</span></button>
-<button onclick="event.stopPropagation();openModal('Déjeuner');closeFab()" style="background:rgba(0,200,150,0.15);border:2px solid rgba(0,200,150,0.4);border-radius:32px;padding:20px 32px;color:#00C896;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.04s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🍽️</span><span style="font-size:20px;font-weight:800;">Déjeuner</span></button>
-<button onclick="event.stopPropagation();openModal('Dîner');closeFab()" style="background:rgba(155,92,255,0.15);border:2px solid rgba(155,92,255,0.4);border-radius:32px;padding:20px 32px;color:#B07FFF;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.08s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🌙</span><span style="font-size:20px;font-weight:800;">Dîner</span></button>
-<button onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:rgba(255,140,66,0.15);border:2px solid rgba(255,140,66,0.4);border-radius:32px;padding:20px 32px;color:#FF8C42;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.12s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🍎</span><span style="font-size:20px;font-weight:800;">Snack</span></button>
-<button onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:rgba(46,196,182,0.15);border:2px solid rgba(46,196,182,0.4);border-radius:32px;padding:20px 32px;color:#2EC4B6;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.16s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🥤</span><span style="font-size:20px;font-weight:800;">Boissons</span></button>
-<button onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:rgba(255,77,106,0.15);border:2px solid rgba(255,77,106,0.4);border-radius:32px;padding:20px 32px;color:#FF4D6A;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🏃</span><span style="font-size:20px;font-weight:800;">Sport</span></button>
+<button onclick="event.stopPropagation();openModal('Déjeuner');closeFab()" style="background:rgba(0,200,150,0.15);border:2px solid rgba(0,200,150,0.4);border-radius:32px;padding:20px 32px;color:#00C896;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.04s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="utensils" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Déjeuner</span></button>
+<button onclick="event.stopPropagation();openModal('Dîner');closeFab()" style="background:var(--accent2-bg-soft);border:2px solid var(--accent2-border-soft);border-radius:32px;padding:20px 32px;color:var(--accent2);font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.08s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="moon" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Dîner</span></button>
+<button onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:var(--orange-bg-soft);border:2px solid var(--orange-border-soft);border-radius:32px;padding:20px 32px;color:var(--orange);font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.12s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="apple" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Snack</span></button>
+<button onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:rgba(46,196,182,0.15);border:2px solid rgba(46,196,182,0.4);border-radius:32px;padding:20px 32px;color:#2EC4B6;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.16s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="cup-soda" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Boissons</span></button>
+<button onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:var(--green-bg-soft);border:2px solid var(--green-border-soft);border-radius:32px;padding:20px 32px;color:var(--green);font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="activity" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Sport</span></button>
 <button onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:rgba(124,92,250,0.18);border:2px solid rgba(124,92,250,0.5);border-radius:32px;padding:20px 32px;color:#a78bfa;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.24s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;touch-action:manipulation;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="bot" style="width:30px;height:30px;"></i></span><span style="font-size:20px;font-weight:800;">Assistant IA</span></button>
 </div>
 <div id="fab-overlay" style="display:none;"></div><!-- overlay handled by fab-menu -->
