@@ -199,7 +199,6 @@ main { max-width: 480px; margin: 0 auto; padding: 16px 14px; }
    une colonne étroite avec du vide de chaque côté. */
 @media (min-width: 900px) {
   main { max-width: 760px; padding: 24px 20px; }
-  .stats-grid { grid-template-columns: repeat(4,1fr); }
 }
 .tabs { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; margin-bottom: 12px; }
 .tab-btn {
@@ -384,6 +383,15 @@ color: var(--muted);
 margin-top: 5px;
 }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+/* Repoussée ici (après la règle de base ci-dessus) : à spécificité égale, une règle
+   plus tard dans le fichier gagne même si elle est hors media query — placée avant,
+   cette même déclaration @media(min-width:900px) était donc silencieusement
+   annulée par la règle .stats-grid de base qui la suivait, et le dashboard restait
+   coincé en 2 colonnes sur desktop malgré l'intention documentée du commentaire
+   "Layout desktop" plus haut. Trouvé en inspectant le CSS calculé en direct. */
+@media (min-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(4,1fr); }
+}
 .stat-box {
 background: rgba(255,255,255,0.03);
 border: 1px solid var(--border);
