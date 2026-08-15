@@ -2306,7 +2306,7 @@ if ('serviceWorker' in navigator) {
 <button class="range-btn" id="range-year" onclick="setBilanRange('year')">Année</button>
 </div>
 <div id="bilan-nav"></div>
-<div style="text-align:right;margin-bottom:10px;"><button class="btn-icon" onclick="exportCSV()" style="color:var(--green);border-color:rgba(61,214,140,0.3);">📥 Exporter CSV</button></div>
+<div style="text-align:right;margin-bottom:10px;"><button class="btn-icon" onclick="exportCSV()" style="color:var(--green);border-color:rgba(61,214,140,0.3);"><i data-lucide="download" class="lc-icon-sm"></i>Exporter CSV</button></div>
 <div id="bilan-summary" class="summary-cards"></div>
 <div id="bilan-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
 <div id="bilan-net-chart-wrap" style="display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(124,111,255,0.1);border-radius:20px;padding:18px 16px;margin-bottom:10px;box-shadow:0 2px 20px rgba(0,0,0,0.2);"></div>
@@ -2340,10 +2340,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
 <button id="saved-meal-link" onclick="openRecipePickerToAdd()" style="background:rgba(124,111,255,0.12);border:1px solid rgba(124,111,255,0.3);color:var(--accent);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><i data-lucide="book-open" class="lc-icon-sm"></i> Ajouter une recette</button>
-<button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()">⭐ Aliments</button>
+<button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()"><i data-lucide="star" class="lc-icon-sm"></i> Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
 <button id="ai-btn" class="fav-link-btn" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
-<button id="gfit-sync-btn" class="fav-link-btn" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;">📲 Google Fit</button>
+<button id="gfit-sync-btn" class="fav-link-btn" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;"><i data-lucide="smartphone" class="lc-icon-sm"></i> Google Fit</button>
 <div id="gfit-sync-result" style="display:none;width:100%;font-size:12px;color:#34d399;padding:4px 2px;"></div>
 </div>
 <!-- SPORT FAVS (marche + vélo) -->
@@ -2404,7 +2404,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="walk-saved-favs-section">
 <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Trajets favoris</div>
 <div id="walk-favs-list"></div>
-<button class="walk-fav-btn" id="save-route-btn" style="display:none;" onclick="saveCurrentRoute()">⭐ Sauvegarder ce trajet</button>
+<button class="walk-fav-btn" id="save-route-btn" style="display:none;" onclick="saveCurrentRoute()"><i data-lucide="star" class="lc-icon-sm"></i> Sauvegarder ce trajet</button>
 </div>
 </div>
 </div>
@@ -2500,7 +2500,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="setting-row">
 <label style="display:flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> Clé API Gemini (IA)</label>
 <input id="s-gemini" type="text" placeholder="AIzaSy..." style="font-size:11px;">
-<button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;">🔍 Lister les modèles disponibles</button>
+<button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;"><i data-lucide="search" class="lc-icon-sm"></i> Lister les modèles disponibles</button>
 <div id="gemini-models-list" style="font-size:10px;color:var(--muted);margin-top:6px;max-height:120px;overflow-y:auto;"></div>
 </div>
 <div class="setting-row" style="display:flex;align-items:center;justify-content:space-between;">
@@ -2658,7 +2658,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;">
 <input type="checkbox" id="cf-fav" style="width:15px;height:15px;accent-color:var(--gold);">
-<label for="cf-fav" style="font-size:12px;color:var(--gold);cursor:pointer;">⭐ Ajouter aux favoris</label>
+<label for="cf-fav" style="font-size:12px;color:var(--gold);cursor:pointer;"><i data-lucide="star" class="lc-icon-sm"></i> Ajouter aux favoris</label>
 </div>
 <button class="btn-primary" onclick="saveCustomFood()">✓ Enregistrer</button>
 <button class="btn-cancel" onclick="closeCustomFoodModal()">Annuler</button>
@@ -2669,7 +2669,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">⭐ Mes aliments</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Mes aliments</div>
 <button class="modal-close" onclick="closeAlimentsModal()">×</button>
 </div>
 
@@ -2684,7 +2684,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <button class="btn-primary" style="font-size:13px;padding:10px 6px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;justify-content:center;gap:4px;" onclick="openBarcodeScanner('aliments')"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
 </div>
 <div style="display:flex;gap:6px;margin-bottom:12px;">
-<button id="alim-tab-base" onclick="switchAlimTab('base')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⭐ Ma base</button>
+<button id="alim-tab-base" onclick="switchAlimTab('base')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;"><i data-lucide="star" class="lc-icon-sm"></i> Ma base</button>
 <button id="alim-tab-ciqual" onclick="switchAlimTab('ciqual')" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;">🇫🇷 Ciqual</button>
 </div>
 <div id="aliments-list"></div>
@@ -2696,7 +2696,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">⭐ Favoris</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Favoris</div>
 <button class="modal-close" onclick="closeFavoritesQuickModal()">×</button>
 </div>
 <div class="helper-line" style="margin-bottom:12px;">Sélectionne un aliment favori.</div>
@@ -2864,7 +2864,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="settings-sheet">
 <div class="modal-handle"></div>
 <div class="modal-title-row">
-<div class="modal-title">⭐ Sports favoris</div>
+<div class="modal-title flex-center-gap8"><i data-lucide="star" class="lc-icon-lg"></i> Sports favoris</div>
 <button class="modal-close" onclick="closeSportFavsModal()">×</button>
 </div>
 <div class="aliments-tabs">
@@ -2902,7 +2902,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="section-label">Repas</div>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-<button class="btn-icon" onclick="selectRecipeMeal('Petit-déjeuner')">🥐 Petit-déjeuner</button>
+<button class="btn-icon" onclick="selectRecipeMeal('Petit-déjeuner')"><i data-lucide="coffee" class="lc-icon-sm"></i>Petit-déjeuner</button>
 <button class="btn-icon" onclick="selectRecipeMeal('Déjeuner')"><i data-lucide="utensils" class="lc-icon-sm"></i>Déjeuner</button>
 <button class="btn-icon" onclick="selectRecipeMeal('Dîner')"><i data-lucide="moon" class="lc-icon-sm"></i>Dîner</button>
 <button class="btn-icon" onclick="selectRecipeMeal('Snack')"><i data-lucide="apple" class="lc-icon-sm"></i>Snack</button>
@@ -3104,7 +3104,7 @@ Oui si nécessaire
 </div>
 <button class="btn-primary" id="ai-add-btn" onclick="addAIEntry()">✓ Confirmer et ajouter</button>
 <div style="display:flex;gap:7px;margin-top:6px;">
-<button class="btn-primary" id="ai-save-fav-btn" onclick="saveAIEntryAsFavorite()" style="flex:1;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);">⭐ Favori</button>
+<button class="btn-primary" id="ai-save-fav-btn" onclick="saveAIEntryAsFavorite()" style="flex:1;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);"><i data-lucide="star" class="lc-icon-sm"></i> Favori</button>
 <button class="btn-primary" id="ai-save-base-btn" onclick="saveAIEntryToBase()" style="flex:1;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);">📦 Base</button>
 </div>
 <button class="btn-primary" id="ai-save-place-btn" onclick="openSavePlaceFromAI()" style="display:none;margin-top:6px;width:100%;background:rgba(91,127,255,0.12);color:var(--accent);border:1px solid rgba(91,127,255,0.3);"><i data-lucide="map-pin" class="lc-icon-sm"></i> Sauvegarder un lieu</button>
@@ -9941,7 +9941,7 @@ document.addEventListener('touchmove', (e) => {
 </div>
 <!-- FAB -->
 <div id="fab-menu" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
-<button onclick="event.stopPropagation();openModal('Petit-déjeuner');closeFab()" style="background:rgba(255,209,102,0.18);border:2px solid rgba(255,209,102,0.4);border-radius:32px;padding:20px 32px;color:#FFD166;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="font-size:32px;width:42px;text-align:center;">🥐</span><span style="font-size:20px;font-weight:800;">Petit-déjeuner</span></button>
+<button onclick="event.stopPropagation();openModal('Petit-déjeuner');closeFab()" style="background:rgba(255,209,102,0.18);border:2px solid rgba(255,209,102,0.4);border-radius:32px;padding:20px 32px;color:#FFD166;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="coffee" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Petit-déjeuner</span></button>
 <button onclick="event.stopPropagation();openModal('Déjeuner');closeFab()" style="background:rgba(0,200,150,0.15);border:2px solid rgba(0,200,150,0.4);border-radius:32px;padding:20px 32px;color:#00C896;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.04s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="utensils" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Déjeuner</span></button>
 <button onclick="event.stopPropagation();openModal('Dîner');closeFab()" style="background:var(--accent2-bg-soft);border:2px solid var(--accent2-border-soft);border-radius:32px;padding:20px 32px;color:var(--accent2);font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.08s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="moon" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Dîner</span></button>
 <button onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:var(--orange-bg-soft);border:2px solid var(--orange-border-soft);border-radius:32px;padding:20px 32px;color:var(--orange);font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:20px;width:min(360px,90vw);box-shadow:0 12px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.1);animation:fabItemIn 0.25s 0.12s cubic-bezier(0.34,1.56,0.64,1) both;letter-spacing:-0.3px;"><span style="width:42px;display:flex;align-items:center;justify-content:center;"><i data-lucide="apple" style="width:28px;height:28px;"></i></span><span style="font-size:20px;font-weight:800;">Snack</span></button>
