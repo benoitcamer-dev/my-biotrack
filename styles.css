@@ -547,7 +547,7 @@ overflow: hidden;
 @keyframes spin { to { transform: rotate(360deg); } }
 .entry-main { flex: 1; min-width: 0; }
 .entry-desc {
-font-size: 12px;
+font-size: 14px;
 font-weight: 500;
 color: var(--text);
 white-space: nowrap;
@@ -555,7 +555,7 @@ overflow: hidden;
 text-overflow: ellipsis;
 }
 .entry-sub {
-font-size: 11px;
+font-size: 12px;
 color: var(--muted);
 margin-top: 2px;
 white-space: nowrap;

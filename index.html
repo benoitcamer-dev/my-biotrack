@@ -423,7 +423,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div id="re-search-results" style="margin-bottom:4px;"></div>
 <div class="search-row">
 <input id="re-desc" class="search-input" type="text" placeholder="Rechercher un ingrédient..."
-autocomplete="off" onkeydown="if(event.key==='Enter'){searchRecipeFood();this.blur();}">
+autocomplete="off" oninput="onRecipeSearchInput()" onkeydown="if(event.key==='Enter'){searchRecipeFood();this.blur();}">
 <button class="search-btn" onclick="searchRecipeFood()">↵</button>
 <button class="search-btn" onclick="openBarcodeScanner('recipe')" style="background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;"><i data-lucide="camera" class="lc-icon-sm"></i></button>
 <button class="search-btn" onclick="openRecipeAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;"><i data-lucide="bot" class="lc-icon-sm"></i></button>

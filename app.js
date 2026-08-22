@@ -174,6 +174,8 @@ async function gcalPreAuth(silent = false) {
 async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj, entryId) {
   if (!gcalIsConfigured()) return;
   try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
     if (!_gcalToken || Date.now() >= _gcalTokenExpiry) await gcalPreAuth();
     if (!_gcalToken) return;
     const token = _gcalToken;
@@ -189,11 +191,11 @@ async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj, entr
       if (gcalEvent.id) {
         if (entryId) {
           // Reliable: update by primary key
-          const { data: entry } = await sb.from('entries').select('desc').eq('id', entryId).single();
-          if (entry) await sb.from('entries').update({ desc: entry.desc + '|||gcal:' + gcalEvent.id }).eq('id', entryId);
+          const { data: entry } = await sb.from('entries').select('desc').eq('id', entryId).eq('user_id', user.id).single();
+          if (entry) await sb.from('entries').update({ desc: entry.desc + '|||gcal:' + gcalEvent.id }).eq('id', entryId).eq('user_id', user.id);
         } else if (_lastBikeEntryDesc) {
           const newDesc = _lastBikeEntryDesc + '|||gcal:' + gcalEvent.id;
-          await sb.from('entries').update({ desc: newDesc }).eq('desc', _lastBikeEntryDesc).eq('type', 'burn');
+          await sb.from('entries').update({ desc: newDesc }).eq('desc', _lastBikeEntryDesc).eq('type', 'burn').eq('user_id', user.id);
         }
       }
     }
@@ -240,6 +242,7 @@ function fillWalkStepFromPlace(name, address) {
 }
 let bikeFavorites = [];
 let searchDebounceTimer = null;
+let recipeSearchDebounceTimer = null;
 let journalDate = new Date(); journalDate.setHours(0, 0, 0, 0);
 let calViewDate = new Date(), calOpen = false;
 let routeBaseDistance = 0, routeBaseDuration = 0, currentWalkFavName = '';
@@ -451,6 +454,10 @@ const LOCAL_FOOD_DB = [
 ];
 
 function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/`/g, '\\`'); }
+// Échappement HTML (à la différence de esc() ci-dessus, qui n'échappe que pour un contexte
+// chaîne JS dans un attribut onclick) — à utiliser pour tout texte libre utilisateur inséré
+// via innerHTML en contenu (pas en attribut), afin d'éviter une injection HTML/JS stockée.
+function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 function dateToStr(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d, 0, 0, 0, 0); }
@@ -716,7 +723,11 @@ onCFUnitChange();
 document.getElementById('modal-custom-food').classList.add('open');
 }
 function closeCustomFoodModal() { document.getElementById('modal-custom-food').classList.remove('open'); document.body.classList.remove('modal-open'); editingCustomFoodId = null; }
+let _isSavingCustomFood = false;
 async function saveCustomFood() {
+if (_isSavingCustomFood) return;
+_isSavingCustomFood = true;
+try {
 const { data: { user } } = await sb.auth.getUser(); if (!user) return;
 const name = document.getElementById('cf-name').value.trim(),
 k = parseInt(document.getElementById('cf-kcal').value) || 0,
@@ -730,7 +741,7 @@ defQty = parseFloat(document.getElementById('cf-default-qty').value) || 100;
 if (!name) { document.getElementById('cf-name').focus(); return; }
 const payload = { name, kcal_100: k, prot_100: p, gluc_100: g, lip_100: l, unit_label: unit, unit_g: unitG, default_qty: defQty };
 let sid = editingCustomFoodId;
-if (editingCustomFoodId) { await sb.from('custom_foods').update(payload).eq('id', editingCustomFoodId); }
+if (editingCustomFoodId) { await sb.from('custom_foods').update(payload).eq('id', editingCustomFoodId).eq('user_id', user.id); }
 else { const { data } = await sb.from('custom_foods').insert([{ user_id: user.id, ...payload }]).select().single(); if (data) sid = data.id; }
 if (sid) {
 const isFav = favoriteIds.includes(sid);
@@ -740,6 +751,7 @@ else if (!wf && isFav) { await sb.from('favorites').delete().eq('user_id', user.
 await loadCustomFoods(); closeCustomFoodModal();
 if (document.getElementById('modal-aliments').classList.contains('open')) renderAlimentsList();
 else if (sid && !editingCustomFoodId) { const f = customFoods.find(f => f.id === sid); if (f) fillFoodWithUnit(f); }
+} finally { _isSavingCustomFood = false; }
 }
 function openAlimentsModal(tab = 'all') {
   currentAlimentsTab = tab;
@@ -933,8 +945,10 @@ document.getElementById('modal-recipe-date-meal').classList.add('open');
 }
 async function deleteCustomFood(id) {
 if (!(await showConfirm('Supprimer cet aliment ?', {danger:true}))) return;
-await sb.from('favorites').delete().eq('food_id', id);
-await sb.from('custom_foods').delete().eq('id', id);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+await sb.from('favorites').delete().eq('food_id', id).eq('user_id', user.id);
+await sb.from('custom_foods').delete().eq('id', id).eq('user_id', user.id);
 favoriteIds = favoriteIds.filter(x => x !== id);
 await loadCustomFoods();
 renderAlimentsList();
@@ -1658,8 +1672,8 @@ async function saveOPFToBase(name, kcal_100, prot_100, gluc_100, lip_100, btn) {
     // Already in base → toggle remove
     if (!(await showConfirm(`Retirer "${name}" de la base ?`, {danger:true}))) return;
     btn.textContent = '⏳'; btn.disabled = true;
-    await sb.from('favorites').delete().eq('food_id', existing.id);
-    await sb.from('custom_foods').delete().eq('id', existing.id);
+    await sb.from('favorites').delete().eq('food_id', existing.id).eq('user_id', user.id);
+    await sb.from('custom_foods').delete().eq('id', existing.id).eq('user_id', user.id);
     favoriteIds = favoriteIds.filter(x => x !== existing.id);
     await loadCustomFoods();
     btn.textContent = '📦'; btn.style.color = '#34d399';
@@ -2429,6 +2443,9 @@ let _isSubmitting = false;
 async function submitEntry() {
 if (_isSubmitting) return;
 _isSubmitting = true;
+const _submitBtn = document.getElementById('submit-btn');
+const _submitBtnLabel = _submitBtn ? _submitBtn.textContent : '';
+if (_submitBtn) { _submitBtn.disabled = true; _submitBtn.textContent = 'Ajout…'; }
 try {
 // Pré-autoriser Google Calendar depuis ce clic direct (avant tout await), sinon le popup est bloqué
 const _isBikeClick = currentCat === 'Sport' && document.getElementById('in-desc').value.trim().toLowerCase() === 'vélo';
@@ -2535,7 +2552,7 @@ kcal_100: isSport ? null : parseFloat(document.getElementById('in-kcal').value) 
 date: document.getElementById('in-entry-date').value || journalDateStr()
 };
 let error = null, insertedEntryId = null;
-if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId); error = res.error; }
+if (editingId) { const res = await sb.from('entries').update(payload).eq('id', editingId).eq('user_id', user.id); error = res.error; }
 else { const res = await sb.from('entries').insert([payload]).select('id').single(); error = res.error; insertedEntryId = res.data?.id || null; }
 if (error) { console.error(error); showToast('Erreur : ' + error.message, 'error'); _isSubmitting = false; return; }
 haptic(10);
@@ -2554,7 +2571,11 @@ if (_entryDate && _entryDate !== journalDateStr()) {
 closeModal();
 loadData();
 if (currentPage === 'bilan') loadBilan();
-} finally { _isSubmitting = false; }
+showToast(editingId ? 'Modification enregistrée.' : 'Ajouté au journal.', 'success');
+} finally {
+_isSubmitting = false;
+if (_submitBtn) { _submitBtn.disabled = false; _submitBtn.textContent = _submitBtnLabel || 'Valider'; }
+}
 }
 function getMealEntries(cat) { return currentEntries.filter(e => e.type === 'food' && e.category === cat); }
 function cloneRecipeItem(entry) {
@@ -2777,6 +2798,12 @@ document.getElementById('re-search-results').innerHTML = '';
 recalcRecipeDraft();
 }
 function searchRecipeFood() { const v = document.getElementById('re-desc').value.trim(); if (!v) return; searchFood(v, 'recipe'); }
+function onRecipeSearchInput() {
+clearTimeout(recipeSearchDebounceTimer);
+const v = document.getElementById('re-desc').value.trim();
+if (!v) { const el = document.getElementById('re-search-results'); el.style.display = 'none'; el.innerHTML = ''; return; }
+recipeSearchDebounceTimer = setTimeout(() => { searchFood(v, 'recipe'); }, 600);
+}
 function fillRecipeIngredient(n, k, pr, gl, lp, defQty) {
 document.getElementById('re-desc').value = n;
 document.getElementById('re-kcal').value = k;
@@ -2863,9 +2890,13 @@ r.totalGluc = round1(t.gluc);
 r.totalLip = round1(t.lip);
 }
 async function saveAndSyncRecipes() { saveSettingsLocal(); await pushSettingsRemote(); }
+let _isSavingRecipe = false;
 async function saveRecipeFromBuilder() {
+if (_isSavingRecipe) return;
 const name = document.getElementById('re-name').value.trim();
 if (!name || !recipeBuilder.length) { showToast('Nom + ingrédients requis.', 'error'); return; }
+_isSavingRecipe = true;
+try {
 const payload = { id: editingRecipeId || String(Date.now()), name, items: recipeBuilder.map(({ id, ...r }) => r) };
 recomputeRecipe(payload);
 if (editingRecipeId) { const i = savedRecipes.findIndex(r => r.id === editingRecipeId); if (i >= 0) savedRecipes[i] = payload; }
@@ -2874,8 +2905,15 @@ await saveAndSyncRecipes();
 closeRecipeEditor();
 document.getElementById('recipe-new-name').value = '';
 renderRecipesPage();
+showToast('Recette enregistrée.', 'success');
+} finally { _isSavingRecipe = false; }
 }
-async function deleteRecipe(rid) { savedRecipes = savedRecipes.filter(r => r.id !== rid); await saveAndSyncRecipes(); renderRecipesPage(); }
+async function deleteRecipe(rid) {
+  if (!(await showConfirm('Supprimer cette recette ?', {danger:true}))) return;
+  savedRecipes = savedRecipes.filter(r => r.id !== rid);
+  await saveAndSyncRecipes();
+  renderRecipesPage();
+}
 function addRecipeToToday(rid, cat = 'Déjeuner') { currentCat = cat; addRecipeToCurrentMeal(rid); }
 // Normalise une chaîne : minuscules + suppression des accents
 // Surligne les occurrences de q dans text (insensible casse + accents)
@@ -3271,7 +3309,7 @@ const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const v = parseFloat(document.getElementById('edit-w-val').value), date = document.getElementById('edit-w-date').value;
 if (!v || !date) { showToast('Renseigne poids et date.', 'error'); return; }
-await sb.from('weight_entries').update({ weight: v }).eq('id', editingWeightId);
+await sb.from('weight_entries').update({ weight: v }).eq('id', editingWeightId).eq('user_id', user.id);
 await loadWeightEntries();
 renderWeightModal();
 const last = weightEntries.length ? weightEntries[weightEntries.length - 1].weight : 75;
@@ -3282,7 +3320,9 @@ document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight
 closeEditWeightModal();
 }
 async function deleteWeightEntry(id) {
-await sb.from('weight_entries').delete().eq('id', id);
+const { data: { user } } = await sb.auth.getUser();
+if (!user) return;
+await sb.from('weight_entries').delete().eq('id', id).eq('user_id', user.id);
 await loadWeightEntries();
 renderWeightModal();
 const last = weightEntries.length ? weightEntries[weightEntries.length - 1].weight : 75;
@@ -3721,6 +3761,7 @@ const raw = (e.desc || '').split('||')[0];
 const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
+const mainSafe = escHtml(main), sub2Safe = escHtml(sub2);
 return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();_onEntryTap(this)">
 <div class="entry-swipe-actions">
 <button class="entry-swipe-copy" onclick="event.stopPropagation();_swipeCopy(${e.id})"><i data-lucide="copy" class="lc-icon-lg"></i></button>
@@ -3728,8 +3769,8 @@ return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot=
 </div>
 <div class="entry-item-inner">
 <div class="entry-main">
-<div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${main}</span>` : main}</div>
-${sub2 ? `<div class="entry-sub">${sub2}</div>` : ''}
+<div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${mainSafe}</span>` : mainSafe}</div>
+${sub2 ? `<div class="entry-sub">${sub2Safe}</div>` : ''}
 </div>
 <div class="entry-right">
 ${(e.desc || '').startsWith('📚') ? '' : `<span class="entry-kcal ${e.type}">${e.type === 'burn' ? '−' : '+'}${e.val}</span>`}
@@ -3919,7 +3960,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
   popup.className = 'entry-detail-popup';
   popup.innerHTML = `
     <div class="detail-handle"></div>
-    <div class="entry-detail-title">${mainDesc}</div>
+    <div class="entry-detail-title">${escHtml(mainDesc)}</div>
     <div class="entry-detail-macros">
       <span class="result-tag" style="background:rgba(99,102,241,0.15);color:var(--accent);font-size:12px;">${sign}${fmtNum(val)} kcal</span>
       ${prot ? `<span class="result-tag" style="background:rgba(52,211,153,0.1);color:#3dd68c;font-size:12px;">P ${prot}g</span>` : ''}
@@ -3941,7 +3982,7 @@ function showEntryDetail(id, descRaw, val, prot, gluc, lip, type) {
       const sqty = qty || 100;
       return `<button class="action-btn action-green" data-sname="${cleanName}" data-sk="${k100}" data-sp="${p100}" data-sg="${g100}" data-sl="${l100}" data-sqty="${sqty}" onclick="_saveToBaseBtn(this)"><i data-lucide="package-plus" class="lc-icon"></i> Sauvegarder dans ma base</button>`;
     })() : ''}
-    ${matchedFood ? `<button class="action-btn ${favClass}" onclick="_toggleFavFromPopup(${matchedFood.id},${id})">${favIcon} ${favLabel}</button>` : ''}
+    ${matchedFood ? `<button class="action-btn ${favClass}" onclick="_toggleFavFromPopup('${matchedFood.id}',${id})">${favIcon} ${favLabel}</button>` : ''}
     <button class="action-btn action-cyan" onclick="_moveEntry(${id})"><i data-lucide="move" class="lc-icon"></i> Déplacer</button>
     <button class="action-btn action-purple" onclick="_copyEntry(${id})"><i data-lucide="copy" class="lc-icon"></i> Copier vers un autre jour</button>
     <button class="action-btn action-red" onclick="_closeDetailPopup();del(${id})"><i data-lucide="trash-2" class="lc-icon"></i> Supprimer</button>
@@ -4058,7 +4099,7 @@ async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
   // Rebuild note string
   const newNote = _entryIngredients.map(i => `${i.name} ${i.qty}g → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100g`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
   // Get current entry to update desc
-  const { data: entry } = await sb.from('entries').select('desc,prot,gluc,lip').eq('id', entryId).single();
+  const { data: entry } = await sb.from('entries').select('desc,prot,gluc,lip').eq('id', entryId).eq('user_id', user.id).single();
   if (!entry) return;
   // Replace note in desc (format: "name (qty)||note")
   const descParts = entry.desc.split('||');
@@ -4076,7 +4117,11 @@ async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
 }
 
 // ── Helper fermeture popup ───────────────────────────────────────────────────
+let _isTogglingFav = false;
 async function _toggleFavFromPopup(foodId, entryId) {
+  if (_isTogglingFav) return;
+  _isTogglingFav = true;
+  try {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
   if (favoriteIds.includes(foodId)) {
@@ -4088,6 +4133,7 @@ async function _toggleFavFromPopup(foodId, entryId) {
   }
   _closeDetailPopup();
   loadData();
+  } finally { _isTogglingFav = false; }
 }
 
 function _saveToBaseBtn(btn) {
@@ -4415,7 +4461,9 @@ async function del(id) {
     }
   }
   haptic(6);
-  await sb.from('entries').delete().eq('id', id);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  await sb.from('entries').delete().eq('id', id).eq('user_id', user.id);
   loadData();
   if (currentPage === 'bilan') loadBilan();
   // Toast undo
@@ -4452,7 +4500,7 @@ const { data: { user } } = await sb.auth.getUser();
 if (!user) return;
 const entriesToDelete = currentEntries.filter(e => e.category === cat && e.type === 'food');
 for (const entry of entriesToDelete) {
-await sb.from('entries').delete().eq('id', entry.id);
+await sb.from('entries').delete().eq('id', entry.id).eq('user_id', user.id);
 }
 loadData();
 }
@@ -4864,7 +4912,7 @@ async function migrateEntryQty() {
       const qty = parseFloat(m[1].replace(',', '.'));
       const unit = m[2].toLowerCase();
       const kcal_100 = (unit !== 'min' && qty > 0) ? Math.round(row.val / (qty / 100) * 10) / 10 : null;
-      await sb.from('entries').update({ qty, kcal_100 }).eq('id', row.id);
+      await sb.from('entries').update({ qty, kcal_100 }).eq('id', row.id).eq('user_id', user.id);
       updated++;
     }
   }
@@ -6423,10 +6471,12 @@ function onDoseFavUnitChange() {
 }
 async function saveDoseFav() {
   if (!_doseFavFoodId) { closeDoseFavModal(); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
   const unit   = document.getElementById('dose-fav-unit').value;
   const qty    = parseFloat(document.getElementById('dose-fav-qty').value) || 100;
   const unitG  = unit === 'g' ? 1 : (parseFloat(document.getElementById('dose-fav-unit-g').value) || UNIT_DEFAULTS[unit].g);
-  await sb.from('custom_foods').update({ unit_label: unit, unit_g: unitG, default_qty: qty }).eq('id', _doseFavFoodId);
+  await sb.from('custom_foods').update({ unit_label: unit, unit_g: unitG, default_qty: qty }).eq('id', _doseFavFoodId).eq('user_id', user.id);
   await loadCustomFoods();
   closeDoseFavModal();
 }
