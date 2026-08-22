@@ -32,3 +32,17 @@ Audit + corrections sur le journal, les favoris, les recettes et la robustesse c
 - Cibles tactiles sous 44px : `.entry-action` (36px), `.food-btn` (40px).
 - `escHtml()` pas encore appliqué aux noms de recette/aliment dans les listes (moins fréquentés que le journal).
 - Architecture mono-fichier (`app.js`, ~6800 lignes) : pas de risque immédiat mais point de vigilance si le projet passe à plusieurs développeurs.
+
+## Désynchronisation dossier local ↔ dépôt distant (découverte + résolue)
+
+Le dossier de travail local (utilisé pour préparer les correctifs ci-dessus) n'était pas un dépôt git et datait du 15/08 — le dépôt GitHub avait continué d'évoluer sans jamais être resynchronisé en local (dernier push le 16/08 : fonctionnalité "Domicile" pour les lieux enregistrés, réordonnancement des étapes d'itinéraire, icônes Lucide sur plusieurs écrans, bannière "nouvelle version disponible" du service worker, `CLAUDE.md`/`verify.js`/`README.md`/`manifest.json`/`sw.js`/icônes absents en local).
+
+Un simple upload des fichiers locaux aurait donc **effacé** tout ce travail distant. À la place :
+1. Clone du dépôt distant à part (`gh repo clone`).
+2. Chaque correctif de cette session appliqué directement sur le clone, fonction par fonction, en vérifiant à chaque fois que le code environnant correspondait avant de modifier.
+3. Vérifications (`node --check`, équilibrage `{}`/`<div>`, puis `node verify.js` une fois découvert) avant chaque commit.
+4. Push (`2a9d005`), vérifié en direct sur `raw.githubusercontent.com` et via l'API GitHub Pages (`status: "built"`).
+5. `PROJECT_BRIEF.md` local (20 Ko, détaillé) et distant (6 Ko, référençant `CLAUDE.md`/`verify.js`) avaient aussi divergé structurellement — fusionnés en un seul document (`a2be366`), en gardant le détail historique de la version locale et les références de la version distante. `DESIGN.md`/`PRODUCT.md` étaient en fait identiques des deux côtés (juste une différence de fin de ligne CRLF/LF) — rien à fusionner.
+6. Dossier local complété avec les fichiers manquants (`CLAUDE.md`, `README.md`, `verify.js`, `manifest.json`, `sw.js`, icônes, `.gitignore`, `_headers`) pour repartir sur une base locale complète et à jour.
+
+**Point encore ouvert** : le dossier local n'est toujours pas un vrai dépôt git (`git init` + remote) — c'est la cause racine de cet épisode. À faire pour éviter que ça se reproduise.
