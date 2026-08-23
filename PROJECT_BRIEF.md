@@ -69,6 +69,25 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ## Historique des correctifs
 
+### Session du 23/08/2026
+
+**Audit UI/UX + cohérence design system (commit `2c14cb5`) :**
+- Couleur "Protéines" unifiée (trois couleurs incompatibles coexistaient) sur `var(--accent)`/`var(--accent2)`.
+- Menu "+" (FAB) : les 7 boutons de catégorie avaient chacun une couleur saturée différente, unifiés sur l'accent violet (icône seule garde une teinte de repère).
+- Contraste texte secondaire (thème sombre) : `--muted` sous le seuil AA (≈4.0:1) → `#8886B3` (≈5.8:1).
+- Cibles tactiles : `.food-btn` 40px→44px, zone de tap invisible ajoutée à `.weight-entry-edit`.
+- Affordance d'édition recette : icône crayon ajoutée sur les cartes recette cliquables.
+
+**Sécurité — XSS stocké (généralisation d'`escHtml()`) :** au-delà du journal (déjà fait le 22/08), appliqué aux noms d'aliment/recette/lieu affichés dans les listes, résultats de recherche, favoris, autocomplete d'adresse — partout où du texte libre utilisateur (ou source externe type Open Food Facts) était inséré via `innerHTML` sans échappement.
+
+**Audit mobile Android (retour d'usage réel, Pixel 8) — commit `a0c3778` :**
+- **Bug critique** : sélectionner "Vélo" dans le formulaire Sport écrasait par erreur (`innerHTML`) le conteneur `#walk-advanced`, qui héberge le formulaire *statique* de la Marche (`renderBikeFavsInModal()` visait le mauvais conteneur). Conséquence : `resetModalForm()` — appelée à **chaque** ouverture du bouton "+", toutes catégories confondues — référençait ensuite un élément détruit, levait une `TypeError`, et l'ajout d'entrée restait silencieusement inerte pour le reste de la session (symptôme observé : "les boutons du journal ne sont plus cliquables" après un Annuler). Fix : nouveau conteneur dédié `#bike-advanced`, `#walk-advanced` n'est plus jamais écrasé. Vérifié qu'aucun autre conteneur du code (recettes, lieux, poids, réglages, IA compris) ne partage ce défaut — c'était un cas unique.
+- Bouton "Valider" du formulaire Sport pouvant rester hors écran après fermeture du clavier virtuel (formulaire plus long que la hauteur visible, footer volontairement non collant sur cette catégorie — voir `.static-footer` dans `styles.css`) : recalage auto (`scrollIntoView`, seulement si nécessaire) sur détection de fermeture clavier.
+- Les deux bugs reproduits puis revérifiés en exécutant le code réel (avant/après correctif), y compris sur le site déployé après un vrai hard reload (piège de cache HTTP confirmé : un simple reload servait encore l'ancien `app.js`).
+- Détail complet : voir `CHANGELOG_2026-08-23.md`.
+
+**En attente (décision produit, non traité)** : densité du tableau de bord (8 chiffres avant le journal, non visibles sans scroller), chiffre héros en rouge plein lors d'un dépassement (déroge à la "Gradient Numeral Rule" de `DESIGN.md`, probablement volontaire mais non acté).
+
 ### Session du 22/08/2026
 
 **Audit UX/robustesse + corrections :**
@@ -136,7 +155,7 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 - `modal-dose-fav` (popup de dose par défaut) est **volontairement** en dehors du système swipe-to-close standard.
 - Quelques ID HTML dupliqués existent (`sf-edit-*`/`sf-new-*`) mais sans risque réel : templates walk/bike mutuellement exclusifs, jamais présents simultanément dans le DOM.
 - Layout desktop : seule la grille de stats du dashboard a été retravaillée pour la largeur. Pistes évoquées non retenues : vraies deux colonnes (Journal + Bilan côte à côte), sidebar de navigation desktop.
-- Cibles tactiles sous 44px identifiées (audit 22/08/2026) : `.entry-action` (36px), `.food-btn` (40px).
-- `escHtml()` pas encore appliqué aux noms de recette/aliment dans les listes (moins fréquentés que le journal, voir historique 22/08/2026).
+- Cible tactile sous 44px restante (audit 22/08/2026) : `.entry-action` (36px). `.food-btn` corrigé à 44px le 23/08/2026.
+- `escHtml()` : appliqué au journal (22/08/2026) puis généralisé aux listes recette/aliment/lieu/favoris/autocomplete (23/08/2026, voir historique). Reste à vérifier au fil de l'eau sur tout nouveau texte libre affiché via `innerHTML`.
 - Architecture mono-fichier `app.js` (~6800 lignes, tout global) : pas de risque immédiat en solo, point de vigilance si le projet passe à plusieurs développeurs.
 - Pas de tests automatisés — `node verify.js` couvre les vérifications syntaxiques/structurelles, pas le comportement. L'accès navigateur réel (Claude in Chrome/Brave, MCP playwright) permet une vérification live quand disponible — à préférer à la seule analyse statique du code.
