@@ -88,6 +88,12 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 **En attente (décision produit, non traité)** : densité du tableau de bord (8 chiffres avant le journal, non visibles sans scroller), chiffre héros en rouge plein lors d'un dépassement (déroge à la "Gradient Numeral Rule" de `DESIGN.md`, probablement volontaire mais non acté).
 
+**Bug remonté (usage mobile réel) — adresse d'itinéraire qui reste affichée à l'écran (commit `89780a4`) :**
+- `resetModalForm()` ne réinitialisait jamais le sous-formulaire itinéraire (`.walk-step-input` Départ/Arrivée/étapes, case "Aller-retour") : la dernière adresse tapée restait affichée à la prochaine ouverture du formulaire Sport, même après être passé par une autre modale entre-temps. Fix : nouvelle fonction `resetWalkRouteForm()`, appelée depuis `resetModalForm()`.
+- `.pac-container` (dropdown Google) pouvait rester visible et suivre l'utilisateur sur tout le reste de l'appli (ajouté par Google en `position:absolute` sur `<body>`, hors DOM de la modale) — le `blurActiveAddressInput()` existant (15/08) dépendait uniquement du `blur()`, insuffisant sur mobile. Fix : force `display:none` sur tout `.pac-container` sans dépendre du blur, avec deux nouveaux points d'appel : écouteur `click` global (capture, exclut le champ d'adresse et le dropdown lui-même) et `showPage()`.
+- Fuite DOM annexe : `removeWalkStep()` ne nettoyait jamais le `.pac-container` de l'étape supprimée (Google n'offrant aucune API de destruction) — `_attachPlacesAutocomplete()` capture désormais `input._pacContainer` pour permettre ce nettoyage.
+- Détail complet (repro, preuves live) : voir `CHANGELOG_2026-08-23.md`.
+
 ### Session du 22/08/2026
 
 **Audit UX/robustesse + corrections :**
