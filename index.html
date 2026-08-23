@@ -285,6 +285,11 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 </div>
 </div>
+<!-- Conteneur dédié au vélo (favoris + bouton sauvegarder), distinct de #walk-advanced :
+     renderBikeFavsInModal() y écrit via innerHTML — le faire sur #walk-advanced écrasait
+     le contenu statique de la marche (itinéraire, durée custom...) de façon irréversible
+     pour le reste de la session (bug du 23/08/2026, voir CLAUDE.md/PROJECT_BRIEF.md). -->
+<div id="bike-advanced" style="display:none;"></div>
 <div class="walk-mode-tabs" id="bike-mode-tabs" style="display:none;">
 <div class="walk-tab active" id="bike-tab-speed" onclick="setBikeMode('speed')">Vitesse</div>
 <div class="walk-tab" id="bike-tab-machine" onclick="setBikeMode('machine')">Kcal machine</div>

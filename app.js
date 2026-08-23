@@ -228,7 +228,7 @@ function renderSavedPlacesChips() {
   // Respecte l'ordre choisi par l'utilisateur (réordonnable dans Lieux ⋯) au lieu d'un tri alphabétique forcé.
   chips.innerHTML = savedPlaces.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
     style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation;">
-    <i data-lucide="map-pin" class="lc-icon-sm"></i> ${p.name}
+    <i data-lucide="map-pin" class="lc-icon-sm"></i> ${escHtml(p.name)}
   </button>`).join('');
 }
 
@@ -801,7 +801,7 @@ async function renderCiqualList() {
       const badge = f.is_average ? '★ ' : '';
       return `<div class="food-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div style="flex:1;cursor:pointer;min-width:0;" onclick="fillFood('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0});closeAlimentsModal()">
-          <div class="food-name">${badge}${f.name}</div>
+          <div class="food-name">${badge}${escHtml(f.name)}</div>
           <div class="food-meta">${k} kcal/100g</div>
         </div>
         <button onclick="saveOPFToBase('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">📦</button>
@@ -872,7 +872,7 @@ const doseInfo = f.default_qty ? `· ${f.default_qty}${f.unit_label && f.unit_la
 const nameEsc = f.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 return `<div class="food-item">
 <div class="food-item-main" onclick="_alimentsFromAdd ? selectFoodFromAliments({name:'${nameEsc}',kcal_100:${f.kcal_100},prot_100:${f.prot_100},gluc_100:${f.gluc_100},lip_100:${f.lip_100},unit_label:'${f.unit_label||'g'}',unit_g:${f.unit_g||1},default_qty:${f.default_qty||100}}) : (closeAlimentsModal(), openCustomFoodModal('','${f.id}'))" style="cursor:pointer;flex:1;min-width:0;">
-<div class="food-item-name">${f.name}</div>
+<div class="food-item-name">${escHtml(f.name)}</div>
 <div class="food-item-meta">${f.kcal_100} kcal/100g ${doseInfo}</div>
 </div>
 <div class="food-item-actions">
@@ -957,7 +957,7 @@ function openFavoritesQuickModal() {
 const el = document.getElementById('favs-quick-list');
 const fav = customFoods.filter(f => favoriteIds.includes(f.id));
 if (!fav.length) { el.innerHTML = emptyStateHTML('star', 'Aucun favori.'); }
-else { el.innerHTML = fav.map(f => `<div class="food-item" data-fav-id="${f.id}"><div class="food-item-main"><div class="food-item-name">${f.name}</div><div class="food-item-meta">${f.kcal_100} kcal/100g</div></div><div class="food-item-actions"><button class="food-btn primary">Utiliser</button></div></div>`).join('');
+else { el.innerHTML = fav.map(f => `<div class="food-item" data-fav-id="${f.id}"><div class="food-item-main"><div class="food-item-name">${escHtml(f.name)}</div><div class="food-item-meta">${f.kcal_100} kcal/100g</div></div><div class="food-item-actions"><button class="food-btn primary">Utiliser</button></div></div>`).join('');
 el.querySelectorAll('[data-fav-id]').forEach(item => { item.querySelector('button').addEventListener('click', function(e) { e.stopPropagation(); useFavFood(item.dataset.favId); }); }); }
 document.getElementById('modal-favs-quick').classList.add('open');
 }
@@ -1057,9 +1057,9 @@ function renderPlacesList() {
   el.innerHTML = savedPlaces.map((p, i) => `<div class="food-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;touch-action:pan-y;">
 <span class="place-drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:8px 6px 8px 0;touch-action:none;flex-shrink:0;">⠿</span>
 <div class="food-item-main" style="flex:1;">
-<div class="food-item-name" style="display:flex;align-items:center;gap:6px;"><i data-lucide="${p.home ? 'home' : 'map-pin'}" class="lc-icon-sm"></i> ${p.name}${p.home ? ' <span style="font-size:10px;font-weight:700;color:var(--accent);">· Domicile</span>' : ''}</div>
-<div class="food-item-meta">${p.address}</div>
-${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${p.resolvedLabel.split(',').slice(0,2).join(',')}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
+<div class="food-item-name" style="display:flex;align-items:center;gap:6px;"><i data-lucide="${p.home ? 'home' : 'map-pin'}" class="lc-icon-sm"></i> ${escHtml(p.name)}${p.home ? ' <span style="font-size:10px;font-weight:700;color:var(--accent);">· Domicile</span>' : ''}</div>
+<div class="food-item-meta">${escHtml(p.address)}</div>
+${p.resolvedLabel ? `<div class="food-item-meta" style="color:var(--green);font-size:10px;">✓ ${escHtml(p.resolvedLabel.split(',').slice(0,2).join(','))}</div>` : '<div class="food-item-meta" style="color:var(--muted);font-size:10px;">⚠️ Non géocodé</div>'}
 </div>
 <div class="food-item-actions" style="flex-shrink:0;">
 <button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();openEditPlaceForm(${i})'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deletePlace(${i})',danger:true}])">⋯</button>
@@ -1289,7 +1289,7 @@ function updateKnownPlaces() {
   // Refresh datalist for walk step autocomplete
   const dl = document.getElementById('saved-places-list');
   if (dl) {
-    dl.innerHTML = savedPlaces.map(p => `<option value="${p.name}">${p.address}</option>`).join('');
+    dl.innerHTML = savedPlaces.map(p => `<option value="${escHtml(p.name)}">${escHtml(p.address)}</option>`).join('');
   }
 }
 
@@ -1343,6 +1343,7 @@ document.getElementById('save-route-btn').style.display = 'none';
 document.getElementById('bike-mode-tabs').style.display = 'none';
 document.getElementById('bike-machine-row').style.display = 'none';
 document.getElementById('bike-machine-note').style.display = 'none';
+document.getElementById('bike-advanced').style.display = 'none';
 document.getElementById('in-kcal-box').style.display = '';
 currentBikeMode = 'speed';
 bikeMachineKcalPerHour = 0;
@@ -1421,14 +1422,14 @@ const unitBadge = (f.unit_label && f.unit_label !== 'g') ? ` · ${f.default_qty}
 if (isRecipe) {
   return `<div class="result-item" onclick="event.stopPropagation();fillRecipeIngredient('${esc(f.name)}',${f.kcal_100},${f.prot_100},${f.gluc_100},${f.lip_100},${f.default_qty||100})">
 <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
-<div class="result-name">${f.name}</div>
+<div class="result-name">${escHtml(f.name)}</div>
 <div class="result-kcal">${f.kcal_100} kcal/100g${unitBadge}</div>
 </div>`;
 } else {
-  const dataAttrs = `data-name="${f.name.replace(/"/g,'&quot;')}" data-k="${f.kcal_100}" data-pr="${f.prot_100}" data-gl="${f.gluc_100}" data-lp="${f.lip_100}" data-unit="${f.unit_label||'g'}" data-unitg="${f.unit_g||1}" data-dq="${f.default_qty||100}"`;
+  const dataAttrs = `data-name="${escHtml(f.name)}" data-k="${f.kcal_100}" data-pr="${f.prot_100}" data-gl="${f.gluc_100}" data-lp="${f.lip_100}" data-unit="${f.unit_label||'g'}" data-unitg="${f.unit_g||1}" data-dq="${f.default_qty||100}"`;
   return `<div class="result-item" ${dataAttrs} onclick="event.stopPropagation();_pickCustomFood(this)">
 <div><span class="result-tag custom">Perso</span>${isFav ? '<span class="result-tag fav">⭐</span>' : ''}</div>
-<div class="result-name">${f.name}</div>
+<div class="result-name">${escHtml(f.name)}</div>
 <div class="result-kcal">${f.kcal_100} kcal/100g${unitBadge}</div>
 </div>`;
 }
@@ -1470,8 +1471,8 @@ const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
-document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
-document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
 sportFavDateDate = new Date(journalDate);
@@ -1499,7 +1500,7 @@ const quickBtns = `<div style="display:flex;gap:6px;padding:8px 4px;border-botto
 </div>`;
 div.innerHTML = quickBtns + DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
 <div><span class="result-tag">Base locale</span></div>
-<div class="result-name">${a.name}</div>
+<div class="result-name">${escHtml(a.name)}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
 }
@@ -1512,7 +1513,7 @@ function searchSport(v) {
 const q = v.toLowerCase(), div = document.getElementById('search-results');
 div.style.display = 'block';
 const items = [{ name: 'Marche', fn: 'selectWalkMode()', sub: 'Calcul précis' }, { name: 'Vélo', fn: 'selectBikeMode()', sub: 'Calcul avec profil' }].filter(s => s.name.toLowerCase().includes(q));
-div.innerHTML = items.map(s => `<div class="result-item" onclick="${s.fn}"><div class="result-name">${s.name}</div><div class="result-kcal burn">${s.sub}</div></div>`).join('') || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
+div.innerHTML = items.map(s => `<div class="result-item" onclick="${s.fn}"><div class="result-name">${escHtml(s.name)}</div><div class="result-kcal burn">${escHtml(s.sub)}</div></div>`).join('') || `<div class="result-item"><div class="result-name" style="color:var(--muted)">Saisie libre possible</div></div>`;
 }
 // Track current search query to avoid stale results
 let _searchToken = 0;
@@ -1526,7 +1527,7 @@ const lv = normalize(v);
 const cH = customFoods.filter(f => matchWords(f.name, lv)).map(f => buildCustomItem(f, isR)).join('');
 const lH = DRINK_DB.filter(a => matchWords(a.name, lv)).map(a => `<div class="result-item" onclick="event.stopPropagation();(${isR ? `()=>fillRecipeIngredient('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp})` : `()=>fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')`})()">
 <div><span class="result-tag">Base locale</span></div>
-<div class="result-name">${a.name}</div>
+<div class="result-name">${escHtml(a.name)}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
 </div>`).join('');
 const localMatches = LOCAL_FOOD_DB.filter(a => matchWords(a.name, lv));
@@ -1535,7 +1536,7 @@ const localH = localMatches.map((a, idx) => {
 const clickFn = isR ? `_pickLocalFood(${idx},true)` : `_pickLocalFood(${idx},false)`;
 return `<div class="result-item" onclick="event.stopPropagation();${clickFn}">
 <div><span class="result-tag" style="background:rgba(52,211,153,0.15);color:#34d399;">🥦 Brut</span></div>
-<div class="result-name">${a.name}</div>
+<div class="result-name">${escHtml(a.name)}</div>
 <div class="result-kcal">${a.k} kcal/100g</div>
 </div>`;
 }).join('');
@@ -1631,7 +1632,7 @@ try {
           return `<div class="result-item" style="display:flex;align-items:center;gap:6px;padding-right:6px;">
 <div style="flex:1;cursor:pointer;min-width:0;" onclick="event.stopPropagation();${fillFn}">
 <div><span class="result-tag" style="background:rgba(251,146,60,0.15);color:#fb923c;">OFF</span></div>
-<div class="result-name">${n}</div>
+<div class="result-name">${escHtml(n)}</div>
 <div class="result-kcal">${k} kcal/100g</div>
 </div>${saveBtn}</div>`;
         }).filter(Boolean).join('');
@@ -1831,6 +1832,12 @@ document.getElementById('speed-row').style.display = 'grid';
 document.getElementById('search-results').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
 document.getElementById('walk-advanced').style.display = 'block';
+// Repasser de Vélo à Marche dans la même session de modale : masquer ce que
+// selectBikeMode() avait affiché (sinon les deux formulaires se superposent).
+document.getElementById('bike-mode-tabs').style.display = 'none';
+document.getElementById('bike-machine-row').style.display = 'none';
+document.getElementById('bike-machine-note').style.display = 'none';
+document.getElementById('bike-advanced').style.display = 'none';
 setWalkMode('simple');
 renderWalkFavsInModal();
 recalc();
@@ -1871,7 +1878,7 @@ if (!walkFavorites.length) { el.innerHTML = emptyStateHTML('route', 'Aucun traje
 el.innerHTML = walkFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadWalkFav(${i})">
-<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div>
+<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div>
 <div class="sport-fav-meta">${f.distance} km · ~${f.duration} min</div>
 </div>
 <button onclick="event.stopPropagation();deleteWalkFav(${i})" class="icon-x-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
@@ -1890,7 +1897,7 @@ routeBaseDuration = f.duration;
 currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
 currentWalkFavName = f.name;
 document.getElementById('walk-route-result').style.display = 'block';
-document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
+document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${escHtml(f.name)}</strong> · ${f.distance} km · ~${f.duration} min`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'none';
@@ -2221,6 +2228,7 @@ document.getElementById('sport-favs-section').style.display = 'none';
 document.getElementById('walk-advanced').style.display = 'none';
 currentWalkFavName = '';
 document.getElementById('bike-mode-tabs').style.display = 'grid';
+document.getElementById('bike-advanced').style.display = 'none'; // remis par renderBikeFavsInModal() juste après
 document.getElementById('in-bike-machine-kcal').value = '';
 document.getElementById('in-bike-correction').value = localStorage.getItem('bt_bike_correction') || '25';
 setBikeMode('machine');
@@ -2255,12 +2263,15 @@ if (machineKcal > 0 && durMin > 0) {
 recalc();
 }
 function renderBikeFavsInModal() {
-const el = document.getElementById('walk-advanced');
+// #bike-advanced, jamais #walk-advanced : ce dernier contient le formulaire
+// statique de la marche (itinéraire, durée custom...) — un innerHTML dessus
+// le détruisait pour le reste de la session (bug du 23/08/2026).
+const el = document.getElementById('bike-advanced');
 el.style.display = 'block';
 const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class="sport-fav-item" data-idx="${i}" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div style="flex:1;cursor:pointer;" onclick="loadBikeFav(${i})">
-<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${f.name}</div>
+<div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div>
 <div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
@@ -2403,6 +2414,7 @@ document.getElementById('scanner-btn').style.display = 'none';
 document.getElementById('ai-btn').style.display = 'none';
 document.getElementById('speed-row').style.display = 'none';
 document.getElementById('walk-advanced').style.display = 'none';
+document.getElementById('bike-advanced').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
 document.getElementById('in-qty').value = qty;
 document.getElementById('in-desc').value = cleanLabel;
@@ -2619,7 +2631,7 @@ const t = recipeTotals(items.map(cloneRecipeItem));
 box.innerHTML = `<div class="recipe-link-card">
 <div class="recipe-name">${cat}</div>
 <div class="recipe-meta">${items.length} ingrédient(s) · ${Math.round(t.kcal)} kcal · ${round1(t.prot)}&nbsp;g P · ${round1(t.gluc)}&nbsp;g G · ${round1(t.lip)}&nbsp;g L</div>
-<div class="recipe-items">${items.map(i => `• ${i.desc}`).join('<br>')}</div>
+<div class="recipe-items">${items.map(i => `• ${escHtml(i.desc)}`).join('<br>')}</div>
 <div class="recipe-actions">
 <button class="recipe-btn primary" onclick="openRecipePickerForCategory('${esc(cat)}')">Ajouter à une recette existante</button>
 <button class="recipe-btn" onclick="createRecipeFromCategory('${esc(cat)}')">Créer nouvelle recette</button>
@@ -2917,17 +2929,22 @@ async function deleteRecipe(rid) {
 function addRecipeToToday(rid, cat = 'Déjeuner') { currentCat = cat; addRecipeToCurrentMeal(rid); }
 // Normalise une chaîne : minuscules + suppression des accents
 // Surligne les occurrences de q dans text (insensible casse + accents)
+// Retourne du HTML (fragments <mark> autour des correspondances) : le texte source, lui, est
+// systématiquement passé par escHtml() avant concaténation, car il peut être un nom d'aliment/
+// recette libre entré par l'utilisateur (ou par une source externe comme Open Food Facts) —
+// sans ça, le texte en surbrillance rouvrait la même faille XSS stockée que celle corrigée
+// ailleurs (voir escHtml() ci-dessus et l'audit de sécurité du 23/08/2026).
 function hl(text, q) {
-  if (!q) return text;
+  if (!q) return escHtml(text);
   const nq = normalize(q);
   const nt = normalize(text);
   let result = '', i = 0;
   while (i < text.length) {
     const idx = nt.indexOf(nq, i);
-    if (idx === -1) { result += text.slice(i); break; }
-    result += text.slice(i, idx)
+    if (idx === -1) { result += escHtml(text.slice(i)); break; }
+    result += escHtml(text.slice(i, idx))
       + '<mark style="background:rgba(91,127,255,0.25);color:var(--accent);border-radius:3px;padding:0 2px;">'
-      + text.slice(idx, idx + nq.length)
+      + escHtml(text.slice(idx, idx + nq.length))
       + '</mark>';
     i = idx + nq.length;
   }
@@ -4596,7 +4613,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
   if (editType === 'walk' && editIdx === i) {
     return `<div class="sport-fav-item" style="flex-direction:column;align-items:stretch;gap:8px;background:var(--surface3);">
 <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Modifier le trajet</div>
-<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
+<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${escHtml(f.name)}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
 <div class="input-box" style="margin:0;"><label>Distance (km)</label><input id="sf-edit-dist" type="number" inputmode="decimal" value="${f.distance}" step="0.1" min="0"></div>
 <div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" inputmode="decimal" value="${f.duration}" min="1"></div>
@@ -4611,7 +4628,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
   return `<div class="sport-fav-item" data-idx="${i}" data-type="walk" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadWalkFavQuick(${i})">
-<div class="builder-title">${f.name}</div>
+<div class="builder-title">${escHtml(f.name)}</div>
 <div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
@@ -4626,7 +4643,7 @@ el.innerHTML = bikeFavorites.map((f, i) => {
   if (editType === 'bike' && editIdx === i) {
     return `<div class="sport-fav-item" style="flex-direction:column;align-items:stretch;gap:8px;background:var(--surface3);">
 <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:4px;"><i data-lucide="pencil" class="lc-icon-sm"></i> Modifier la sortie</div>
-<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${f.name}" style="font-size:12px;"></div>
+<div class="setting-row" style="margin:0;"><label style="font-size:11px;">Nom</label><input id="sf-edit-name" class="text-input" type="text" value="${escHtml(f.name)}" style="font-size:12px;"></div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
 <div class="input-box" style="margin:0;"><label>Vitesse (km/h)</label><input id="sf-edit-speed" type="number" inputmode="decimal" value="${f.speed}" step="0.5" min="0"></div>
 <div class="input-box" style="margin:0;"><label>Durée (min)</label><input id="sf-edit-dur" type="number" inputmode="decimal" value="${f.duration}" min="1"></div>
@@ -4641,7 +4658,7 @@ el.innerHTML = bikeFavorites.map((f, i) => {
   return `<div class="sport-fav-item" data-idx="${i}" data-type="bike" style="display:flex;align-items:center;gap:6px;cursor:default;">
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadBikeFavQuick(${i})">
-<div class="builder-title">${f.name}</div>
+<div class="builder-title">${escHtml(f.name)}</div>
 <div class="builder-sub">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div>
 </div>
 <div class="food-item-actions">
@@ -4757,7 +4774,7 @@ routeBaseDuration = f.duration;
 currentRouteData = { distance: f.distance, from: f.from, to: f.to, roundtrip: f.roundtrip };
 currentWalkFavName = f.name;
 document.getElementById('walk-route-result').style.display = 'block';
-document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${f.name}</strong> · ${f.distance} km · ~${f.duration} min`;
+document.getElementById('walk-route-result').innerHTML = `<i data-lucide="star" class="lc-icon-sm"></i> <strong>${escHtml(f.name)}</strong> · ${f.distance} km · ~${f.duration} min`;
 document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'inline-block';
@@ -6559,7 +6576,7 @@ function openBaseOnRecipePicker() {
   if (clr) clr.style.display = 'none';
   const el = document.getElementById('recipe-picker-list');
   el.innerHTML = savedRecipes.map(r => `<div class="recipe-card clickable" onclick="baseEditorOnRecipe('${r.id}')">
-<div class="recipe-name">${r.name}</div>
+<div class="recipe-name">${escHtml(r.name)}</div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal</div>
 </div>`).join('');
   document.getElementById('modal-recipe-picker').classList.add('open');
@@ -6716,6 +6733,21 @@ if ('serviceWorker' in navigator) {
     } else {
       sheet.dataset.kbLift = 0;
       sheet.style.transform = '';
+      // Le clavier vient de se fermer (retour Android, "OK"...). Sur un formulaire
+      // long (ex: Sport/Vélo, footer en flux normal via .static-footer — voir son
+      // commentaire CSS), le scroll laissé par l'auto-scroll-vers-le-champ du
+      // navigateur peut laisser le bouton Valider hors écran : l'utilisateur doit
+      // deviner qu'il faut scroller pour le retrouver (retour mobile Android du
+      // 23/08/2026). On le ramène en vue seulement s'il est réellement hors champ.
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn && sheet.contains(submitBtn)) {
+        setTimeout(() => {
+          const r = submitBtn.getBoundingClientRect();
+          if (r.bottom > window.innerHeight || r.top < 0) {
+            submitBtn.scrollIntoView({ block: 'end', behavior: 'smooth' });
+          }
+        }, 50);
+      }
     }
   });
 
