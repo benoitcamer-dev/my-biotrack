@@ -1025,6 +1025,7 @@ const el = document.getElementById(id); if (el) el.addEventListener('click', fun
 });
 document.getElementById('modal-barcode').addEventListener('click', function(e) { if (e.target === this) closeBarcodeScanner(); });
 function showPage(page) {
+blurActiveAddressInput();
 currentPage = page;
 localStorage.setItem('bt_current_page', page);
 const fabBtn = document.getElementById('fab-btn');
@@ -1332,6 +1333,7 @@ document.getElementById('in-speed').value = '6';
 document.getElementById('in-distance').value = '—';
 document.getElementById('walk-advanced').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
+resetWalkRouteForm();
 currentWalkMode = 'simple';
 currentRouteData = null;
 routeBaseDistance = 0;
@@ -1954,8 +1956,38 @@ function addWalkStep() {
 
 function removeWalkStep(btn) {
   const row = btn.closest('.walk-addr-row');
+  _cleanupWalkStepRow(row);
   row.remove();
   updateWalkStepIndices();
+}
+
+// Retire le .pac-container Google associé à une ligne d'étape avant suppression
+// du champ — Google ne fournit aucune API officielle pour détruire une instance
+// Autocomplete, le dropdown (ajouté à <body>, hors du DOM de la ligne) resterait
+// sinon orphelin indéfiniment. Voir _attachPlacesAutocomplete pour la capture
+// de la référence.
+function _cleanupWalkStepRow(row) {
+  const inp = row.querySelector('.walk-step-input');
+  if (inp && inp._pacContainer) { inp._pacContainer.remove(); inp._pacContainer = null; }
+}
+
+// Remet à zéro le sous-formulaire itinéraire (Départ/Arrivée, étapes ajoutées,
+// aller-retour) — appelé par resetModalForm(). Avant ce correctif, ces champs
+// n'étaient jamais vidés : une adresse (notamment l'Arrivée) restait affichée
+// indéfiniment d'une ouverture du formulaire à l'autre, y compris après être
+// passé par une autre modale entre-temps (bug remonté le 23/08/2026).
+function resetWalkRouteForm() {
+  const rtCheckbox = document.getElementById('walk-roundtrip');
+  if (rtCheckbox) rtCheckbox.checked = false;
+  const container = document.getElementById('walk-steps-container');
+  if (container) {
+    const rows = Array.from(container.querySelectorAll('.walk-addr-row'));
+    rows.forEach((row, i) => {
+      if (i >= 2) { _cleanupWalkStepRow(row); row.remove(); }
+    });
+    updateWalkStepIndices();
+  }
+  document.querySelectorAll('.walk-step-input').forEach(inp => { inp.value = ''; });
 }
 
 function updateWalkStepIndices() {
@@ -2069,6 +2101,7 @@ function _attachPlacesAutocomplete() {
   document.querySelectorAll('.walk-step-input, .walk-places-input').forEach(input => {
     if (input._placesAttached) return;
     try {
+      const _pacCountBefore = document.querySelectorAll('.pac-container').length;
       const ac = new google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: 'fr' },
         fields: ['geometry', 'formatted_address', 'name'],
@@ -2087,6 +2120,13 @@ function _attachPlacesAutocomplete() {
         }
       });
       input._placesAttached = true;
+      // Repère le .pac-container que Google vient de créer pour ce champ (Google
+      // ne fournit aucune API officielle pour l'obtenir ni pour détruire l'
+      // Autocomplete) — permet à removeWalkStep()/resetWalkRouteForm() de le
+      // retirer du DOM quand le champ correspondant est supprimé, au lieu de le
+      // laisser orphelin sur <body> indéfiniment.
+      const _pacNodes = document.querySelectorAll('.pac-container');
+      if (_pacNodes.length > _pacCountBefore) input._pacContainer = _pacNodes[_pacNodes.length - 1];
     } catch(e) { console.warn('Places error:', e); }
   });
 }
@@ -2108,12 +2148,33 @@ function blurActiveAddressInput() {
   if (active && active.classList && (active.classList.contains('walk-step-input') || active.classList.contains('walk-places-input'))) {
     active.blur();
   }
+  // Filet de sécurité : compter uniquement sur le blur ci-dessus pour que Google
+  // referme son dropdown s'est révélé insuffisant sur mobile (timing du blur au
+  // moment où le clavier virtuel se ferme, tap sur une suggestion qui overlape
+  // un bouton de fermeture, retour Android...). Le dropdown reste alors visible,
+  // et comme il est ajouté à <body> en position absolute — hors de la modale et
+  // même hors de la page courante — il "flotte" au même endroit à l'écran quand
+  // on change d'onglet/modale (bug remonté le 23/08/2026). On force donc sa
+  // disparition dans tous les cas, sans dépendre du blur.
+  document.querySelectorAll('.pac-container').forEach(p => { p.style.display = 'none'; });
 }
 document.addEventListener('scroll', (e) => {
   const t = e.target;
   if (!t || !t.classList) return;
   if (!t.classList.contains('modal-sheet') && !t.classList.contains('settings-sheet')) return;
   blurActiveAddressInput();
+}, true);
+// Filet de sécurité supplémentaire : plutôt que de ne fermer le dropdown Google
+// qu'aux points de sortie explicites listés ci-dessus (fermeture de modale,
+// scroll), n'importe quel clic ailleurs que sur le champ d'adresse ou le
+// dropdown lui-même le referme aussi — couvre la nav du bas, les tabs
+// Journal/Bilan, et tout autre bouton de l'appli (bug "adresse flottante
+// partout" remonté le 23/08/2026). Exclut les clics sur le champ/le dropdown
+// pour ne pas empêcher la saisie ou la sélection d'une suggestion.
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.closest && (t.closest('.walk-step-input') || t.closest('.walk-places-input') || t.closest('.pac-container'))) return;
+  document.querySelectorAll('.pac-container').forEach(p => { p.style.display = 'none'; });
 }, true);
 
 // Override geocodeAddress to use Google if available
