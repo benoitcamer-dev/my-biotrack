@@ -19,14 +19,19 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
   touch-action: manipulation;
 }
 :root {
 --bg: #08080F; --surface: #0F0F1A; --surface2: #16162A; --surface3: #1E1E35;
 --border: rgba(255,255,255,0.05); --border2: rgba(255,255,255,0.1);
---text: #EEEEFF; --muted: #6B6B99; --accent: #7C6FFF; --accent2: #9B5CFF;
+--text: #EEEEFF;
+/* #6B6B99 → #8886B3 : l'ancienne valeur donnait un contraste ≈4.0:1 sur --bg, sous le
+   seuil AA (4.5:1) pour ce texte utilisé partout en 9-11px (sous-titres, labels, méta).
+   Nouvelle valeur ≈5.8:1, même teinte perçue. Audit UI/UX du 23/08/2026. */
+--muted: #8886B3; --accent: #7C6FFF; --accent2: #9B5CFF;
 --orange: #FF8C42; --green: #2ECC8F; --pink: #F062C0; --danger: #FF4D6A;
 --gold: #FFD166; --radius: 20px; --radius-sm: 14px;
 --text-size: 15px;
@@ -36,6 +41,7 @@ button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
 --accent2-bg-soft: rgba(155,92,255,0.15); --accent2-border-soft: rgba(155,92,255,0.4);
 --orange-bg-soft: rgba(255,140,66,0.15); --orange-border-soft: rgba(255,140,66,0.4);
 --green-bg-soft: rgba(46,204,143,0.15); --green-border-soft: rgba(46,204,143,0.4);
+--accent-bg-soft: rgba(124,111,255,0.14); --accent-border-soft: rgba(124,111,255,0.4);
 --gradient-main: linear-gradient(135deg, #7C6FFF, #5B7FFF);
 --gradient-surface: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%);
 }
@@ -51,6 +57,7 @@ button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
 --accent2-bg-soft: rgba(123,63,228,0.12); --accent2-border-soft: rgba(123,63,228,0.35);
 --orange-bg-soft: rgba(232,98,10,0.12); --orange-border-soft: rgba(232,98,10,0.35);
 --green-bg-soft: rgba(22,163,74,0.12); --green-border-soft: rgba(22,163,74,0.35);
+--accent-bg-soft: rgba(91,79,232,0.1); --accent-border-soft: rgba(91,79,232,0.32);
 --gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
 --gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
 }
@@ -586,7 +593,9 @@ text-overflow: ellipsis;
 .entry-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 .meal-macros-row { display: flex; gap: 8px; padding: 2px 12px 6px; }
 .meal-macro { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
-.meal-macro.p { background: rgba(91,127,255,0.12); color: #7da4ff; }
+/* Couleur "Protéines" alignée sur --accent (violet), plus de bleu #7da4ff propre à ce
+   badge — 2e des 3 couleurs "protéines" incohérentes relevées à l'audit du 23/08/2026. */
+.meal-macro.p { background: var(--accent-soft, rgba(124,111,255,0.12)); color: var(--accent); }
 .meal-macro.g { background: rgba(251,191,36,0.12); color: #fbbf24; }
 .meal-macro.l { background: rgba(249,115,22,0.12); color: #f97316; }
 .entry-kcal {font-family: 'Inter', sans-serif;
@@ -653,6 +662,9 @@ font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 }
+/* Indice visuel "cette carte s'édite au tap" — jusqu'ici seul un cursor:pointer CSS le
+   signalait, invisible au doigt sur mobile. Audit UI/UX du 23/08/2026. */
+.recipe-edit-hint { color: var(--muted); vertical-align: -2px; opacity: 0.7; }
 .recipe-meta {
 font-size: 11px;
 color: var(--muted);
@@ -1638,8 +1650,9 @@ background: var(--surface);
 color: var(--text);
 border-radius: 7px;
 padding: 5px 9px;
-min-width: 40px;
-min-height: 40px;
+/* 40px → 44px : cible tactile sous le seuil recommandé, relevé à l'audit du 23/08/2026. */
+min-width: 44px;
+min-height: 44px;
 font-size: 10px;
 font-weight: 700;
 cursor: pointer;
@@ -1852,6 +1865,7 @@ touch-action: manipulation;
 .weight-entry-del::before { content: ''; position: absolute; inset: -12px; }
 .weight-entry-del:hover { color: var(--danger); }
 .weight-entry-edit {
+position: relative;
 background: none;
 border: none;
 color: var(--border2);
@@ -1860,6 +1874,9 @@ cursor: pointer;
 padding: 2px;
 margin-right: 8px;
 }
+/* Zone de tap invisible élargie à ~44px — même principe que .weight-entry-del juste à
+   côté, qui l'avait déjà ; oubli comblé à l'audit du 23/08/2026. */
+.weight-entry-edit::before { content: ''; position: absolute; inset: -12px; }
 .weight-entry-edit:hover { color: var(--text); }
 .sport-fav-section { margin-bottom: 12px; }
 .sport-fav-title {
@@ -2042,6 +2059,7 @@ font-size: 11px;
 color: var(--muted);
 margin-left: 4px;
 }
+
 </style>
 <script>
 if ('serviceWorker' in navigator) {
@@ -3025,7 +3043,8 @@ Oui si nécessaire
 <button class="btn-cancel" id="auth-toggle-btn" onclick="toggleAuthMode()" style="margin-top:6px">Pas encore de compte ? S'inscrire</button>
 </div>
 </div>
-<script>// Hauteur réelle visible (hors clavier virtuel) — évite le bandeau noir sous les modales
+<script>
+// Hauteur réelle visible (hors clavier virtuel) — évite le bandeau noir sous les modales
 // quand le clavier s'ouvre : position:fixed + inset:0 ne se redimensionne pas tout seul.
 function _setAppHeight() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -5698,7 +5717,7 @@ if (!filtered.length) {
   return;
 }
 el.innerHTML = filtered.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
-<div class="recipe-name">${hl(r.name, raw)}</div>
+<div class="recipe-name">${hl(r.name, raw)} <i data-lucide="pencil" class="lc-icon-sm recipe-edit-hint"></i></div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${[...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr')).slice(0, 4).map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
 <div class="recipe-actions">
@@ -6004,7 +6023,7 @@ const ingredientItems = [...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr
 const displayItems = ingredientItems.slice(0, 4);
 const moreCount = r.items.length - displayItems.length;
 return `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
-<div class="recipe-name">${hl(r.name, raw)}</div>
+<div class="recipe-name">${hl(r.name, raw)} <i data-lucide="pencil" class="lc-icon-sm recipe-edit-hint"></i></div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${displayItems.map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${moreCount > 0 ? `<br>• …+${moreCount}` : ''}</div>
 <div class="recipe-actions">
@@ -6720,8 +6739,13 @@ if (userProtGoal > 0 && protWrap) {
   const protRounded = Math.round(tP);
   const protOver = protRounded > userProtGoal;
   document.getElementById('prot-goal-label').textContent = protRounded + ' / ' + userProtGoal + ' g' + (protOver ? ' (+' + (protRounded - userProtGoal) + ')' : '');
-  document.getElementById('prot-goal-fill').style.background = tP >= userProtGoal ? 'linear-gradient(90deg,#00C896,#00E8B0)' : 'linear-gradient(90deg,#00C896,#00A87E)';
-  document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? '0 0 12px rgba(0,200,150,0.5)' : '0 0 8px rgba(0,200,150,0.3)';
+  // Couleur "Protéines" alignée sur --accent/--accent2 (au lieu du teal #00C896 en dur,
+  // qui créait une 3e couleur pour la même macro en plus du violet du calculateur et du
+  // bleu des badges journal — cf. audit UI/UX du 23/08/2026, "Macro-Color Rule" de DESIGN.md).
+  const protAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const protAccent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+  document.getElementById('prot-goal-fill').style.background = `linear-gradient(90deg,${protAccent},${protAccent2})`;
+  document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? `0 0 12px ${protAccent}80` : `0 0 8px ${protAccent}4D`;
 } else if (protWrap) {
   protWrap.style.display = 'none';
   if (protPill) protPill.style.display = '';
@@ -9895,6 +9919,7 @@ document.addEventListener('touchmove', (e) => {
 })();
 
 
+
 </script>
 <!-- MODAL DOSE FAVORI -->
 <div id="modal-dose-fav" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:flex-end;justify-content:center;">
@@ -9923,13 +9948,17 @@ document.addEventListener('touchmove', (e) => {
 </div>
 <!-- FAB -->
 <div id="fab-menu" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;background:rgba(0,0,0,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
-<button class="fab-item" onclick="event.stopPropagation();openModal('Petit-déjeuner');closeFab()" style="background:rgba(255,209,102,0.18);border-color:rgba(255,209,102,0.4);color:#FFD166;"><span class="fab-item-icon"><i data-lucide="coffee"></i></span><span>Petit-déjeuner</span></button>
-<button class="fab-item" onclick="event.stopPropagation();openModal('Déjeuner');closeFab()" style="background:rgba(0,200,150,0.15);border-color:rgba(0,200,150,0.4);color:#00C896;"><span class="fab-item-icon"><i data-lucide="utensils"></i></span><span>Déjeuner</span></button>
-<button class="fab-item" onclick="event.stopPropagation();openModal('Dîner');closeFab()" style="background:var(--accent2-bg-soft);border-color:var(--accent2-border-soft);color:var(--accent2);"><span class="fab-item-icon"><i data-lucide="moon"></i></span><span>Dîner</span></button>
-<button class="fab-item" onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:var(--orange-bg-soft);border-color:var(--orange-border-soft);color:var(--orange);"><span class="fab-item-icon"><i data-lucide="apple"></i></span><span>Snack</span></button>
-<button class="fab-item" onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:rgba(46,196,182,0.15);border-color:rgba(46,196,182,0.4);color:#2EC4B6;"><span class="fab-item-icon"><i data-lucide="cup-soda"></i></span><span>Boissons</span></button>
-<button class="fab-item" onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:var(--green-bg-soft);border-color:var(--green-border-soft);color:var(--green);"><span class="fab-item-icon"><i data-lucide="activity"></i></span><span>Sport</span></button>
-<button class="fab-item" onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:rgba(124,92,250,0.18);border-color:rgba(124,92,250,0.5);color:#a78bfa;"><span class="fab-item-icon"><i data-lucide="bot" style="width:30px;height:30px;"></i></span><span>Assistant IA</span></button>
+<!-- Fond/bordure unifiés sur l'accent violet (une seule couleur "primaire", cf. "The One
+     Accent Rule" de DESIGN.md) — seule l'icône garde une teinte par catégorie, pour rester
+     repérable au coup d'œil sans transformer le menu en arc-en-ciel de 7 boutons.
+     Audit UI/UX du 23/08/2026. -->
+<button class="fab-item" onclick="event.stopPropagation();openModal('Petit-déjeuner');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="coffee" style="color:#FFD166;"></i></span><span>Petit-déjeuner</span></button>
+<button class="fab-item" onclick="event.stopPropagation();openModal('Déjeuner');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="utensils" style="color:#00C896;"></i></span><span>Déjeuner</span></button>
+<button class="fab-item" onclick="event.stopPropagation();openModal('Dîner');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="moon" style="color:var(--accent2);"></i></span><span>Dîner</span></button>
+<button class="fab-item" onclick="event.stopPropagation();openModal('Snack');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="apple" style="color:var(--orange);"></i></span><span>Snack</span></button>
+<button class="fab-item" onclick="event.stopPropagation();openModal('Boissons');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="cup-soda" style="color:#2EC4B6;"></i></span><span>Boissons</span></button>
+<button class="fab-item" onclick="event.stopPropagation();openModal('Sport');closeFab()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="activity" style="color:var(--green);"></i></span><span>Sport</span></button>
+<button class="fab-item" onclick="event.stopPropagation();closeFab();openAIModalGlobal()" style="background:var(--accent-bg-soft);border-color:var(--accent-border-soft);color:var(--text);"><span class="fab-item-icon"><i data-lucide="bot" style="width:30px;height:30px;color:var(--accent2);"></i></span><span>Assistant IA</span></button>
 </div>
 <div id="fab-overlay" style="display:none;"></div><!-- overlay handled by fab-menu -->
 <button id="fab-btn" onclick="toggleFab()" style="position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));right:20px;z-index:201;width:58px;height:58px;border-radius:50%;background:var(--gradient-main);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 6px 24px rgba(0,200,150,0.45);display:flex;align-items:center;justify-content:center;transition:all 0.25s;line-height:1;font-weight:300;">＋</button>

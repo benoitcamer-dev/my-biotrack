@@ -2671,7 +2671,7 @@ if (!filtered.length) {
   return;
 }
 el.innerHTML = filtered.map(r => `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
-<div class="recipe-name">${hl(r.name, raw)}</div>
+<div class="recipe-name">${hl(r.name, raw)} <i data-lucide="pencil" class="lc-icon-sm recipe-edit-hint"></i></div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${[...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr')).slice(0, 4).map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${r.items.length > 4 ? `<br>• …+${r.items.length - 4}` : ''}</div>
 <div class="recipe-actions">
@@ -2977,7 +2977,7 @@ const ingredientItems = [...r.items].sort((a,b)=>a.desc.localeCompare(b.desc,'fr
 const displayItems = ingredientItems.slice(0, 4);
 const moreCount = r.items.length - displayItems.length;
 return `<div class="recipe-card clickable" onclick="openRecipeEditorEdit('${r.id}')">
-<div class="recipe-name">${hl(r.name, raw)}</div>
+<div class="recipe-name">${hl(r.name, raw)} <i data-lucide="pencil" class="lc-icon-sm recipe-edit-hint"></i></div>
 <div class="recipe-meta">${r.items.length} ing. · ${Math.round(r.totalKcal)} kcal · ${round1(r.totalProt)}&nbsp;g P · ${round1(r.totalGluc)}&nbsp;g G · ${round1(r.totalLip)}&nbsp;g L</div>
 <div class="recipe-items">${displayItems.map(i => { const cd = i.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi,'').trim(); return `• ${cd} <span style='color:var(--muted);font-size:10px;'>(${i.qty}g)</span>`; }).join('<br>')}${moreCount > 0 ? `<br>• …+${moreCount}` : ''}</div>
 <div class="recipe-actions">
@@ -3693,8 +3693,13 @@ if (userProtGoal > 0 && protWrap) {
   const protRounded = Math.round(tP);
   const protOver = protRounded > userProtGoal;
   document.getElementById('prot-goal-label').textContent = protRounded + ' / ' + userProtGoal + ' g' + (protOver ? ' (+' + (protRounded - userProtGoal) + ')' : '');
-  document.getElementById('prot-goal-fill').style.background = tP >= userProtGoal ? 'linear-gradient(90deg,#00C896,#00E8B0)' : 'linear-gradient(90deg,#00C896,#00A87E)';
-  document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? '0 0 12px rgba(0,200,150,0.5)' : '0 0 8px rgba(0,200,150,0.3)';
+  // Couleur "Protéines" alignée sur --accent/--accent2 (au lieu du teal #00C896 en dur,
+  // qui créait une 3e couleur pour la même macro en plus du violet du calculateur et du
+  // bleu des badges journal — cf. audit UI/UX du 23/08/2026, "Macro-Color Rule" de DESIGN.md).
+  const protAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const protAccent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+  document.getElementById('prot-goal-fill').style.background = `linear-gradient(90deg,${protAccent},${protAccent2})`;
+  document.getElementById('prot-goal-fill').style.boxShadow = tP >= userProtGoal ? `0 0 12px ${protAccent}80` : `0 0 8px ${protAccent}4D`;
 } else if (protWrap) {
   protWrap.style.display = 'none';
   if (protPill) protPill.style.display = '';

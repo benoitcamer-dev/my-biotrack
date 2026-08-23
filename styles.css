@@ -5,7 +5,11 @@ button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
 :root {
 --bg: #08080F; --surface: #0F0F1A; --surface2: #16162A; --surface3: #1E1E35;
 --border: rgba(255,255,255,0.05); --border2: rgba(255,255,255,0.1);
---text: #EEEEFF; --muted: #6B6B99; --accent: #7C6FFF; --accent2: #9B5CFF;
+--text: #EEEEFF;
+/* #6B6B99 → #8886B3 : l'ancienne valeur donnait un contraste ≈4.0:1 sur --bg, sous le
+   seuil AA (4.5:1) pour ce texte utilisé partout en 9-11px (sous-titres, labels, méta).
+   Nouvelle valeur ≈5.8:1, même teinte perçue. Audit UI/UX du 23/08/2026. */
+--muted: #8886B3; --accent: #7C6FFF; --accent2: #9B5CFF;
 --orange: #FF8C42; --green: #2ECC8F; --pink: #F062C0; --danger: #FF4D6A;
 --gold: #FFD166; --radius: 20px; --radius-sm: 14px;
 --text-size: 15px;
@@ -15,6 +19,7 @@ button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
 --accent2-bg-soft: rgba(155,92,255,0.15); --accent2-border-soft: rgba(155,92,255,0.4);
 --orange-bg-soft: rgba(255,140,66,0.15); --orange-border-soft: rgba(255,140,66,0.4);
 --green-bg-soft: rgba(46,204,143,0.15); --green-border-soft: rgba(46,204,143,0.4);
+--accent-bg-soft: rgba(124,111,255,0.14); --accent-border-soft: rgba(124,111,255,0.4);
 --gradient-main: linear-gradient(135deg, #7C6FFF, #5B7FFF);
 --gradient-surface: linear-gradient(160deg, #0F0F1A 0%, #12102A 100%);
 }
@@ -30,6 +35,7 @@ button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
 --accent2-bg-soft: rgba(123,63,228,0.12); --accent2-border-soft: rgba(123,63,228,0.35);
 --orange-bg-soft: rgba(232,98,10,0.12); --orange-border-soft: rgba(232,98,10,0.35);
 --green-bg-soft: rgba(22,163,74,0.12); --green-border-soft: rgba(22,163,74,0.35);
+--accent-bg-soft: rgba(91,79,232,0.1); --accent-border-soft: rgba(91,79,232,0.32);
 --gradient-main: linear-gradient(135deg, #5B4FE8, #4F6EF7);
 --gradient-surface: linear-gradient(160deg, #FFFFFF 0%, #F0EEFF 100%);
 }
@@ -565,7 +571,9 @@ text-overflow: ellipsis;
 .entry-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 .meal-macros-row { display: flex; gap: 8px; padding: 2px 12px 6px; }
 .meal-macro { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
-.meal-macro.p { background: rgba(91,127,255,0.12); color: #7da4ff; }
+/* Couleur "Protéines" alignée sur --accent (violet), plus de bleu #7da4ff propre à ce
+   badge — 2e des 3 couleurs "protéines" incohérentes relevées à l'audit du 23/08/2026. */
+.meal-macro.p { background: var(--accent-soft, rgba(124,111,255,0.12)); color: var(--accent); }
 .meal-macro.g { background: rgba(251,191,36,0.12); color: #fbbf24; }
 .meal-macro.l { background: rgba(249,115,22,0.12); color: #f97316; }
 .entry-kcal {font-family: 'Inter', sans-serif;
@@ -632,6 +640,9 @@ font-family: 'Inter', sans-serif;
 font-size: 14px;
 font-weight: 700;
 }
+/* Indice visuel "cette carte s'édite au tap" — jusqu'ici seul un cursor:pointer CSS le
+   signalait, invisible au doigt sur mobile. Audit UI/UX du 23/08/2026. */
+.recipe-edit-hint { color: var(--muted); vertical-align: -2px; opacity: 0.7; }
 .recipe-meta {
 font-size: 11px;
 color: var(--muted);
@@ -1617,8 +1628,9 @@ background: var(--surface);
 color: var(--text);
 border-radius: 7px;
 padding: 5px 9px;
-min-width: 40px;
-min-height: 40px;
+/* 40px → 44px : cible tactile sous le seuil recommandé, relevé à l'audit du 23/08/2026. */
+min-width: 44px;
+min-height: 44px;
 font-size: 10px;
 font-weight: 700;
 cursor: pointer;
@@ -1831,6 +1843,7 @@ touch-action: manipulation;
 .weight-entry-del::before { content: ''; position: absolute; inset: -12px; }
 .weight-entry-del:hover { color: var(--danger); }
 .weight-entry-edit {
+position: relative;
 background: none;
 border: none;
 color: var(--border2);
@@ -1839,6 +1852,9 @@ cursor: pointer;
 padding: 2px;
 margin-right: 8px;
 }
+/* Zone de tap invisible élargie à ~44px — même principe que .weight-entry-del juste à
+   côté, qui l'avait déjà ; oubli comblé à l'audit du 23/08/2026. */
+.weight-entry-edit::before { content: ''; position: absolute; inset: -12px; }
 .weight-entry-edit:hover { color: var(--text); }
 .sport-fav-section { margin-bottom: 12px; }
 .sport-fav-title {
