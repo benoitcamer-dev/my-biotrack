@@ -19,8 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 button, a, [onclick], .result-item, .cal-day, .fav-link-btn {
   touch-action: manipulation;
 }
@@ -643,7 +642,7 @@ transition: all 0.2s;
 }
 .search-btn:active { transform: scale(0.96); }
 .recipes-list,.summary-cards,.daily-week-list { display: flex; flex-direction: column; gap: 10px; }
-.recipe-card,.day-line,.recipe-form,.recipe-link-card,.builder-item,.nav-card {
+.recipe-card,.day-line,.recipe-form,.recipe-link-card,.builder-item,.nav-card,.summary-card {
 background: rgba(255,255,255,0.03);
 border: 1px solid rgba(255,255,255,0.07);
 border-radius: 18px;
@@ -2059,7 +2058,6 @@ font-size: 11px;
 color: var(--muted);
 margin-left: 4px;
 }
-
 </style>
 <script>
 if ('serviceWorker' in navigator) {
@@ -3531,9 +3529,19 @@ function fmtNum(n) {
   return sign + abs.toLocaleString('fr-FR').replace(/[    ]/g, ' ');
 }
 function parseDesc(desc) {
-const m = String(desc).match(/^(.*?)\s*$(\d+(?:[.,]\d+)?)\s*(g|min|ml)\b[^)]*$$/i);
+// Les `$` de cette regex étaient des ancres fin-de-chaîne littérales au lieu de parenthèses
+// échappées (`\(`/`\)`) : `\s*$(...)` ne peut jamais matcher (rien ne peut suivre une ancre `$`),
+// donc cette fonction renvoyait TOUJOURS `qty: null` — bug confirmé en l'exécutant directement,
+// pas seulement en la relisant. Conséquence dans son unique appelant (`cloneRecipeItem()`) :
+// toute conversion d'une entrée du journal en ingrédient de recette (bouton "Créer nouvelle
+// recette" depuis une catégorie) retombait sur une quantité par défaut de 100 sans rapport avec
+// la vraie quantité, avec un nom d'ingrédient conservant le "(Xg)" brut. Ajout du support `cl`
+// (converti en équivalent ml ×10, même convention que `_parseNoteIngredients`).
+const m = String(desc).match(/^(.*?)\s*\((\d+(?:[.,]\d+)?)\s*(g|ml|cl|min)\b[^)]*\)$/i);
 if (!m) return { label: desc, qty: null, unit: null };
-return { label: m[1].trim(), qty: parseFloat(m[2].replace(',', '.')), unit: m[3].toLowerCase() };
+const rawQty = parseFloat(m[2].replace(',', '.'));
+const unit = m[3].toLowerCase();
+return { label: m[1].trim(), qty: unit === 'cl' ? rawQty * 10 : rawQty, unit };
 }
 function getMETWalk(spd) {
 // Source: Compendium of Physical Activities (Ainsworth 2011)
@@ -3738,6 +3746,10 @@ function onCFUnitChange() {
   }
 }
 function openCustomFoodModal(prefill = '', editId = null, fromAlim = false) {
+// fromAlim=true : ce modal s'ouvre PAR-DESSUS #modal-aliments (bouton "+ Créer", scan
+// code-barres lancé depuis l'onglet Aliments...) — le fermer d'abord : sinon son overlay
+// opaque+flouté (z84) recouvre #modal-custom-food (z83) et le clic semblait ne rien faire.
+if (fromAlim && document.getElementById('modal-aliments').classList.contains('open')) closeAlimentsModal();
 editingCustomFoodId = editId;
 document.getElementById('custom-food-title').textContent = editId ? '✏️ Modifier' : '✨ Nouvel aliment';
 if (editId) {
@@ -3771,6 +3783,7 @@ document.getElementById('cf-unit-g').value = '1';
 onCFUnitChange();
 }
 document.getElementById('modal-custom-food').classList.add('open');
+document.body.classList.add('modal-open');
 }
 function closeCustomFoodModal() { document.getElementById('modal-custom-food').classList.remove('open'); document.body.classList.remove('modal-open'); editingCustomFoodId = null; }
 let _isSavingCustomFood = false;
@@ -3800,7 +3813,14 @@ else if (!wf && isFav) { await sb.from('favorites').delete().eq('user_id', user.
 }
 await loadCustomFoods(); closeCustomFoodModal();
 if (document.getElementById('modal-aliments').classList.contains('open')) renderAlimentsList();
-else if (sid && !editingCustomFoodId) { const f = customFoods.find(f => f.id === sid); if (f) fillFoodWithUnit(f); }
+else if (sid && !editingCustomFoodId) {
+  const f = customFoods.find(f => f.id === sid);
+  if (f) fillFoodWithUnit(f);
+  // closeCustomFoodModal() vient de retirer 'modal-open' — on revient ici dans modal-add
+  // (créé depuis sa recherche via "+ Créer '...'"), qui reste ouvert derrière : sans ce
+  // rappel, le FAB "+" réapparaît par-dessus et le fond redevient scrollable.
+  if (document.getElementById('modal-add').classList.contains('open')) document.body.classList.add('modal-open');
+}
 } finally { _isSavingCustomFood = false; }
 }
 function openAlimentsModal(tab = 'all') {
@@ -3809,6 +3829,7 @@ function openAlimentsModal(tab = 'all') {
   if (inp) inp.value = '';
   switchAlimTab('base');
   document.getElementById('modal-aliments').classList.add('open');
+  document.body.classList.add('modal-open');
 }
 function switchAlimTab(tab) {
   const baseList = document.getElementById('aliments-list');
@@ -3851,8 +3872,8 @@ async function renderCiqualList() {
       const badge = f.is_average ? '★ ' : '';
       return `<div class="food-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div style="flex:1;cursor:pointer;min-width:0;" onclick="fillFood('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0});closeAlimentsModal()">
-          <div class="food-name">${badge}${escHtml(f.name)}</div>
-          <div class="food-meta">${k} kcal/100g</div>
+          <div class="food-item-name">${badge}${escHtml(f.name)}</div>
+          <div class="food-item-meta">${k} kcal/100g</div>
         </div>
         <button onclick="saveOPFToBase('${esc(f.name)}',${k},${f.prot_100||0},${f.gluc_100||0},${f.lip_100||0},this)" title="Ajouter à ma base" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;">📦</button>
         <button onclick="deleteCiqualFood(${f.id},'${esc(f.name)}',this)" title="Supprimer définitivement" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;"><i data-lucide="trash-2" class="lc-icon-sm"></i></button>
@@ -3978,6 +3999,10 @@ function selectFoodFromAliments(f) {
     if (!document.getElementById('modal-add').classList.contains('open')) {
       document.getElementById('modal-add').classList.add('open');
     }
+    // closeAlimentsModal() ci-dessus vient de retirer 'modal-open' du body — modal-add reste
+    // pourtant ouvert derrière : sans ce rappel, le FAB "+" réapparaît par-dessus et le fond
+    // redevient scrollable tant qu'on ne referme/rouvre pas une autre modale par-dessus.
+    document.body.classList.add('modal-open');
   } else {
     fillFoodWithUnit(f);
   }
@@ -4036,6 +4061,7 @@ if (gmapsEl) gmapsEl.value = GMAPS_API_KEY;
 document.getElementById('theme-toggle-btn').textContent = localStorage.getItem('theme') === 'light' ? 'ON' : 'OFF';
 updateBMRLive();
 document.getElementById('modal-settings').classList.add('open');
+document.body.classList.add('modal-open');
 }
 function closeSettings() { document.getElementById('modal-settings').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function onSettingChange() { updateBMRLive(); }
@@ -4095,9 +4121,10 @@ let _editingPlaceIdx = -1;
 function openPlacesModal() {
   renderPlacesList();
   document.getElementById('modal-places').classList.add('open');
+  document.body.classList.add('modal-open');
   if (GMAPS_API_KEY && _googleMapsReady) setTimeout(() => _attachPlacesAutocomplete(), 100);
 }
-function closePlacesModal() { blurActiveAddressInput(); document.getElementById('modal-places').classList.remove('open'); }
+function closePlacesModal() { blurActiveAddressInput(); document.getElementById('modal-places').classList.remove('open'); document.body.classList.remove('modal-open'); }
 
 function renderPlacesList() {
   const el = document.getElementById('places-list');
@@ -4363,9 +4390,11 @@ async function saveQuickPlace(name, address) {
 function openRecipesModal() {
   renderRecipesPage();
   document.getElementById('modal-recipes').classList.add('open');
+  document.body.classList.add('modal-open');
 }
 function closeRecipesModal() {
   document.getElementById('modal-recipes').classList.remove('open');
+  document.body.classList.remove('modal-open');
 }
 function resetModalForm() {
 editingId = null;
@@ -5408,6 +5437,11 @@ recalc();
 }
 function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); }
 function saveBikeFav() {
+// La structure des favoris vélo ({name, speed, duration, kcal}) ne sait représenter que le mode
+// "Vitesse" — en mode "Kcal machine", #in-kcal (la vitesse) est masqué et jamais renseigné : sans
+// ce garde-fou, le favori était silencieusement enregistré avec la valeur par défaut du champ
+// caché (18 km/h), sans aucun rapport avec les kcal machine/correction réellement saisis.
+if (currentBikeMode === 'machine') { showToast('Passe en mode "Vitesse" pour sauvegarder cette sortie en favori.', 'error'); return; }
 const name = prompt("Nom de cette sortie :", "Sortie vélo");
 if (!name) return;
 const spd = parseFloat(document.getElementById('in-kcal').value) || 18;
@@ -5496,6 +5530,13 @@ function editEntry(id) {
 id = parseInt(id) || id; // Supabase retourne des numbers, dataset retourne des strings
 const entry = currentEntries.find(e => e.id === id || String(e.id) === String(id));
 if (!entry) return;
+// Repartir d'un formulaire propre avant de le repeupler avec l'entrée à modifier : editEntry()
+// avait sa propre logique de reset partielle, divergente de resetModalForm() (utilisée par le
+// flux d'ajout "+"), et oubliait des champs spécifiques Sport (onglets vélo, itinéraire marche...).
+// Un résidu de saisie précédente (ex. mode "Kcal machine" du vélo resté affiché/actif) pouvait
+// alors apparaître sur une entrée sans rapport (bug remonté : une entrée Boisson/repas affichant
+// des champs "calories vélo").
+resetModalForm();
 editingId = entry.id;
 currentCat = entry.category;
 const isSport = entry.type === 'burn', isDrink = entry.category === 'Boissons';
@@ -5539,12 +5580,46 @@ document.getElementById('in-desc').value = 'Marche';
 document.getElementById('speed-row').style.display = 'grid';
 document.getElementById('in-speed').value = spd;
 document.getElementById('in-kcal').value = calcWalkKcalH(spd);
+// Un trajet nommé (favori ou itinéraire multi-étapes, ex. "Domicile → Bureau") a un libellé
+// ≠ "Marche" pur — le préserver via currentWalkFavName/currentWalkMode/currentRouteData, sinon
+// submitEntry() (sa condition `currentWalkMode === 'route' && currentRouteData`, voir plus bas)
+// retombe dans la branche générique et aplatit irréversiblement le trajet en
+// "Marche (Qmin · Dkm · Skm/h)" dès qu'on enregistre, perdant le nom d'origine.
+if (ll !== 'marche') {
+const distMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km(?!\/h)/);
+const dist = distMatch ? parseFloat(distMatch[1].replace(',', '.')) : round1(spd * (qty / 60));
+currentWalkFavName = cleanLabel.replace(/^🚶\s*/, '').trim();
+currentWalkMode = 'route';
+currentRouteData = { distance: dist };
+} else {
+currentWalkFavName = '';
+currentWalkMode = 'simple';
+currentRouteData = null;
+}
 } else if (ll.includes('vélo')) {
+document.getElementById('in-desc').value = 'Vélo';
+document.getElementById('bike-mode-tabs').style.display = 'grid';
+renderBikeFavsInModal();
+// Deux modes possibles à la création (voir selectBikeMode()/setBikeMode()) : "machine" (calories
+// affichées par le vélo + correction) ou "vitesse". editEntry() doit rouvrir le bon onglet et
+// préremplir ses champs, sinon on retombe toujours en mode vitesse même pour une entrée créée en
+// mode "calories estimées" (bug remonté : impossible de revoir/corriger ces calories à l'édition).
+const machineMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*kcal machine.*?(\d+(?:[.,]\d+)?)\s*kcal ajust/i);
+if (machineMatch) {
+const machineKcal = parseFloat(machineMatch[1].replace(',', '.'));
+const adjustedKcal = parseFloat(machineMatch[2].replace(',', '.'));
+const correction = machineKcal > 0 ? Math.round((1 - adjustedKcal / machineKcal) * 100) : (parseFloat(localStorage.getItem('bt_bike_correction')) || 25);
+document.getElementById('in-bike-machine-kcal').value = machineKcal;
+document.getElementById('in-bike-correction').value = correction;
+setBikeMode('machine');
+} else {
 const spdMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km\/h/);
 const spd = spdMatch ? parseFloat(spdMatch[1]) : 18;
-document.getElementById('in-desc').value = 'Vélo';
 document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
 document.getElementById('in-kcal').value = spd;
+document.getElementById('in-bike-correction').value = localStorage.getItem('bt_bike_correction') || '25';
+setBikeMode('speed');
+}
 } else { document.getElementById('in-kcal').value = perHour; }
 document.getElementById('in-p').value = '0';
 document.getElementById('in-g').value = '0';
@@ -5561,6 +5636,12 @@ document.getElementById('cancel-edit-btn').style.display = 'block';
 document.getElementById('search-results').style.display = 'none';
 recalc();
 document.getElementById('modal-add').classList.add('open');
+// openModal() pose ces deux états à l'ouverture (voir plus bas) — editEntry() rouvre le même
+// modal-add par un autre chemin (souvent juste après _closeDetailPopup(), qui vient de RETIRER
+// 'modal-open') et les oubliait : le FAB "+" restait visible/cliquable par-dessus le formulaire
+// d'édition, et le scroll du fond (liste du journal) restait actif sous la modale.
+document.body.classList.add('modal-open');
+const _fabEdit = document.getElementById('fab-btn'); if (_fabEdit) _fabEdit.style.display = 'none';
 }
 let _isSubmitting = false;
 async function submitEntry() {
@@ -5702,7 +5783,12 @@ if (_submitBtn) { _submitBtn.disabled = false; _submitBtn.textContent = _submitB
 }
 function getMealEntries(cat) { return currentEntries.filter(e => e.type === 'food' && e.category === cat); }
 function cloneRecipeItem(entry) {
-const p = parseDesc(entry.desc), qty = p.qty || 100;
+const p = parseDesc(entry.desc);
+// parseDesc() (maintenant corrigée) couvre g/ml/cl ; pour une unité personnalisée qu'elle ne
+// reconnaît pas (cuillères...), se rabattre sur la colonne `qty` stockée en base plutôt que sur
+// un 100 par défaut sans rapport — même priorité que editEntry() (voir son commentaire "stored
+// qty column > parsed from desc > default").
+const qty = p.qty || entry.qty || 100;
 return {
 id: Date.now() + Math.random(),
 desc: p.label,
@@ -5902,6 +5988,11 @@ document.body.classList.add('modal-open');
 }
 function closeRecipeEditor() {
   document.getElementById('modal-recipe-editor').classList.remove('open');
+  // openRecipeEditorNew()/openRecipeEditorEdit() posent 'modal-open' sur le body (masque le FAB,
+  // bloque le scroll du fond) — jamais retiré ici avant ce fix : après la moindre utilisation de
+  // l'éditeur de recette, la page Journal restait scrollée-bloquée et le bouton "+" masqué en
+  // permanence, jusqu'à l'ouverture/fermeture fortuite d'une autre modale qui gère bien la classe.
+  document.body.classList.remove('modal-open');
   _editingBuilderItemId = null;
   editingRecipeId = null;
   recipeBuilder = [];
@@ -6402,8 +6493,8 @@ if (bilanRange === 'week') {
 async function loadWeightEntries() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('weight_entries').select('*').eq('user_id', user.id).order('date', { ascending: true }); weightEntries = data || []; } catch (e) { console.error(e); }
 }
-function openWeightModal() { document.getElementById('w-date').value = todayStr(); document.getElementById('sleep-date').value = todayStr(); renderWeightModal(); loadSleepData(); document.getElementById('modal-weight').classList.add('open'); }
-function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); }
+function openWeightModal() { document.getElementById('w-date').value = todayStr(); document.getElementById('w-val').value = ''; document.getElementById('sleep-date').value = todayStr(); renderWeightModal(); loadSleepData(); document.getElementById('modal-weight').classList.add('open'); document.body.classList.add('modal-open'); }
+function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function renderWeightModal() { renderIMC(); renderWeightChart(); renderWeightHistory(); }
 async function addWeightEntry() {
 const { data: { user } } = await sb.auth.getUser();
@@ -7207,6 +7298,8 @@ function _rebuildEntryIngTable(entryId) {
       <span style="font-size:10px;color:var(--muted);">k/100</span>
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
+      <button type="button" onclick="_entryIngRemove('${entryId}',${i})" title="Supprimer cet ingrédient"
+        style="flex-shrink:0;width:20px;height:20px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:12px;line-height:1;cursor:pointer;">✕</button>
     </div>`).join('');
   const total = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
   el.innerHTML = rows + `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;"><span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span><span style="font-size:13px;font-weight:800;color:var(--accent);">${total} kcal</span></div>`;
@@ -7220,6 +7313,13 @@ function _entryIngChange(entryId, idx, field, rawVal) {
   else if (field === 'kcalTotal') { ing.kcalTotal = val; ing.kcal100 = ing.qty > 0 ? Math.round(val / ing.qty * 100) : 0; }
   _rebuildEntryIngTable(entryId);
   // Show save button
+  const saveBtn = document.getElementById(`entry-ing-save-${entryId}`);
+  if (saveBtn) saveBtn.style.display = 'block';
+}
+
+function _entryIngRemove(entryId, idx) {
+  _entryIngredients.splice(idx, 1);
+  _rebuildEntryIngTable(entryId);
   const saveBtn = document.getElementById(`entry-ing-save-${entryId}`);
   if (saveBtn) saveBtn.style.display = 'block';
 }
@@ -8366,6 +8466,8 @@ function _rebuildIngredientTable() {
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
         onchange="_ingChange(${i},'kcalTotal',this.value)" title="kcal total">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
+      <button type="button" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
+        style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
     </div>`).join('');
   const total = _aiIngredients.reduce((s, ing) => s + ing.kcalTotal, 0);
   const totalQty = _aiIngredients.reduce((s, ing) => s + ing.qty, 0);
@@ -8390,12 +8492,32 @@ function _ingChange(idx, field, rawVal) {
     ing.kcal100 = ing.qty > 0 ? Math.round(val / ing.qty * 100) : 0;
   }
   _rebuildIngredientTable();
-  // Update main qty/kcal fields
+  _syncAIIngredientTotals();
+}
+
+// Retire un ingrédient de la répartition affichée après une réponse IA (recette/repas), sans
+// fermer la fenêtre — avant ça, le seul moyen de corriger un ingrédient en trop était de reposer
+// toute la question à l'IA.
+function _ingRemove(idx) {
+  _aiIngredients.splice(idx, 1);
+  _rebuildIngredientTable();
+  _syncAIIngredientTotals();
+}
+
+// Recalcule les champs agrégés (qty/kcal globaux) ET régénère `_aiLastFoodNote` depuis
+// `_aiIngredients` après une correction manuelle (grammage/kcal/suppression). Sans ça, `addAIEntry()`
+// et `_confirmAIEdit()` réutilisaient telle quelle la note brute d'origine de l'IA (`_aiLastFoodNote`,
+// jamais régénérée) dans la description enregistrée : les champs kcal/qty affichés reflétaient bien
+// la correction, mais le détail par ingrédient (rouvert plus tard via _parseNoteIngredients) restait
+// celui d'AVANT correction — un total incohérent entre le badge de l'entrée et son détail.
+function _syncAIIngredientTotals() {
   const totalQty = _aiIngredients.reduce((s, i) => s + i.qty, 0);
   const totalKcal = _aiIngredients.reduce((s, i) => s + i.kcalTotal, 0);
   const kcal100Global = totalQty > 0 ? Math.round(totalKcal / totalQty * 100) : 0;
   document.getElementById('ai-qty').value = totalQty;
   document.getElementById('ai-kcal').value = kcal100Global;
+  _aiLastFoodNote = _aiIngredients.map(i => `${i.name} ${i.qty}g → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100g`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
+  const noteEl = document.getElementById('ai-note-text'); if (noteEl) noteEl.textContent = _aiLastFoodNote;
   recalcAI();
 }
 
@@ -9816,7 +9938,11 @@ if ('serviceWorker' in navigator) {
 // ── Clavier mobile : remonte le modal-add au-dessus du clavier ──
 (function() {
   if (!window.visualViewport) return;
-  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food'];
+  // modal-ai (textarea de question, sollicité à chaque frappe) et modal-settings (dont les champs
+  // mot de passe tout en bas d'un formulaire déjà long) contiennent aussi des champs texte proches
+  // du même risque que les 4 sheets ci-dessus (bottom-sheet ancrée en bas, sans remontage le champ
+  // actif/son contenu peut se retrouver sous le clavier virtuel) — ajoutées par prudence.
+  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food', 'modal-ai', 'modal-settings'];
 
   function getActiveSheet() {
     for (const id of SHEETS_TO_LIFT) {
@@ -9836,8 +9962,14 @@ if ('serviceWorker' in navigator) {
       const sheetBottom = sheetRect.bottom;
       const visibleBottom = window.innerHeight - keyboardHeight;
       const overflow = sheetBottom - visibleBottom;
-      // Ne remonter que de l'overflow + 8px de marge, max 60% du clavier
-      const lift = Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6));
+      // Ne remonter que de l'overflow + 8px de marge, max 60% du clavier, et jamais plus que
+      // sheetRect.top - 8px : un champ proche du haut du sheet (ex. la recherche d'aliment,
+      // juste sous le titre) suivi de son dropdown de suggestions ne doit jamais être poussé
+      // au-dessus du haut de l'écran par ce remontage — contrairement au scroll interne du
+      // sheet, un translateY qui dépasse sheetRect.top rend ce contenu invisible sans recours
+      // (bug remonté : le haut des suggestions d'aliment disparaît en tapant dans un repas).
+      const maxLift = Math.max(0, sheetRect.top - 8);
+      const lift = Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6, maxLift));
       sheet.dataset.kbLift = lift > 0 ? Math.round(lift) : 0;
       sheet.style.transform = lift > 0 ? `translateY(-${Math.round(lift)}px)` : '';
       sheet.style.transition = 'transform 0.15s ease';
@@ -9875,7 +10007,16 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('touchmove', (e) => {
   // Si un modal est ouvert, bloquer le touchmove sauf à l'intérieur d'un scroll autorisé
   if (!document.body.classList.contains('modal-open')) return;
-  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, .modal-scroll, #ai-chat-log, #daily-list, .settings-body, .recipes-list, #aliments-list, #recipe-builder-list, #sport-favs-content, #places-list, .entry-detail-popup, .entry-detail-note');
+  // `.recipes-list`/`#aliments-list`/`#recipe-builder-list`/`#sport-favs-content`/`#places-list`
+  // (+ `.modal-scroll`/`.settings-body`, jamais utilisés dans le HTML) ont été retirés de cette
+  // liste : ce sont de simples conteneurs flex SANS overflow propre, imbriqués dans le vrai
+  // conteneur scrollable `.settings-sheet`. `closest()` remontait jusqu'à eux en premier (plus
+  // proches dans le DOM que `.settings-sheet`), leur `scrollHeight` == `clientHeight` déclenchait
+  // alors systématiquement le `preventDefault()` ci-dessous — le scroll tactile de ces listes
+  // (recettes, aliments, lieux, favoris sport...) restait bloqué. En les retirant, `closest()`
+  // remonte directement jusqu'à `.settings-sheet`, le vrai conteneur qui scrolle (bug remonté :
+  // affichage "bizarre" en scrollant la liste de recettes enregistrées).
+  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, #ai-chat-log, #daily-list, .entry-detail-popup, .entry-detail-note');
   if (!scrollable) {
     e.preventDefault();
     return;

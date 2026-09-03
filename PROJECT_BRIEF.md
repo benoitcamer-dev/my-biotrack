@@ -2,6 +2,12 @@
 
 À lire en premier à chaque nouvelle session sur ce repo (voir `CLAUDE.md`). Pour le détail visuel/produit, voir `DESIGN.md` et `PRODUCT.md`.
 
+**Avant toute action** : lire aussi les 4 docs de référence transversales (valables pour tous les projets de `IA - Automatisations/`, pas seulement celui-ci — déjà rappelées dans le `CLAUDE.md` racine, reliées ici pour qu'un agent qui n'ouvrirait que ce fichier ne les manque pas) :
+- `../Bonne pratiques IA/securite_cles_credentials.md` — sécurité des clés API/credentials.
+- `../Bonne pratiques IA/bonnes_pratiques_claude_md.md` — garder un `CLAUDE.md`/`PROJECT_BRIEF.md` sous contrôle (état actuel vs journal daté).
+- `../Bonne pratiques IA/boucles_de_verification.md` — découper un objectif en sous-tâches vérifiables, ne jamais déclarer une sous-tâche terminée sans vérification indépendante de l'action elle-même.
+- `../Bonne pratiques IA/conseils_environnement_travail.md` — pièges déjà rencontrés sur cet environnement (Windows/PowerShell/Bash, NAS, n8n, OneDrive, encodage...).
+
 ## Qu'est-ce que c'est
 
 **LeGrosBarbu** ("my-biotrack") — un journal quotidien de nutrition, poids et sport. Application personnelle (un seul utilisateur réel : Benoit), positionnée comme alternative gratuite et sans pub à MyFitnessPal/Yazio : base d'aliments auto-curatée, estimation par photo IA (Gemini, clé perso), pas de multi-tenant à concevoir. Journal alimentaire par repas, activité physique (marche/vélo avec calcul d'itinéraire), suivi de poids/IMC, bilans sur période, favoris, recettes, lieux enregistrés, scan de code-barres, assistant IA pour l'analyse de repas/photos.
@@ -16,7 +22,9 @@ Détail produit complet → `PRODUCT.md`. Système visuel (thème, typographie, 
 - Intégrations optionnelles à clé API fournie par l'utilisateur (stockée en `localStorage`, chargée conditionnellement au boot) :
   - Gemini (estimation nutritionnelle par photo)
   - Google Maps/Places (recherche d'adresse pour l'onglet "Lieux")
-  - Google Fit / Google Calendar (sync sport, OAuth via une Edge Function Supabase)
+  - Google Fit / Google Calendar (sync sport, OAuth via une Edge Function Supabase) — **⚠️ scopes Fit
+    retirés du projet Google Cloud partagé le 31/08/2026** (non utilisés, voir `CHANGELOG_2026-08-31.md`) :
+    la connexion Google Fit ne fonctionnera plus tant que les scopes ne sont pas recréés côté Google Cloud
   - OpenRouteService (`ORS_KEY`, calcul d'itinéraires pour le mode marche/vélo)
 - Icônes : Lucide (CDN, rendu par un `MutationObserver` sur `[data-lucide]` car la majorité du contenu est injectée en `innerHTML`). Conversion emoji → Lucide en cours, pas exhaustive (voir "Ce qui reste à faire").
 - Google Fonts (Inter).
@@ -68,6 +76,43 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 - Décision explicite : pas d'intégration Google Maps Directions API ni de bouton "ouvrir dans Google Maps" (évalué le 14/08/2026, écarté par l'utilisateur).
 
 ## Historique des correctifs
+
+### Session du 04/09/2026
+
+Bugs remontés en usage réel + revue multi-agents (3 agents en parallèle, lecture seule sur
+modales/état résiduel, affichage CSS, mapping des fonctions d'édition). Détail complet, repro et
+raisonnement de chaque fix : `CHANGELOG_2026-09-04.md`.
+
+- **Vélo** : mode "Kcal machine" perdu à l'édition (retombait toujours en mode vitesse, 18km/h par
+  défaut) — corrigé, `editEntry()` détecte et restaure le bon mode.
+- **Entrée Boisson/repas affichant des champs "calories vélo"** : `editEntry()` avait sa propre
+  logique de reset divergente de `resetModalForm()` — corrigé, `resetModalForm()` appelée en tête.
+- **Édition IA d'un repas/recette** : ajout d'un bouton de suppression par ingrédient (résultat IA
+  et détail d'entrée), + régénération de la note détaillée après correction (`_syncAIIngredientTotals`).
+- **Scroll bizarre liste de recettes** (et aliments/lieux/favoris sport) : le blocage de scroll de
+  fond sous les modales ciblait le mauvais conteneur (`.recipes-list` au lieu de `.settings-sheet`,
+  l'ancêtre réellement scrollable) — corrigé.
+- **Haut des suggestions d'aliment invisible au clavier ouvert** : le remontage du sheet au-dessus
+  du clavier pouvait pousser son haut au-dessus de l'écran — plafonné à `sheetRect.top - 8px`.
+- **`closeRecipeEditor()` ne retirait jamais `modal-open` du body** (bug critique : app scrollée-
+  bloquée + FAB masqué en permanence après usage de l'éditeur de recette) — corrigé, avec plusieurs
+  modales apparentées (Aliments/Réglages/Lieux/Recettes/Poids) qui n'ajoutaient jamais `modal-open`
+  à l'ouverture directe depuis la nav du bas.
+- **`parseDesc()` totalement cassée** (regex avec des `$` littéraux au lieu de parenthèses
+  échappées, ne matchait jamais) : toute conversion d'une entrée du journal en ingrédient de
+  recette retombait sur 100g par défaut — corrigé, + support `cl`.
+- **Marche en itinéraire nommé** : nom du trajet perdu à l'édition (même famille que le bug vélo) —
+  corrigé (préservation du libellé sans reconstruire l'itinéraire interactif complet).
+- **Nouvel aliment caché derrière Mes aliments** (z-index, bouton "+ Créer") — corrigé.
+- **`.food-name`/`.food-meta`** (onglet Ciqual) et **`.summary-card`** (Bilan) : classes CSS
+  référencées mais jamais définies, rendu dégradé — corrigées.
+- **Favoris vélo** : sauvegarde silencieusement fausse en mode "Kcal machine" — garde-fou ajouté.
+- Ajout d'un pointeur explicite dans ce fichier vers les 4 docs de référence transversales
+  (`../Bonne pratiques IA/*.md`).
+
+**Non corrigé, signalé pour référence** : cible tactile `.walk-move-btn` (26×19px, sous 44px) ;
+`_saveIngEdits()` réécrit toujours l'unité en "g" même pour une note en ml/cl à l'origine
+(cosmétique). Voir `CHANGELOG_2026-09-04.md` pour le détail.
 
 ### Session du 23/08/2026
 
