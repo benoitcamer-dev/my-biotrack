@@ -1951,10 +1951,16 @@ outline: none;
 .walk-addr-input::placeholder { color: var(--muted); }
 .walk-move-btns { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; }
 .walk-move-btn {
+  position: relative;
   width: 26px; height: 19px; display: flex; align-items: center; justify-content: center;
   background: none; border: none; color: var(--muted); cursor: pointer; padding: 0;
   touch-action: manipulation;
 }
+/* Cible tactile agrandie (26x19px, sous le seuil 44px) sans faire se chevaucher la paire
+   monter/descendre : chaque bouton n'étend sa zone de tap invisible que vers l'EXTÉRIEUR de la
+   paire (haut pour "monter", bas pour "descendre"), jamais vers l'autre. Audit du 04/09/2026. */
+.walk-move-up::before { content: ''; position: absolute; top: -8px; left: -4px; right: -4px; bottom: 0; }
+.walk-move-down::before { content: ''; position: absolute; bottom: -8px; left: -4px; right: -4px; top: 0; }
 .walk-move-btn .lc-icon { width: 13px; height: 13px; }
 .walk-move-btn:active:not(:disabled) { color: var(--accent); }
 .walk-move-btn:disabled { opacity: 0.25; cursor: default; }
@@ -7276,7 +7282,11 @@ function _parseNoteIngredients(note) {
     // Extract first number only (ignore macro annotations like "(15P,35G,11L)/100g")
     const kcalTotal = parseInt((kcalTotalStr.match(/(\d+)/) || [])[1]) || 0;
     const kcal100 = parseInt((kcal100Str.match(/(\d+)/) || [])[1]) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
-    return { name, qty, kcal100, kcalTotal };
+    // `qty` est déjà converti en équivalent ml pour le cl (voir ci-dessus) — l'unité mémorisée
+    // suit cette même convention (cl -> "ml") plutôt que l'unité brute d'origine, pour rester
+    // cohérente avec la valeur numérique réellement stockée/affichée ensuite.
+    const unit = qtyMatch ? (qtyMatch[2].toLowerCase() === 'cl' ? 'ml' : qtyMatch[2].toLowerCase()) : 'g';
+    return { name, qty, kcal100, kcalTotal, unit };
   });
 }
 
@@ -7292,8 +7302,8 @@ function _rebuildEntryIngTable(entryId) {
   const rows = _entryIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
-      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="g">
-      <span style="font-size:10px;color:var(--muted);">g</span>
+      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="${ing.unit || 'g'}">
+      <span style="font-size:10px;color:var(--muted);">${ing.unit || 'g'}</span>
       <input type="number" inputmode="decimal" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
@@ -7329,8 +7339,9 @@ async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
   if (!user) return;
   const totalKcal = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
   const totalQty = _entryIngredients.reduce((s, i) => s + i.qty, 0);
-  // Rebuild note string
-  const newNote = _entryIngredients.map(i => `${i.name} ${i.qty}g → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100g`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
+  // Rebuild note string — réutilise l'unité d'origine (g/ml, cl remonté en ml) plutôt qu'un "g"
+  // en dur : une note en ml/cl à l'origine (boisson) n'est plus réétiquetée "g" en la sauvegardant.
+  const newNote = _entryIngredients.map(i => `${i.name} ${i.qty}${i.unit || 'g'} → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100${i.unit || 'g'}`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
   // Get current entry to update desc
   const { data: entry } = await sb.from('entries').select('desc,prot,gluc,lip').eq('id', entryId).eq('user_id', user.id).single();
   if (!entry) return;
@@ -8458,8 +8469,8 @@ function _rebuildIngredientTable() {
     <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
-        onchange="_ingChange(${i},'qty',this.value)" title="Grammes">
-      <span style="font-size:10px;color:var(--muted);">g</span>
+        onchange="_ingChange(${i},'qty',this.value)" title="${ing.unit || 'g'}">
+      <span style="font-size:10px;color:var(--muted);">${ing.unit || 'g'}</span>
       <input type="number" inputmode="decimal" style="width:58px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1"
         onchange="_ingChange(${i},'kcal100',this.value)" title="kcal/100g">
       <span style="font-size:10px;color:var(--muted);">k/100</span>
@@ -8516,7 +8527,7 @@ function _syncAIIngredientTotals() {
   const kcal100Global = totalQty > 0 ? Math.round(totalKcal / totalQty * 100) : 0;
   document.getElementById('ai-qty').value = totalQty;
   document.getElementById('ai-kcal').value = kcal100Global;
-  _aiLastFoodNote = _aiIngredients.map(i => `${i.name} ${i.qty}g → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100g`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
+  _aiLastFoodNote = _aiIngredients.map(i => `${i.name} ${i.qty}${i.unit || 'g'} → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100${i.unit || 'g'}`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
   const noteEl = document.getElementById('ai-note-text'); if (noteEl) noteEl.textContent = _aiLastFoodNote;
   recalcAI();
 }

@@ -1930,10 +1930,16 @@ outline: none;
 .walk-addr-input::placeholder { color: var(--muted); }
 .walk-move-btns { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; }
 .walk-move-btn {
+  position: relative;
   width: 26px; height: 19px; display: flex; align-items: center; justify-content: center;
   background: none; border: none; color: var(--muted); cursor: pointer; padding: 0;
   touch-action: manipulation;
 }
+/* Cible tactile agrandie (26x19px, sous le seuil 44px) sans faire se chevaucher la paire
+   monter/descendre : chaque bouton n'étend sa zone de tap invisible que vers l'EXTÉRIEUR de la
+   paire (haut pour "monter", bas pour "descendre"), jamais vers l'autre. Audit du 04/09/2026. */
+.walk-move-up::before { content: ''; position: absolute; top: -8px; left: -4px; right: -4px; bottom: 0; }
+.walk-move-down::before { content: ''; position: absolute; bottom: -8px; left: -4px; right: -4px; top: 0; }
 .walk-move-btn .lc-icon { width: 13px; height: 13px; }
 .walk-move-btn:active:not(:disabled) { color: var(--accent); }
 .walk-move-btn:disabled { opacity: 0.25; cursor: default; }
