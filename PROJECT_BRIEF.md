@@ -107,12 +107,19 @@ raisonnement de chaque fix : `CHANGELOG_2026-09-04.md`.
 - **`.food-name`/`.food-meta`** (onglet Ciqual) et **`.summary-card`** (Bilan) : classes CSS
   référencées mais jamais définies, rendu dégradé — corrigées.
 - **Favoris vélo** : sauvegarde silencieusement fausse en mode "Kcal machine" — garde-fou ajouté.
+- **Cible tactile `.walk-move-btn`** (26×19px, sous 44px) : zone de tap agrandie via `::before`,
+  uniquement vers l'extérieur de la paire monter/descendre (jamais l'un vers l'autre).
+- **Unité ml/cl perdue dans le détail d'ingrédients** (`_saveIngEdits()`/résultat IA réétiquetaient
+  toujours "g", même pour une boisson) — `_parseNoteIngredients()` mémorise maintenant l'unité
+  d'origine, réutilisée partout où la note est reconstruite.
 - Ajout d'un pointeur explicite dans ce fichier vers les 4 docs de référence transversales
   (`../Bonne pratiques IA/*.md`).
 
-**Non corrigé, signalé pour référence** : cible tactile `.walk-move-btn` (26×19px, sous 44px) ;
-`_saveIngEdits()` réécrit toujours l'unité en "g" même pour une note en ml/cl à l'origine
-(cosmétique). Voir `CHANGELOG_2026-09-04.md` pour le détail.
+**Vérifié et écarté (pas un bug)** : `sportFavDateDate` (date pré-remplie en ajoutant une activité
+depuis un favori sport) — se réinitialise déjà correctement à la date du journal affiché à chaque
+ouverture (`loadWalkFavQuick()`/`loadBikeFavQuick()`, seuls points d'entrée réels), confirmé en
+direct sur le site déployé. Détail des deux points ci-dessus et de cette vérification :
+`CHANGELOG_2026-09-04.md` (section "Suite (même journée)").
 
 ### Session du 23/08/2026
 

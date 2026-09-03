@@ -82,8 +82,7 @@ puis resynchronisées dans `index-complet.html` (`node verify.js` OK).
   cassant la cohérence visuelle avec le reste de l'app. Corrigée en l'ajoutant à la règle partagée
   avec `.recipe-card`/`.day-line`/etc.
 - Cible tactile `.walk-move-btn` (réordonnancement des étapes d'itinéraire, 26×19px) signalée sous
-  le seuil de 44px — **non corrigée cette session** (risque de chevauchement du bouton voisin dans
-  la paire monter/descendre à évaluer avant d'agrandir la zone de tap invisible).
+  le seuil de 44px — voir "Suite (même journée)" ci-dessous pour le correctif.
 
 **Audit "mapping formulaires d'édition" :**
 - **`parseDesc()` totalement cassée** : sa regex utilisait des ancres fin-de-chaîne `$` littérales
@@ -112,11 +111,43 @@ puis resynchronisées dans `index-complet.html` (`node verify.js` OK).
   sans rapport avec les kcal machine/correction réellement saisis. La structure des favoris vélo ne
   sachant représenter que le mode vitesse, fix minimal : garde-fou + message explicite plutôt
   qu'une sauvegarde silencieusement fausse.
-- Point mineur signalé, **non corrigé** : `_saveIngEdits()` (édition du détail d'ingrédients d'une
-  entrée déjà enregistrée) réécrit toujours l'unité en "g" même pour une note en ml/cl à l'origine
-  — cosmétique, les calculs restent corrects.
+- Point mineur signalé : `_saveIngEdits()` (édition du détail d'ingrédients d'une entrée déjà
+  enregistrée) réécrivait toujours l'unité en "g" même pour une note en ml/cl à l'origine —
+  cosmétique, les calculs restaient corrects. Voir "Suite (même journée)" ci-dessous pour le
+  correctif.
+- **Non retenu après vérification, `sportFavDateDate` n'est pas un bug** : signalé à confiance
+  faible par l'agent (lecture statique du code), qui n'avait pas vu que les deux seuls points
+  d'entrée réels du modal date-favori (`loadWalkFavQuick()`/`loadBikeFavQuick()`, appelés depuis
+  la liste rapide *et* depuis l'onglet Sports/favoris — aucun autre appelant dans `app.js`/
+  `index.html`) réinitialisent déjà `sportFavDateDate = new Date(journalDate)` avant chaque
+  ouverture. Vérifié en direct sur le site déployé (console) : `sportFavDateDate` forcée à une
+  date absurde (2099) puis `journalDate` mise à une date arbitraire (10/08/2026) → réouverture du
+  modal via `loadWalkFavQuick()` → `sportFavDateDate` repart bien de `journalDate`
+  ("2026-08-10"), pas de la valeur absurde. Aucun changement de code nécessaire.
 
 ## Documentation
 
 - `PROJECT_BRIEF.md` : ajout d'un pointeur explicite vers les 4 docs de référence transversales
   (`../Bonne pratiques IA/*.md`) en tête de fichier.
+
+## Suite (même journée) : cible tactile + unité ml/cl
+
+Les deux points laissés non corrigés plus haut, traités dans un second temps :
+
+- **`.walk-move-btn`** (réordonnancement des étapes d'itinéraire marche, 26×19px) : zone de tap
+  invisible agrandie via un pseudo-élément `::before` sur chaque bouton — mais en n'étendant la
+  zone que vers l'**extérieur** de la paire monter/descendre (`.walk-move-up` vers le haut
+  uniquement, `.walk-move-down` vers le bas uniquement), jamais l'un vers l'autre : élimine le
+  risque de chevauchement identifié initialement (les deux classes CSS distinctes déjà présentes
+  dans le HTML permettaient cette approche asymétrique).
+- **Unité ml/cl préservée dans le détail d'ingrédients** : `_parseNoteIngredients()` (fonction
+  partagée par le détail d'une entrée *et* le résultat IA) mémorise maintenant l'unité d'origine
+  de chaque ingrédient (`g`, ou `ml` — le `cl` étant déjà remonté en équivalent ml ×10 comme le
+  reste du calcul) au lieu de la perdre. `_saveIngEdits()` et `_syncAIIngredientTotals()`
+  réutilisent cette unité au lieu d'un `"g"` codé en dur, dans le tableau éditable comme dans la
+  note reconstruite et sauvegardée.
+
+Vérifié en direct sur le site déployé (fetch `no-store` + introspection du code réellement
+exécuté dans l'onglet via `.toString()` sur les fonctions concernées, après un vrai hard reload —
+la première tentative de vérification est tombée sur un léger délai de propagation du CDN GitHub
+Pages, la seconde a confirmé le code à jour). `node verify.js` au vert.
