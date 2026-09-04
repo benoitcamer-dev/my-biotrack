@@ -907,7 +907,15 @@ border-top: 1px solid var(--border);
    `.modal-sheet` via JS selon la catégorie ouverte) repasse le footer en flux
    normal : plus de recouvrement, on scrolle jusqu'à lui comme n'importe quel
    bouton de fin de formulaire. */
-.modal-sheet.static-footer .modal-sticky-footer { position: static; }
+.modal-sheet.static-footer .modal-sticky-footer,
+.modal-sheet.search-active-footer .modal-sticky-footer { position: static; }
+/* .search-active-footer : même parade que .static-footer (voir commentaire ci-dessus),
+   déclenchée cette fois tant que #search-results affiche des résultats (posée/retirée en
+   JS par un MutationObserver, voir app.js). Sans elle, le footer sticky se plaque dès le
+   premier rendu en bas du (petit) viewport visible une fois le sheet correctement borné
+   par --app-height (clavier ouvert) et recouvre les résultats qui n'ont pas encore été
+   scrollés — bug remonté 04/09/2026 : les résultats existent bien dans le DOM mais restent
+   invisibles, cachés sous la carte kcal et les boutons Valider/Fermer. */
 
 /* ── Icônes (Lucide) ─────────────────────────────────────────────────────── */
 .lc-icon, [data-lucide] { width: 16px; height: 16px; stroke-width: 2.1; vertical-align: -3px; flex-shrink: 0; }
@@ -9987,8 +9995,19 @@ if ('serviceWorker' in navigator) {
       // au-dessus du haut de l'écran par ce remontage — contrairement au scroll interne du
       // sheet, un translateY qui dépasse sheetRect.top rend ce contenu invisible sans recours
       // (bug remonté : le haut des suggestions d'aliment disparaît en tapant dans un repas).
+      // N'appliquer un lift QUE si le sheet déborde réellement (overflow > 0) : depuis que
+      // .modal-sheet est lui-même plafonné par --app-height (voir styles.css), sheetBottom
+      // colle exactement à visibleBottom dans le cas courant (overflow ≈ 0), et l'ancienne
+      // formule (overflow + 8, sans condition) appliquait quand même un lift fantôme de 8px
+      // à chaque ouverture de clavier. Un transform actif sur ce même élément scrollable
+      // (overflow-y:auto) pendant qu'on y injecte du contenu dynamique (résultats de
+      // recherche ajoutés après coup, sans nouveau resize donc sans recalcul du lift) a été
+      // observé provoquer un rendu figé sur appareil réel : les résultats restent générés
+      // dans le DOM mais s'affichent visuellement sous la carte kcal/les boutons Valider-
+      // Fermer (bug remonté 04/09/2026, capture à l'appui) — supprimer ce lift inutile dans
+      // le cas sans débordement réel évite de transformer ce conteneur sans raison.
       const maxLift = Math.max(0, sheetRect.top - 8);
-      const lift = Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6, maxLift));
+      const lift = overflow > 0 ? Math.max(0, Math.min(overflow + 8, keyboardHeight * 0.6, maxLift)) : 0;
       sheet.dataset.kbLift = lift > 0 ? Math.round(lift) : 0;
       sheet.style.transform = lift > 0 ? `translateY(-${Math.round(lift)}px)` : '';
       sheet.style.transition = 'transform 0.15s ease';
@@ -10020,6 +10039,29 @@ if ('serviceWorker' in navigator) {
       document.body.classList.remove('modal-open');
     }
   });
+})();
+
+// ── Footer sticky (Valider/kcal) de modal-add vs résultats de recherche ─────
+// .modal-sticky-footer (styles.css) reste volontairement sticky en temps normal, pour
+// rester visible pendant qu'on scrolle un long formulaire déjà rempli. Mais tant que
+// #search-results affiche des résultats, l'utilisateur n'a encore rien à valider — et
+// depuis que .modal-sheet est correctement borné par --app-height (clavier ouvert), le
+// sheet déborde presque toujours de sa petite zone visible dès l'ouverture : le footer
+// sticky se plaque alors immédiatement en bas de cette zone, AVANT tout scroll manuel, et
+// recouvre les résultats qui viennent d'apparaître juste sous le champ de recherche (bug
+// remonté 04/09/2026 : résultats bien générés dans le DOM mais invisibles à l'écran,
+// cachés sous la carte kcal et les boutons Valider/Fermer). Bascule le footer en flux
+// normal (classe .search-active-footer, voir styles.css) tant que des résultats sont
+// affichés, indépendamment de .static-footer (Sport) qui garde sa propre logique.
+(function() {
+  const searchResults = document.getElementById('search-results');
+  const sheet = document.querySelector('#modal-add .modal-sheet');
+  if (!searchResults || !sheet) return;
+  const syncFooter = () => {
+    const visible = searchResults.style.display !== 'none';
+    sheet.classList.toggle('search-active-footer', visible);
+  };
+  new MutationObserver(syncFooter).observe(searchResults, { attributes: true, attributeFilter: ['style'], childList: true });
 })();
 
 // ── Bloquer le scroll du fond sous les modals (iOS fix) ─────────────────────

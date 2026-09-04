@@ -886,7 +886,15 @@ border-top: 1px solid var(--border);
    `.modal-sheet` via JS selon la catégorie ouverte) repasse le footer en flux
    normal : plus de recouvrement, on scrolle jusqu'à lui comme n'importe quel
    bouton de fin de formulaire. */
-.modal-sheet.static-footer .modal-sticky-footer { position: static; }
+.modal-sheet.static-footer .modal-sticky-footer,
+.modal-sheet.search-active-footer .modal-sticky-footer { position: static; }
+/* .search-active-footer : même parade que .static-footer (voir commentaire ci-dessus),
+   déclenchée cette fois tant que #search-results affiche des résultats (posée/retirée en
+   JS par un MutationObserver, voir app.js). Sans elle, le footer sticky se plaque dès le
+   premier rendu en bas du (petit) viewport visible une fois le sheet correctement borné
+   par --app-height (clavier ouvert) et recouvre les résultats qui n'ont pas encore été
+   scrollés — bug remonté 04/09/2026 : les résultats existent bien dans le DOM mais restent
+   invisibles, cachés sous la carte kcal et les boutons Valider/Fermer. */
 
 /* ── Icônes (Lucide) ─────────────────────────────────────────────────────── */
 .lc-icon, [data-lucide] { width: 16px; height: 16px; stroke-width: 2.1; vertical-align: -3px; flex-shrink: 0; }
