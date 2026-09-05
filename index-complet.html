@@ -835,24 +835,53 @@ z-index: 60;
 background: var(--surface);
 border: 1px solid rgba(124,111,255,0.1);
 border-top: 1px solid rgba(255,255,255,0.08);
-border-radius: 28px 28px 0 0;
+border-radius: 0;
 width: 100%;
 max-width: 480px;
 padding: 20px 18px 40px;
-/* Bornée par --app-height (hauteur réelle visible, clavier ouvert compris — voir app.js
-   _setAppHeight) et pas seulement par l'unité dvh brute : 92dvh seul ne se réduit pas de
+/* Plein écran demandé (05/09/2026) : hauteur forcée à --app-height (pas seulement un
+   plafond) au lieu de min(92dvh,...) — plus de bande de fond visible au-dessus du sheet.
+   --app-height (hauteur réelle visible, clavier ouvert compris — voir app.js
+   _setAppHeight) et pas seulement l'unité dvh brute : 92dvh seul ne se réduisait pas de
    façon fiable sur tous les appareils quand le clavier virtuel s'ouvre, alors que
-   .modal-overlay (le conteneur flex parent, align-items:flex-end) suit correctement
-   --app-height — un sheet plus grand que son conteneur flex-end déborde par le HAUT,
-   au-dessus de l'écran visible (bug remonté 04/09/2026, ex. recherche d'aliment illisible
-   au clavier ouvert). Avec ce plafond, le sheet reste toujours dans la zone visible et
-   scroll en interne (overflow-y:auto) au lieu de déborder. */
-max-height: min(92dvh, calc(var(--app-height, 100dvh) - 8px));
+   .modal-overlay (le conteneur flex parent) suit correctement --app-height — d'où son
+   usage ici aussi pour la hauteur pleine (bug de débordement du 04/09/2026 : voir
+   historique PROJECT_BRIEF.md). Le sheet garde son scroll interne (overflow-y:auto)
+   pour tout contenu dépassant malgré tout cette hauteur. */
+height: var(--app-height, 100dvh);
+max-height: var(--app-height, 100dvh);
 overflow-y: auto;
+display: flex;
+flex-direction: column;
 animation: slideUp 0.28s cubic-bezier(0.32,1.2,0.64,1);
 box-shadow: 0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
 }
-.settings-sheet { padding-bottom: 48px; max-height: min(90dvh, calc(var(--app-height, 100dvh) - 8px)); -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.settings-sheet { padding-bottom: 48px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+/* Plein écran (05/09/2026) : sur un contenu plus court que l'écran, le sheet en
+   display:flex;flex-direction:column ci-dessus laisse sinon un grand vide sous le
+   dernier élément — bouton(s) d'action « flottant(s) » au milieu de l'écran plutôt
+   que collé(s) en bas comme sur un vrai plein écran. margin-top:auto sur le dernier
+   élément (ou le premier des deux, quand les boutons sont deux frères directs non
+   groupés dans un conteneur commun — sinon les séparer casserait leur alignement)
+   consomme l'espace flex restant et les plaque en bas. Ciblé modale par modale
+   (vérifié un par un via DevTools distant sur Pixel 8, pas une règle générale) car
+   plusieurs sheets se terminent par une LISTE de contenu (recettes/aliments/poids/
+   favoris) où ce même comportement pousserait la liste elle-même en bas, cassant sa
+   position naturelle juste sous la recherche — volontairement laissés tels quels.
+   !important nécessaire : l'élément ciblé porte souvent un style inline
+   margin-top:14px (ex. la rangée de boutons Annuler/Confirmer, `style="display:flex;
+   gap:8px;margin-top:14px;"`) — un style inline bat toujours une règle externe à
+   spécificité égale ou supérieure, seul !important passe outre sans devoir purger
+   cet inline au cas par cas dans chaque template JS concerné. Vérifié sur le fichier
+   réel (pas seulement en aperçu) via DevTools distant avant ce commit. */
+#modal-add > .modal-sheet > :last-child,
+#modal-ai > .modal-sheet > :last-child,
+#modal-copy-meal > .settings-sheet > :last-child,
+#modal-edit-weight > .settings-sheet > :last-child { margin-top: auto !important; }
+#modal-recipe-editor > .settings-sheet > :nth-last-child(2),
+#modal-custom-food > .settings-sheet > :nth-last-child(2),
+#modal-sport-favs > .settings-sheet > :nth-last-child(2),
+#modal-sport-fav-date > .settings-sheet > :nth-last-child(2) { margin-top: auto !important; }
 @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
 @keyframes fabItemIn { from { opacity: 0; transform: translateY(16px) scale(0.85); } to { opacity: 1; transform: translateY(0) scale(1); } }
 /* Boutons du menu FAB (+) : 7 boutons quasi identiques ne différaient que par
