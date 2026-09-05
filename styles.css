@@ -864,8 +864,17 @@ background: var(--surface);
 margin: -20px -18px 16px;
 padding: 20px 18px 0;
 border-radius: 28px 28px 0 0;
+/* Le margin-top négatif fait « saigner » le header jusqu'au bord du sheet, mais la
+   marge négative d'un élément sticky n'est pas repeinte par son propre background
+   (elle est hors de sa boîte) : sur un sheet long (overflow-y:auto), le contenu
+   défilé peut apparaître furtivement dans cet interstice de ~20px juste au-dessus
+   du header, entre le bord réel du sheet et le point où le header s'accroche —
+   confirmé mesuré sur appareil réel (Pixel 8, DevTools distant) : ~20.76px d'écart,
+   correspondant très précisément à ce margin-top. box-shadow (hors flux, peint
+   au-delà de la boîte, contrairement à background) comble cet interstice sans
+   toucher au calcul de position sticky/scroll. */
+box-shadow: 0 -22px 0 0 var(--surface);
 }
-[data-theme="light"] .modal-sticky-header { background: #FFFFFF; }
 .modal-sticky-footer {
 position: sticky;
 bottom: -40px;
