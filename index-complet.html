@@ -5909,7 +5909,12 @@ function openRecipePickerToAdd() {
   if (clr) clr.style.display = 'none';
   renderRecipePicker(true);
   document.getElementById('modal-recipe-picker').classList.add('open');
-  setTimeout(() => { if (inp) inp.focus(); }, 200);
+  // Pas d'auto-focus ici (retiré le 06/09/2026) : contrairement aux autres sheets, ce picker
+  // n'était pas dans SHEETS_TO_LIFT (voir plus bas) — le clavier ouvert automatiquement
+  // écrasait la quasi-totalité de l'écran sans que le sheet soit remonté au-dessus, ne
+  // laissant qu'une bande minuscule pour voir la liste de recettes (bug remonté 06/09/2026).
+  // Le champ reste utilisable au tap ; ajouté aussi à SHEETS_TO_LIFT par cohérence si
+  // l'utilisateur tape volontairement dedans.
 }
 function clearRecipePickerSearch() {
   const inp = document.getElementById('recipe-picker-search');
@@ -5971,11 +5976,17 @@ console.log('Title insert result:', JSON.stringify(titleRes));
 // Insérer les ingrédients
 for (const item of r.items) {
 const qty = item.qty || 100, f = qty / 100;
+// item.desc peut déjà contenir la quantité entre parenthèses (ex. "Chou chinois (100g)",
+// héritée du nom de l'aliment source lors de la création de la recette — voir
+// renderRecipeBuilder/renderRecipePicker qui la nettoient déjà à l'affichage avec ce même
+// regex). Sans ce nettoyage ici, l'entrée journal affichait la quantité en double, ex.
+// "Chou chinois (100g) (100g)" (bug remonté 06/09/2026).
+const cleanDesc = item.desc.replace(/\s*\(\d+(?:[.,]\d+)?\s*(g|ml|cl)\)/gi, '').trim();
 await sb.from('entries').insert([{
 user_id: user.id,
 type: 'food',
 category: currentCat,
-desc: `${item.desc} (${qty}${currentCat === 'Boissons' ? 'ml' : 'g'})`,
+desc: `${cleanDesc} (${qty}${currentCat === 'Boissons' ? 'ml' : 'g'})`,
 val: Math.round((item.kcal100 || 0) * f),
 prot: round1((item.prot100 || 0) * f),
 gluc: round1((item.gluc100 || 0) * f),
@@ -10007,7 +10018,10 @@ if ('serviceWorker' in navigator) {
   // mot de passe tout en bas d'un formulaire déjà long) contiennent aussi des champs texte proches
   // du même risque que les 4 sheets ci-dessus (bottom-sheet ancrée en bas, sans remontage le champ
   // actif/son contenu peut se retrouver sous le clavier virtuel) — ajoutées par prudence.
-  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food', 'modal-ai', 'modal-settings'];
+  // modal-recipe-picker ajouté le 06/09/2026 : oublié à l'origine, son champ de recherche
+  // pouvait laisser le clavier recouvrir la liste de recettes sans remontage (voir
+  // openRecipePickerToAdd, dont l'auto-focus a aussi été retiré par prudence ce même jour).
+  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food', 'modal-ai', 'modal-settings', 'modal-recipe-picker'];
 
   function getActiveSheet() {
     for (const id of SHEETS_TO_LIFT) {
