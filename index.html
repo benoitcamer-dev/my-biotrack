@@ -481,11 +481,16 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-title flex-center-gap8"><i data-lucide="book-open" class="lc-icon-lg"></i> Choisir une recette</div>
 <button class="modal-close" aria-label="Fermer" onclick="closeRecipePicker()">×</button>
 </div>
-<div id="recipe-picker-list" style="margin-bottom:8px;"></div>
+<!-- Champ de recherche placé avant la liste (06/09/2026) : avec l'auto-focus au clavier
+     retiré (voir openRecipePickerToAdd), rien ne scrollait plus automatiquement vers ce
+     champ resté après la liste dans le DOM — invisible sans scroller manuellement jusqu'en
+     bas (bug remonté 06/09/2026). Replacé avant la liste comme dans modal-recipes, pour
+     rester visible d'emblée qu'on tape dedans ou non. -->
 <div style="position:relative;margin-bottom:10px;">
 <input id="recipe-picker-search" class="search-input" type="text" placeholder="🔍 Rechercher une recette…" oninput="renderRecipePicker(_recipePickerFromAdd)" onkeydown="if(event.key==='Enter')this.blur();" autocomplete="off" style="padding-right:36px;">
 <button onclick="clearRecipePickerSearch()" id="recipe-picker-search-clear" class="icon-x-btn" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
 </div>
+<div id="recipe-picker-list" style="margin-bottom:8px;"></div>
 </div>
 </div>
 <!-- MODAL CUSTOM FOOD -->

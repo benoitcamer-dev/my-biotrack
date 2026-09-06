@@ -3949,14 +3949,14 @@ const parenMatch = raw.match(/^(.*?)\s*\(([^)]+)\)$/);
 let main = raw, sub2 = '';
 if (parenMatch && e.type === 'burn') { main = parenMatch[1].trim(); sub2 = parenMatch[2]; }
 const mainSafe = escHtml(main), sub2Safe = escHtml(sub2);
-return `<div class="entry-item" data-id="${e.id}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();_onEntryTap(this)">
+return `<div class="entry-item" data-id="${e.id}" data-cat="${cat}" data-val="${e.val}" data-prot="${e.prot||0}" data-gluc="${e.gluc||0}" data-lip="${e.lip||0}" data-type="${e.type}" data-desc="${(e.desc||'').replace(/"/g,'&quot;')}" onclick="event.stopPropagation();_onEntryTap(this, event)">
 <div class="entry-swipe-actions">
 <button class="entry-swipe-copy" onclick="event.stopPropagation();_swipeCopy(${e.id})"><i data-lucide="copy" class="lc-icon-lg"></i></button>
 <button class="entry-swipe-delete" onclick="event.stopPropagation();_swipeDelete(${e.id})"><i data-lucide="trash-2" class="lc-icon-lg"></i></button>
 </div>
 <div class="entry-item-inner">
 <div class="entry-main">
-<div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${mainSafe}</span>` : mainSafe}</div>
+<div class="entry-desc" style="${main.startsWith('📚') ? 'font-weight:800;font-size:14px;letter-spacing:-0.3px;cursor:pointer;' : ''}">${main.startsWith('📚') ? `<span style="border-bottom:2px solid var(--accent);padding-bottom:1px;">${mainSafe}</span>` : mainSafe}</div>
 ${sub2 ? `<div class="entry-sub">${sub2Safe}</div>` : ''}
 </div>
 <div class="entry-right">
@@ -4043,13 +4043,15 @@ function showMealCtxMenu(e, cat, hasItems, isFood) {
 })();
 
 // ── Popup détail entrée ──────────────────────────────────────────────────────
-function _onEntryTap(el) {
+function _onEntryTap(el, ev) {
   // Un swipe en cours ne doit pas déclencher l'ouverture du détail
   if (el._wasSwiping) return;
   // Si les actions sont révélées, un tap referme au lieu d'ouvrir le détail
   if (el.classList.contains('swiped-open')) { _closeEntrySwipe(el); return; }
-  // Ne pas ouvrir pour les entrées recette titre (📚)
-  if ((el.dataset.desc || '').startsWith('📚')) return;
+  // Entrée recette titre (📚) : pas de détail kcal (val toujours 0), menu dédié à la place
+  // (renommer / supprimer la recette entière — ajouté le 06/09/2026, absent jusque-là :
+  // aucune action possible sur ce titre une fois ses ingrédients supprimés un par un).
+  if ((el.dataset.desc || '').startsWith('📚')) { _onRecipeTitleTap(el, ev); return; }
   const id = el.dataset.id;
   const desc = el.dataset.desc;
   const val = parseFloat(el.dataset.val) || 0;
@@ -4058,6 +4060,55 @@ function _onEntryTap(el) {
   const lip = parseFloat(el.dataset.lip) || 0;
   const type = el.dataset.type;
   showEntryDetail(id, desc, val, prot, gluc, lip, type);
+}
+
+// ── Titre de recette dans le journal : renommer ou supprimer le groupe entier ──
+function _onRecipeTitleTap(el, ev) {
+  const id = parseInt(el.dataset.id);
+  const cat = el.dataset.cat;
+  showCtxPopup(ev, [
+    { icon: 'pencil', label: 'Renommer', fn: `closeCtxPopup();renameRecipeTitle(${id})` },
+    { icon: 'trash-2', label: 'Supprimer la recette', fn: `closeCtxPopup();deleteRecipeGroup(${id},'${cat}')`, danger: true }
+  ]);
+}
+async function renameRecipeTitle(id) {
+  const entry = currentEntries.find(e => e.id === id);
+  if (!entry) return;
+  const currentName = (entry.desc || '').replace(/^📚\s*/, '');
+  const newName = prompt('Renommer la recette :', currentName);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed || trimmed === currentName) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  await sb.from('entries').update({ desc: `📚 ${trimmed}` }).eq('id', id).eq('user_id', user.id);
+  await loadData();
+}
+// Le titre (desc commençant par 📚) n'a pas d'identifiant de groupe stocké en base — pas de
+// colonne dédiée pour ça. Le groupe est donc déduit de l'ordre d'insertion (currentEntries
+// est trié par id croissant, cf loadData) : le titre + tous les items qui le suivent
+// immédiatement dans la même catégorie, jusqu'au prochain titre 📚 ou la fin du repas — soit
+// exactement ce que l'utilisateur voit visuellement groupé sous ce titre dans le journal.
+async function deleteRecipeGroup(titleId, cat) {
+  const items = currentEntries.filter(e => e.category === cat);
+  const idx = items.findIndex(e => e.id === titleId);
+  if (idx === -1) return;
+  const group = [items[idx]];
+  for (let i = idx + 1; i < items.length; i++) {
+    if ((items[i].desc || '').startsWith('📚')) break;
+    group.push(items[i]);
+  }
+  const name = (items[idx].desc || '').replace(/^📚\s*/, '');
+  const extra = group.length - 1;
+  const msg = extra > 0
+    ? `Supprimer "${name}" et ${extra === 1 ? 'son ingrédient' : `ses ${extra} ingrédients`} du journal ?`
+    : `Supprimer "${name}" du journal ?`;
+  const ok = await showConfirm(msg, { danger: true });
+  if (!ok) return;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  await sb.from('entries').delete().in('id', group.map(e => e.id)).eq('user_id', user.id);
+  await loadData();
 }
 
 // ── Swipe pour révéler Copier / Supprimer sur une entrée du journal ──────────
