@@ -834,8 +834,21 @@ display: flex;
 flex-direction: column;
 animation: slideUp 0.28s cubic-bezier(0.32,1.2,0.64,1);
 box-shadow: 0 -8px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.02);
+/* Bug remonté (09/09/2026) : scroller une longue liste (résultat IA multi-ingrédients,
+   modal-ai) pouvait, de façon intermittente, fermer carrément l'onglet Chrome au lieu de
+   scroller — reproduit en direct sur Pixel 8 (débogage USB + Chrome DevTools distant) :
+   un swipe rapide démarrant dans le tiers bas de l'écran est parfois intercepté par le
+   geste système Android (retour à l'accueil) au lieu d'être consommé par la page. `.modal-
+   sheet` (seul utilisateur : modal-add/modal-ai) n'avait pas `touch-action:pan-y` — déjà
+   présent sur `.settings-sheet` ci-dessous, déplacé ici pour couvrir aussi `.modal-sheet` —
+   qui indique au navigateur dès le premier pixel de mouvement qu'il s'agit d'un scroll
+   vertical pur, sans délai d'arbitrage de geste où l'OS peut reprendre la main.
+   `overscroll-behavior:contain` empêche en plus le rebond en fin de liste de se propager
+   (scroll chaining) à la page/l'OS quand le swipe dépasse le contenu restant à scroller. */
+touch-action: pan-y;
+overscroll-behavior: contain;
 }
-.settings-sheet { padding-bottom: 48px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.settings-sheet { padding-bottom: 48px; -webkit-overflow-scrolling: touch; }
 /* Plein écran (05/09/2026) : sur un contenu plus court que l'écran, le sheet en
    display:flex;flex-direction:column ci-dessus laisse sinon un grand vide sous le
    dernier élément — bouton(s) d'action « flottant(s) » au milieu de l'écran plutôt
@@ -1428,6 +1441,8 @@ body.modal-open { overflow: hidden; }
   max-height: 85vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y; /* même fix que .modal-sheet (09/09/2026), même risque de scroll bottom-sheet */
+  overscroll-behavior: contain;
 }
 .entry-detail-popup .detail-handle {
   width: 40px; height: 4px;
@@ -1450,6 +1465,8 @@ body.modal-open { overflow: hidden; }
   max-height: 200px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 .entry-detail-overlay {
   position: fixed; inset: 0; z-index: 299;
@@ -1997,6 +2014,13 @@ outline: none;
 .walk-move-btn .lc-icon { width: 13px; height: 13px; }
 .walk-move-btn:active:not(:disabled) { color: var(--accent); }
 .walk-move-btn:disabled { opacity: 0.25; cursor: default; }
+/* Bouton supprimer d'une ligne d'ingrédient (résultat IA multi-ingrédients, modal-ai) :
+   22x22px visuel, en bout d'une rangée de 6 contrôles très rapprochés (audit du
+   09/09/2026, lié au fix scroll ci-dessus sur .modal-sheet) — zone de tap agrandie en
+   invisible via ::before (même technique que .walk-move-up/.walk-move-down), sans
+   grossir le cercle visuel ni empiéter sur le champ kcalTotal juste avant. */
+.ing-del-btn { position: relative; }
+.ing-del-btn::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: -8px; right: -10px; }
 .walk-calc-btn {
 background: var(--accent);
 color: #fff;

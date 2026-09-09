@@ -960,7 +960,7 @@ Oui si nécessaire
   </div>
   <button id="ai-voice-response-btn" onclick="toggleAIVoiceResponse()" title="Réponse vocale" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:15px;cursor:pointer;color:var(--muted);transition:all 0.2s;flex-shrink:0;touch-action:manipulation;">🔇</button>
 </div>
-<div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
+<div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;touch-action:pan-y;overscroll-behavior:contain;"></div>
 <div style="display:flex;gap:7px;margin-bottom:10px;align-items:flex-end;">
 <textarea id="ai-input" class="search-input" rows="1" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" style="resize:none;min-height:50px;max-height:120px;overflow-y:auto;line-height:1.4;padding-top:13px;padding-bottom:13px;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
 <button class="search-btn" onclick="askAI()" style="width:50px;height:50px;font-size:20px;flex-shrink:0;">→</button>

@@ -5485,7 +5485,7 @@ function _rebuildIngredientTable() {
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
         onchange="_ingChange(${i},'kcalTotal',this.value)" title="kcal total">
       <span style="font-size:10px;color:var(--muted);">kcal</span>
-      <button type="button" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
+      <button type="button" class="ing-del-btn" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
         style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
     </div>`).join('');
   const total = _aiIngredients.reduce((s, ing) => s + ing.kcalTotal, 0);
