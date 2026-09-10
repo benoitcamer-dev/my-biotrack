@@ -5234,7 +5234,11 @@ async function geocodePlace(name) {
     }
   }
   // 2. ORS geocoding
-  const result = await geocodeAddress(name.toLowerCase().includes('lyon') ? name : name + ' Lyon');
+  // Ne plus forcer "Lyon" dans la requête (cassait la recherche en voyage, ex. une
+  // adresse à Paris devenait "...Paris Lyon France") — la préférence géographique
+  // (bounds/region côté Google, focus.point côté ORS, voir geocodeAddress()) suffit
+  // à favoriser Lyon sans exclure/fausser un résultat ailleurs.
+  const result = await geocodeAddress(name);
   if (result) return result;
   return null;
 }
@@ -5359,9 +5363,13 @@ document.addEventListener('click', (e) => {
 // Override geocodeAddress to use Google if available
 async function geocodeAddress(query) {
   // Try Google Geocoding first if key available
+  // Ni "Lyon"/"France" ni aucune ville ne sont injectés dans le texte de recherche :
+  // ça cassait la recherche en voyage (une adresse hors de Lyon se voyait accoler
+  // "Lyon France", donnant un résultat faux ou introuvable). `region`/`bounds`
+  // suffisent : ils favorisent Lyon sans jamais exclure un résultat ailleurs.
   if (GMAPS_API_KEY) {
     try {
-      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query + ' Lyon France')}&key=${GMAPS_API_KEY}&region=fr&bounds=45.70,4.77|45.82,4.90`);
+      const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${GMAPS_API_KEY}&region=fr&bounds=45.70,4.77|45.82,4.90`);
       const d = await r.json();
       if (d.results?.[0]) {
         const loc = d.results[0].geometry.location;
@@ -5370,7 +5378,9 @@ async function geocodeAddress(query) {
     } catch(e) {}
   }
   // Fallback to ORS + Nominatim
-  const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
+  // focus.point (préférence douce) plutôt que boundary.rect (qui excluait purement
+  // et simplement tout résultat hors de Lyon, même en voyage).
+  const lyonBias = '&focus.point.lat=45.76&focus.point.lon=4.84';
   try {
     const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
     const d = await r.json();
