@@ -7609,8 +7609,8 @@ function _moveEntry(id) {
       </select>
     </div>
     <div style="margin-bottom:16px;">
-      <label class="eyebrow-label-block">Date</label>
-      <input type="date" id="move-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+      <label class="eyebrow-label-block" style="display:flex;align-items:center;gap:6px;">Date <span id="move-date-badge" style="display:none;font-size:10px;font-weight:700;color:var(--accent);background:rgba(124,111,255,0.12);border-radius:999px;padding:2px 8px;">Aujourd'hui</span></label>
+      <input type="date" id="move-date" oninput="_updateTodayBadge('move-date','move-date-badge')" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
     </div>
     <button class="action-btn action-cyan" onclick="_confirmMoveEntry()"><i data-lucide="check" class="lc-icon"></i> Confirmer le déplacement</button>
     <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
@@ -7620,9 +7620,24 @@ function _moveEntry(id) {
   document.body.appendChild(popup);
   document.body.classList.add('modal-open');
 
-  // Pré-remplir avec les valeurs actuelles
+  // Pré-remplir avec la catégorie actuelle, mais la date du jour (pas celle de
+  // l'entrée d'origine) — c'est le cas d'usage le plus fréquent : reporter un
+  // repas déjà saisi vers aujourd'hui.
   document.getElementById('move-cat').value = entry.category;
-  document.getElementById('move-date').value = entry.date || journalDateStr();
+  document.getElementById('move-date').value = todayStr();
+  _updateTodayBadge('move-date', 'move-date-badge');
+}
+
+// Signale visuellement (badge + bordure accentuée) quand un champ date de
+// popup Déplacer/Copier est réglé sur aujourd'hui — utilisé aussi bien à
+// l'ouverture (valeur pré-remplie) qu'après une modification manuelle.
+function _updateTodayBadge(inputId, badgeId) {
+  const inp = document.getElementById(inputId);
+  const badge = document.getElementById(badgeId);
+  if (!inp || !badge) return;
+  const isToday = inp.value === todayStr();
+  badge.style.display = isToday ? 'inline-block' : 'none';
+  inp.style.borderColor = isToday ? 'var(--accent)' : 'var(--border2)';
 }
 
 async function _confirmMoveEntry() {
@@ -7666,8 +7681,8 @@ function _copyEntry(id) {
       </select>
     </div>
     <div style="margin-bottom:16px;">
-      <label class="eyebrow-label-block">Date</label>
-      <input type="date" id="copy-entry-date" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+      <label class="eyebrow-label-block" style="display:flex;align-items:center;gap:6px;">Date <span id="copy-entry-date-badge" style="display:none;font-size:10px;font-weight:700;color:var(--accent);background:rgba(124,111,255,0.12);border-radius:999px;padding:2px 8px;">Aujourd'hui</span></label>
+      <input type="date" id="copy-entry-date" oninput="_updateTodayBadge('copy-entry-date','copy-entry-date-badge')" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
     </div>
     <button class="action-btn action-purple" onclick="_confirmCopyEntry()"><i data-lucide="copy" class="lc-icon"></i> Copier</button>
     <button class="btn-cancel" onclick="this.closest('.entry-detail-popup').remove();document.querySelector('.entry-detail-overlay')?.remove();document.body.classList.remove('modal-open')">Annuler</button>
@@ -7677,8 +7692,11 @@ function _copyEntry(id) {
   document.body.appendChild(popup);
   document.body.classList.add('modal-open');
 
+  // Pré-remplie avec la date du jour (pas celle de l'entrée d'origine) — voir
+  // même choix pour _moveEntry() ci-dessus.
   document.getElementById('copy-entry-cat').value = entry.category;
-  document.getElementById('copy-entry-date').value = entry.date || journalDateStr();
+  document.getElementById('copy-entry-date').value = todayStr();
+  _updateTodayBadge('copy-entry-date', 'copy-entry-date-badge');
 }
 
 async function _confirmCopyEntry() {
