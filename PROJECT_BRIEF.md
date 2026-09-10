@@ -77,6 +77,28 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ## Historique des correctifs
 
+### Session du 10/09/2026
+
+Trois correctifs sur la saisie d'adresse/itinéraire (marche) et le journal, remontés en usage
+réel. Détail complet, preuves testées avec l'API Google réelle : `CHANGELOG_2026-09-10.md`.
+
+- **Itinéraire marche** : le journal affiche maintenant le nom du lieu (ex. "Laiterie de Lyon")
+  plutôt que l'adresse brute, quand l'adresse vient d'une suggestion Google Places ou correspond à
+  un lieu enregistré ("Mes lieux"). Effet de bord accepté : une adresse sans établissement s'affiche
+  aussi en version courte (sans ville/code postal) — sans conséquence, l'app étant mono-ville.
+- **Copier/Déplacer une entrée du journal** : la date se présélectionne maintenant sur aujourd'hui
+  (au lieu de la date de l'entrée d'origine), avec un badge "Aujourd'hui" + bordure accentuée quand
+  c'est le cas.
+- **Recherche d'adresse en voyage** : `geocodePlace()`/`geocodeAddress()` forçaient "Lyon"/"Lyon
+  France" dans toute requête de géocodage, cassant potentiellement une recherche hors de Lyon (ex.
+  "Café de Flore" résolvait vers un restaurant à Lyon au lieu du vrai Café de Flore à Paris — vérifié
+  en direct). Remplacé par les biais géographiques *doux* déjà en place (`bounds`/`region` côté
+  Google, `focus.point` côté ORS/Pelias en remplacement de `boundary.rect`, qui excluait purement et
+  simplement tout résultat hors de Lyon). Limite résiduelle non corrigée (comportement volontaire) :
+  en cas de rue ambiguë existant dans plusieurs villes, toujours sélectionner une suggestion du menu
+  déroulant plutôt que retaper l'adresse à la main — le recalcul d'itinéraire sans sélection ne
+  renvoie qu'un seul résultat (biaisé Lyon), sans avertissement d'ambiguïté.
+
 ### Session du 04/09/2026
 
 Bugs remontés en usage réel + revue multi-agents (3 agents en parallèle, lecture seule sur
