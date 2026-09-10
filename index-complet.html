@@ -3166,6 +3166,16 @@ _setAppHeight();
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', _setAppHeight);
   window.visualViewport.addEventListener('scroll', _setAppHeight);
+  // Clavier numérique Android (inputmode="decimal"/"numeric") : la barre de suggestions
+  // d'autofill (icônes clé/carte/localisation) au-dessus des touches peut s'afficher avec
+  // un léger retard après l'événement resize principal du clavier, sans redéclencher
+  // resize entre-temps — --app-height restait alors légèrement trop grand (mesuré avant
+  // que la barre ne s'affiche), laissant une bande de la page réelle visible sous la
+  // modale/son dernier bouton une fois le clavier numérique complètement affiché (bug
+  // remonté le 10/09/2026, assistant IA). Recalcul différé pour rattraper ce cas — stable
+  // dans le temps quand il se produit (vérifié en direct sur Pixel 8, pas de correction
+  // spontanée), donc un nouveau calcul planifié après coup est nécessaire.
+  window.visualViewport.addEventListener('resize', () => setTimeout(_setAppHeight, 350));
 } else {
   window.addEventListener('resize', _setAppHeight);
 }
@@ -5238,9 +5248,18 @@ function normalizeForLookup(str) {
 async function geocodePlace(name) {
   const lyonBias = '&boundary.rect.min_lon=4.77&boundary.rect.min_lat=45.70&boundary.rect.max_lon=4.90&boundary.rect.max_lat=45.82';
   const normalized = normalizeForLookup(name);
-  // 1. Check saved places by name — use stored coords if available
+  // 1. Check saved places by nom OU adresse — use stored coords if available.
+  // Le champ d'itinéraire n'est quasiment jamais rempli avec le NOM du lieu : le
+  // pré-remplissage Départ (prefillHomeDeparture) et les chips "Lieux enregistrés"
+  // (fillWalkStepFromPlace) écrivent tous les deux l'ADRESSE brute dans le champ, pas
+  // le nom — seule la comparaison par nom ci-dessous ne matchait donc quasiment jamais
+  // en usage réel, et le journal affichait l'adresse brute ("74 Rue Pierre Corneille…")
+  // au lieu du nom ("Domicile") même pour un lieu enregistré (bug remonté le 10/09/2026,
+  // repro : Départ pré-rempli "Domicile" + Arrivée "Laiterie de Lyon" via chip → les deux
+  // s'affichaient en adresse brute dans le journal une fois l'entrée validée).
   for (const p of savedPlaces) {
-    if (normalizeForLookup(p.name) === normalized || normalized.includes(normalizeForLookup(p.name))) {
+    if (normalizeForLookup(p.name) === normalized || normalized.includes(normalizeForLookup(p.name))
+      || (p.address && normalizeForLookup(p.address) === normalized)) {
       if (p.coords) {
         return { coords: p.coords, label: p.name };
       }

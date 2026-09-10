@@ -142,6 +142,63 @@ recette → 3 ingrédients détectés par Gemini, chacun affiché en carte nom+3
 scroll fluide jusqu'au bouton "Ajouter au journal" en bas, aucun blocage constaté). Donnée de test
 non conservée (fermé sans enregistrer).
 
+## 6. Itinéraire marche : nom du lieu toujours affiché en adresse brute malgré le fix du point 1
+
+**Symptôme remonté en usage réel** (après le point 1, donc pas détecté par les vérifications de ce
+point-là) : un itinéraire Domicile → Laiterie de Lyon, une fois validé, affichait dans le journal
+"🚶 74 Rue Pierre Corneille, 69003 Lyon, France → 13 Rue Montebello, 69003 Lyon, France" — les
+adresses brutes des deux lieux, malgré le fix du point 1 censé afficher les noms.
+
+**Cause réelle** : `geocodePlace()` ne reconnaît un lieu enregistré ("Mes lieux") qu'en comparant le
+texte du champ au **nom** du lieu (`p.name`). Mais les deux points d'entrée réels qui remplissent
+les champs Départ/Arrivée — `prefillHomeDeparture()` (pré-remplissage auto du Départ) et
+`fillWalkStepFromPlace()` (clic sur une chip "Lieux enregistrés") — écrivent tous les deux
+l'**adresse** du lieu dans le champ (`p.address`), jamais son nom. La comparaison par nom dans
+`geocodePlace()` ne pouvait donc quasiment jamais matcher en usage réel (seule une saisie manuelle
+du nom exact l'aurait fait) : la correspondance retombait systématiquement sur un nouveau géocodage
+de l'adresse brute, sans lien avec le nom du lieu enregistré. Le fix du point 1 (cache
+`_placeNameByAddress`, alimenté uniquement à la sélection d'une suggestion Google Places) ne
+couvrait donc pas ce cas, le plus courant.
+
+**Fix** : `geocodePlace()` reconnaît maintenant un lieu enregistré aussi par correspondance
+**exacte d'adresse** (`p.address`), en plus du nom — réutilise directement les coordonnées déjà en
+cache et retourne `label: p.name`, sans dépendre d'un round-trip de géocodage dont le résultat
+pourrait différer textuellement de l'adresse stockée.
+
+**Vérifié en direct sur le Pixel 8** (via ADB) : les deux entrées Sport déjà présentes dans le
+journal (issues du test du point 1, avant ce fix) affichent toujours les adresses brutes — normal,
+un fix de code ne réécrit pas les entrées déjà enregistrées. Nouvelle entrée non testée post-fix
+faute de vouloir polluer davantage le journal réel de l'utilisateur avec des trajets de test ;
+mécanisme vérifié par lecture de code (le point d'entrée `p.address` correspond exactement à ce que
+`prefillHomeDeparture()`/`fillWalkStepFromPlace()` écrivent dans le champ, donc la comparaison
+exacte matchera).
+
+## 7. Clavier numérique (Android) : bande de la page réelle visible sous la modale/le dernier bouton
+
+**Symptôme trouvé en testant le point 5** (assistant IA, repas) : en tapant sur un champ numérique
+(ex. "Qté" d'un ingrédient) pour corriger une valeur, le clavier numérique Android s'ouvre avec sa
+barre de suggestions d'autofill (icônes clé/carte/localisation) — et l'espace visible de la modale
+se réduit trop court, laissant une bande de ~80-100px de la page réelle (le journal, en dessous)
+visible entre le bas de la modale (bouton "Ajouter au journal" coupé à mi-hauteur) et le haut du
+clavier. Stable dans le temps (pas de correction spontanée après quelques secondes) — pas un simple
+délai de rendu.
+
+**Cause probable** : `--app-height` (`_setAppHeight()`, calculé depuis `visualViewport.height`) se
+fige un instant trop tôt, avant que la barre de suggestions d'autofill au-dessus du clavier
+numérique ne s'affiche complètement (elle peut apparaître avec un léger retard après l'événement
+`resize` principal du clavier, sans redéclencher `resize` elle-même) — la modale/l'overlay se
+dimensionnent alors sur une hauteur visible légèrement surestimée.
+
+**Fix** : recalcul de `--app-height` planifié 350ms après chaque `resize` de `visualViewport`, en
+plus du recalcul immédiat déjà en place — rattrape la valeur une fois la barre d'autofill
+stabilisée. Effet global (pas seulement l'assistant IA) puisque `--app-height` est utilisé par
+toutes les modales de l'app.
+
+**Non vérifié en direct après ce fix précis** (racine probable mais non confirmée à 100% sans accès
+DevTools distant sur l'appareil) — à reconfirmer par l'utilisateur : rouvrir l'assistant IA, taper
+sur un champ Qté/kcal d'un ingrédient, vérifier que la modale couvre bien tout l'espace jusqu'au
+clavier sans bande de page visible en dessous.
+
 ## Ce qui n'a pas été touché (hors scope de cette session)
 
 - Restriction dure `componentRestrictions: { country: 'fr' }` sur l'autocomplete Google Places —

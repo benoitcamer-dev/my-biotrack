@@ -109,6 +109,16 @@ remontés en usage réel. Détail complet, preuves testées avec l'API Google r�
   trop dense sur mobile (nom écrasé par 3 champs numériques + unités sur une seule ligne) — nom sur
   sa propre ligne, champs en grille 3 colonnes avec libellés. **Vérifié en direct sur le Pixel 8** :
   rendu correct, scroll fluide jusqu'au bouton d'ajout.
+- **Itinéraire marche, nom du lieu toujours en adresse brute malgré le 1er fix** : `geocodePlace()`
+  ne reconnaissait un lieu enregistré qu'en comparant le texte du champ à son NOM — mais les deux
+  points d'entrée réels (pré-remplissage Départ, chips "Lieux enregistrés") remplissent le champ
+  avec l'ADRESSE, jamais le nom. Ajout de la correspondance par adresse en plus du nom. Mécanisme
+  vérifié par lecture de code (repro confirmée sur 2 entrées réelles du journal utilisateur, fix non
+  re-testé en live pour ne pas polluer davantage son journal).
+- **Clavier numérique Android : bande de la page réelle visible sous la modale** (trouvé en testant
+  le point précédent) : `--app-height` figé un instant trop tôt par rapport à la barre de
+  suggestions d'autofill du clavier numérique — recalcul différé de 350ms ajouté. Cause probable,
+  non confirmée à 100% sans DevTools distant — à reconfirmer par l'utilisateur.
 
 ### Session du 04/09/2026
 
