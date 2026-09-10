@@ -2063,6 +2063,10 @@ function getWalkSteps() {
 }
 
 const KNOWN_PLACES = {}; // populated from savedPlaces at load time
+// Adresse Google (formatted_address) → nom d'établissement (place.name), rempli quand
+// l'utilisateur choisit une suggestion Google Places Autocomplete (voir _attachPlacesAutocomplete)
+// — permet d'afficher "Laiterie de Lyon" plutôt que "13 rue de Montebello" dans le journal.
+const _placeNameByAddress = {};
 
 function normalizeForLookup(str) {
   return str.toLowerCase()
@@ -2080,7 +2084,7 @@ async function geocodePlace(name) {
   for (const p of savedPlaces) {
     if (normalizeForLookup(p.name) === normalized || normalized.includes(normalizeForLookup(p.name))) {
       if (p.coords) {
-        return { coords: p.coords, label: p.address };
+        return { coords: p.coords, label: p.name };
       }
       // Saved place but no coords yet — geocode and store
       const result = await geocodeAddress(p.address);
@@ -2088,7 +2092,7 @@ async function geocodePlace(name) {
         p.coords = result.coords;
         p.resolvedLabel = result.label;
         saveSettingsLocal(); pushSettingsRemote();
-        return { coords: result.coords, label: p.address };
+        return { coords: result.coords, label: p.name };
       }
     }
   }
@@ -2148,6 +2152,13 @@ function _attachPlacesAutocomplete() {
           input._gCoords = [place.geometry.location.lng(), place.geometry.location.lat()];
           input._gLabel = place.formatted_address || place.name;
           input.value = place.formatted_address || place.name;
+          // Nom d'établissement distinct de l'adresse (ex: "Laiterie de Lyon" vs
+          // "13 rue de Montebello") — mémorisé pour affichage dans le journal,
+          // sans changer la valeur du champ (qui reste l'adresse, utilisée pour
+          // le géocodage/re-géocodage de l'itinéraire).
+          if (place.name && place.formatted_address && place.name.trim() !== place.formatted_address.trim()) {
+            _placeNameByAddress[place.formatted_address] = place.name;
+          }
         }
       });
       input._placesAttached = true;
@@ -2262,7 +2273,7 @@ async function calcMultiLegRoute(places) {
   return {
     distanceKm: round1(route.summary.distance),
     durationMin: Math.round(route.summary.duration / 60),
-    waypoints: geocoded.map(g => g.label)
+    waypoints: geocoded.map(g => _placeNameByAddress[g.label] || g.label)
   };
 }
 
