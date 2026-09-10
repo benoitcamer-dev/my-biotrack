@@ -102,13 +102,13 @@ remontés en usage réel. Détail complet, preuves testées avec l'API Google r�
 - **Itinéraire marche, champ "Arrivée" injoignable au clavier** : un listener de scroll global (fermeture
   du dropdown Google Places) blurait par erreur le champ qu'on venait juste de focuser, à cause du
   scroll-into-view automatique du navigateur — clavier jamais ouvert. Fix : garde de 600ms après le
-  focus d'un champ d'adresse avant que ce listener ne redevienne actif. **Non vérifié en direct**
-  (extension Claude in Chrome indisponible cette session) — à confirmer par l'utilisateur.
+  focus d'un champ d'adresse avant que ce listener ne redevienne actif. **Vérifié en direct sur le
+  Pixel 8 de l'utilisateur** (pilotage ADB, extension Claude in Chrome indisponible cette session) :
+  clavier s'ouvre, saisie et suggestions fonctionnent.
 - **Refonte de la liste d'ingrédients de l'assistant IA** (repas et recette) : rangée par ingrédient
   trop dense sur mobile (nom écrasé par 3 champs numériques + unités sur une seule ligne) — nom sur
-  sa propre ligne, champs en grille 3 colonnes avec libellés. **Non vérifié en direct** (même
-  blocage d'outillage), y compris sur le signalement initial d'impossibilité de scroller dans cette
-  zone — à reconfirmer par l'utilisateur après déploiement.
+  sa propre ligne, champs en grille 3 colonnes avec libellés. **Vérifié en direct sur le Pixel 8** :
+  rendu correct, scroll fluide jusqu'au bouton d'ajout.
 
 ### Session du 04/09/2026
 

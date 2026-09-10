@@ -106,10 +106,12 @@ aussitôt le champ qu'on venait de sélectionner, annulant l'ouverture du clavie
 l'appel à `blurActiveAddressInput()`. Un scroll manuel ultérieur (au-delà de cette fenêtre) reste
 traité normalement, la fermeture du dropdown Google sur scroll volontaire n'est pas affectée.
 
-**Non vérifié en direct** (extension Claude in Chrome indisponible cette session, pas d'accès
-distant au Pixel 8 de l'utilisateur) — correctif déduit du code (mécanisme identifié avec
-certitude, comportement décrit par l'utilisateur correspond exactement au symptôme attendu), à
-confirmer par l'utilisateur après déploiement.
+**Vérifié en direct sur l'appareil réel** (Pixel 8 de l'utilisateur, pilotage ADB en ligne de
+commande — voir `../Bonne pratiques IA/conseils_environnement_travail.md` §16) après déploiement
+et propagation GitHub Pages confirmée (`gh run view`) : Sport → Marche → Itinéraire → tap sur
+"Arrivée" → clavier s'ouvre correctement, saisie ("Bureau") fonctionne, suggestions Google Places
+s'affichent. Avant le fix, la même séquence blurait le champ instantanément (cause reproduite par
+lecture de code, confirmée corrigée par ce test).
 
 ## 5. Refonte de la liste d'ingrédients IA (résultat multi-ingrédients, repas et recette via IA)
 
@@ -134,9 +136,11 @@ Nouvelles classes CSS (`.ai-ing-row`, `.ai-ing-row-top`, `.ai-ing-name`, `.ai-in
 `_rebuildIngredientTable()` (`app.js`). Comportement fonctionnel (édition/suppression d'un
 ingrédient, recalcul du total) inchangé.
 
-**Non vérifié en direct** (même blocage d'outillage que le point 4) — à confirmer par
-l'utilisateur après déploiement, en particulier si le scroll reste bloqué malgré la refonte : dans
-ce cas la cause serait ailleurs qu'un simple problème de mise en page.
+**Vérifié en direct sur l'appareil réel** (Pixel 8, ADB) : recette IA testée de bout en bout
+(saisie "Riz 150g poulet 120g sauce soja 10g" dans l'Assistant IA ouvert depuis l'éditeur de
+recette → 3 ingrédients détectés par Gemini, chacun affiché en carte nom+3 champs comme prévu →
+scroll fluide jusqu'au bouton "Ajouter au journal" en bas, aucun blocage constaté). Donnée de test
+non conservée (fermé sans enregistrer).
 
 ## Ce qui n'a pas été touché (hors scope de cette session)
 
