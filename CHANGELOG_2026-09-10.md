@@ -199,6 +199,54 @@ DevTools distant sur l'appareil) — à reconfirmer par l'utilisateur : rouvrir 
 sur un champ Qté/kcal d'un ingrédient, vérifier que la modale couvre bien tout l'espace jusqu'au
 clavier sans bande de page visible en dessous.
 
+## 8. Audit itinéraire marche : page réelle visible sous la modale au focus du champ "Arrivée"
+
+**Contexte** : demande d'audit complet de la fonction itinéraire suite au signalement "l'affichage
+est buggé" — reproduit en direct sur Pixel 8 (ADB), y compris sur une page **rechargée à froid**
+(donc pas un état corrompu par une session de test précédente).
+
+**Symptôme** : au tap sur le champ "Arrivée" (formulaire Itinéraire), le clavier Android s'ouvre
+avec les suggestions natives de la `<datalist>` ("Domicile"/"Psy"…, lieux enregistrés dont le nom
+matche). La modale se coupe alors nette juste après le champ Arrivée — tout le reste du formulaire
+(+ Étape, Vitesse/Calculer, lieux enregistrés, trajets favoris, Valider) disparaît, remplacé par la
+vraie page du journal visible en dessous (chiffres du jour). Confirmé **stable dans le temps**
+(pas de correction après plusieurs secondes) : ce n'est pas un problème de délai de rendu.
+
+**Cause** : `.modal-overlay`/`.modal-sheet` sont dimensionnés sur `--app-height`
+(`_setAppHeight()`, calculé depuis `visualViewport.height`) pour se positionner juste au-dessus du
+clavier. Avec ce clavier précis (suggestions `<datalist>` natives, plus hautes qu'une simple barre
+d'autofill), `--app-height` se stabilise sur une valeur trop petite par rapport à l'espace
+réellement obscurci — l'overlay ET le sheet se coupent donc nettement avant le clavier, laissant
+une bande de la vraie page visible entre les deux. Le fix précédent de cette session (recalcul
+différé de 350ms, point 7 ci-dessus) ne peut rien y changer : il refait la même mesure, qui donne
+la même valeur stable — le problème n'est pas un timing mais une valeur de mesure durablement
+fausse pour cette configuration de clavier précise.
+
+**Fix (défensif, pas une correction pixel-perfect de `--app-height`)** : un fond plein écran
+(`body.modal-open::before`, `position:fixed;inset:0;height:100dvh`, assombri + flouté, z-index 55
+— juste sous le plus bas des `.modal-overlay` à 60) apparaît systématiquement dès qu'une modale est
+ouverte, **indépendamment** de `--app-height` donc jamais soumis au même sous-dimensionnement.
+Résultat : si l'overlay/sheet se coupe encore net sur un clavier particulier, on voit au pire un
+formulaire tronqué devant un fond flouté (dégradation mineure, cohérente visuellement) — plus
+jamais la page réelle qui apparaît par-dessous comme si la modale avait disparu. N'essaie pas de
+deviner la hauteur exacte de chaque variante de clavier Android (fragile, impossible à valider
+sans DevTools distant) : décorrèle la couverture visuelle du calcul de positionnement.
+
+**Reste du code itinéraire audité, aucun autre problème trouvé** :
+- `getWalkSteps()`/`addWalkStep()`/`removeWalkStep()`/`moveWalkStep()` (jusqu'à 6 étapes) : logique
+  cohérente, pas de régression liée aux fixes précédents de cette session.
+- Édition d'une entrée itinéraire déjà enregistrée (`editEntry()`) : préserve bien le libellé nommé
+  (favori ou "A → B") via `currentWalkFavName`/`currentRouteData`, sans reconstruire le formulaire
+  interactif complet — limitation connue et documentée (session du 04/09/2026), pas un bug.
+- `saveCurrentRoute()`/`walkFavorites` (trajets favoris) : cohérent avec le fix d'affichage du nom
+  du lieu (point 6) — un favori garde son propre `name` explicite, non affecté.
+
+**Non vérifié en direct après ce fix précis** (même limite que le point 7 : pas d'accès DevTools
+distant pour lire `--app-height` en conditions réelles) — mais le mécanisme est indépendant de la
+cause exacte du sous-dimensionnement, donc robuste par construction. À reconfirmer par
+l'utilisateur : rouvrir Itinéraire, taper sur "Arrivée", vérifier qu'un fond flouté couvre bien tout
+l'écran même si le formulaire reste coupé.
+
 ## Ce qui n'a pas été touché (hors scope de cette session)
 
 - Restriction dure `componentRestrictions: { country: 'fr' }` sur l'autocomplete Google Places —

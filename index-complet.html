@@ -1448,6 +1448,38 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 }
 /* Scroll lock quand un modal est ouvert */
 body.modal-open { overflow: hidden; }
+/* Filet de sécurité anti-page-visible : `.modal-overlay`/`.modal-sheet` sont dimensionnés sur
+   `--app-height` (hauteur visible réelle, clavier virtuel déduit — voir _setAppHeight() dans
+   app.js) pour positionner le sheet juste au-dessus du clavier. Sur certains claviers Android
+   (suggestions de `<datalist>` natif au-dessus du clavier — champs d'adresse itinéraire avec
+   plusieurs lieux enregistrés qui matchent, ex. "Domicile"/"Psy" ; observé aussi, en plus léger,
+   avec la barre d'autofill clé/carte/localisation d'un clavier numérique), `--app-height` peut se
+   figer sur une valeur trop petite par rapport à l'espace réellement obscurci — le sheet ET
+   l'overlay qui le contient se coupent alors bien avant le clavier, et la vraie page (journal,
+   chiffres du jour...) devient visible dans la bande ainsi laissée à nu, sous le formulaire
+   (bug remonté le 10/09/2026 : itinéraire marche, focus sur "Arrivée"). Cette bande n'est PAS un
+   délai de rendu (vérifié stable après plusieurs secondes) : `--app-height` se stabilise bel et
+   bien sur une valeur trop petite pour ce clavier-là — un recalcul différé (déjà en place pour le
+   cas clavier numérique, voir _setAppHeight) ne peut donc rien y changer ici.
+   Plutôt que de chercher à corriger `--app-height` au pixel près pour chaque variante de clavier
+   Android (fragile, impossible à valider sans DevTools distant), ce filet indépendant garantit
+   qu'aucun overlay ne peut jamais se couper sans qu'un fond plein écran (assombri + flouté) ne
+   reste visible derrière lui : un fond fixe en 100dvh (donc jamais soumis au même sous-dimensionnement
+   que --app-height) apparaît dès qu'un modal est ouvert, à un z-index juste sous celui du plus bas
+   des `.modal-overlay` (60) — au pire, un formulaire coupé net devant un fond flouté (dégradation
+   mineure et cohérente), plus jamais la page réelle qui apparaît par-dessous comme si le modal
+   avait disparu. */
+body.modal-open::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 55;
+  pointer-events: none;
+}
 /* Popup détail entrée */
 .entry-detail-popup {
   position: fixed;
