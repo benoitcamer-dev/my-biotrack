@@ -87,6 +87,57 @@ ambiguïté. Mais si l'adresse est retapée/re-géocodée sans passer par une s�
 avertissement. À garder en tête en voyage : toujours sélectionner une suggestion plutôt que taper
 l'adresse complète à la main.
 
+## 4. Itinéraire marche : impossible d'écrire dans le champ "Arrivée" (clavier ne s'ouvrait pas)
+
+**Symptôme remonté** : en tapant sur le champ "Arrivée" de l'itinéraire marche, l'écran se
+décalait vers le bas et le clavier virtuel ne s'ouvrait jamais — impossible d'y écrire quoi que ce
+soit. "Départ" (premier champ, déjà visible sans scroll) n'était pas affecté.
+
+**Cause** : le listener `scroll` posé sur `document` (capture) pour fermer le dropdown Google
+Places (`.pac-container`) dès qu'on scrolle à l'intérieur d'une modale appelait
+`blurActiveAddressInput()` sur **tout** scroll du sheet, sans distinguer un scroll volontaire de
+l'utilisateur d'un scroll **automatique du navigateur** déclenché par le focus lui-même
+(scroll-into-view natif pour dégager la place du clavier virtuel). "Arrivée", situé plus bas dans
+le formulaire que "Départ", nécessitait quasi systématiquement ce scroll natif — qui blurait
+aussitôt le champ qu'on venait de sélectionner, annulant l'ouverture du clavier.
+
+**Fix** : garde temporelle de 600ms posée sur `focusin` d'un champ d'adresse
+(`.walk-step-input`/`.walk-places-input`) — pendant cette fenêtre, le listener `scroll` ignore
+l'appel à `blurActiveAddressInput()`. Un scroll manuel ultérieur (au-delà de cette fenêtre) reste
+traité normalement, la fermeture du dropdown Google sur scroll volontaire n'est pas affectée.
+
+**Non vérifié en direct** (extension Claude in Chrome indisponible cette session, pas d'accès
+distant au Pixel 8 de l'utilisateur) — correctif déduit du code (mécanisme identifié avec
+certitude, comportement décrit par l'utilisateur correspond exactement au symptôme attendu), à
+confirmer par l'utilisateur après déploiement.
+
+## 5. Refonte de la liste d'ingrédients IA (résultat multi-ingrédients, repas et recette via IA)
+
+**Symptôme remonté** : avant de valider une recette écrite via l'assistant IA, impossible de
+scroller dans la zone listant les ingrédients détectés ; par ailleurs le rectangle de chaque
+ingrédient jugé "bien trop petit".
+
+**Cause identifiée** : chaque ligne d'ingrédient (`_rebuildIngredientTable()`) entassait sur une
+seule rangée flex le nom + 3 champs numériques (qté/kcal-100/kcal-total, 52-58px de large chacun)
++ 2 libellés d'unité + un bouton de suppression. Sur un écran mobile étroit, le nom (seul élément
+flexible) se retrouvait écrasé sur une largeur résiduelle minime, provoquant un retour à la ligne
+sur plusieurs lignes et un rendu très dense — la sensation de "rectangle trop petit". Le scroll de
+la liste dans son ensemble dépend de `.modal-sheet` (déjà `overflow-y:auto`, fix tab-closing du
+09/09/2026 déjà en place et vérifié synchronisé) ; aucune régression distincte trouvée à ce niveau
+mais non re-testée en direct (même blocage d'outillage que le point 4 ci-dessus).
+
+**Fix** : nouveau layout par ingrédient — nom sur sa propre ligne (plus de place, plus lisible),
+puis les 3 champs qté/kcal-100/kcal-total en grille 3 colonnes avec un libellé au-dessus de chaque
+champ (au lieu d'unités abrégées collées sur le côté) et une hauteur de champ portée à 36px min.
+Nouvelles classes CSS (`.ai-ing-row`, `.ai-ing-row-top`, `.ai-ing-name`, `.ai-ing-row-fields`,
+`.ai-ing-field(-label)`, `.ai-ing-total-row`) dans `styles.css`, appliquées dans
+`_rebuildIngredientTable()` (`app.js`). Comportement fonctionnel (édition/suppression d'un
+ingrédient, recalcul du total) inchangé.
+
+**Non vérifié en direct** (même blocage d'outillage que le point 4) — à confirmer par
+l'utilisateur après déploiement, en particulier si le scroll reste bloqué malgré la refonte : dans
+ce cas la cause serait ailleurs qu'un simple problème de mise en page.
+
 ## Ce qui n'a pas été touché (hors scope de cette session)
 
 - Restriction dure `componentRestrictions: { country: 'fr' }` sur l'autocomplete Google Places —

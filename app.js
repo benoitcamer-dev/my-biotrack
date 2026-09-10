@@ -2204,10 +2204,27 @@ function blurActiveAddressInput() {
   // disparition dans tous les cas, sans dépendre du blur.
   document.querySelectorAll('.pac-container').forEach(p => { p.style.display = 'none'; });
 }
+// Garde anti-faux-positif : focuser un champ d'adresse peut lui-même déclencher un scroll
+// natif du navigateur (scroll-into-view pour dégager la place du clavier virtuel qui va
+// s'ouvrir). Sans distinction, ce scroll était intercepté par le listener ci-dessous et
+// blurait aussitôt le champ qu'on vient de sélectionner — le clavier ne s'ouvrait alors
+// jamais (bug remonté le 10/09/2026 : sur "Arrivée", plus bas dans le sheet que "Départ"
+// donc plus souvent hors du viewport visible au moment du tap, "l'écran part en bas et le
+// clavier ne s'ouvre pas" ; "Départ", déjà visible, n'a besoin d'aucun scroll et n'était
+// jamais affecté). Fenêtre courte après le focus pendant laquelle ce scroll auto est
+// ignoré ; un scroll manuel ultérieur (au-delà de cette fenêtre) reste traité normalement.
+let _addrFocusGuardUntil = 0;
+document.addEventListener('focusin', (e) => {
+  const t = e.target;
+  if (t && t.classList && (t.classList.contains('walk-step-input') || t.classList.contains('walk-places-input'))) {
+    _addrFocusGuardUntil = Date.now() + 600;
+  }
+});
 document.addEventListener('scroll', (e) => {
   const t = e.target;
   if (!t || !t.classList) return;
   if (!t.classList.contains('modal-sheet') && !t.classList.contains('settings-sheet')) return;
+  if (Date.now() < _addrFocusGuardUntil) return;
   blurActiveAddressInput();
 }, true);
 // Filet de sécurité supplémentaire : plutôt que de ne fermer le dropdown Google
@@ -5511,26 +5528,25 @@ function renderAINoteIngredients(note) {
 function _rebuildIngredientTable() {
   const el = document.getElementById('ai-result-text');
   if (!el) return;
-  const inputStyle = 'width:52px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
   const rows = _aiIngredients.map((ing, i) => `
-    <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
-      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1"
-        onchange="_ingChange(${i},'qty',this.value)" title="${ing.unit || 'g'}">
-      <span style="font-size:10px;color:var(--muted);">${ing.unit || 'g'}</span>
-      <input type="number" inputmode="decimal" style="width:58px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 5px;font-size:12px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1"
-        onchange="_ingChange(${i},'kcal100',this.value)" title="kcal/100g">
-      <span style="font-size:10px;color:var(--muted);">k/100</span>
-      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1"
-        onchange="_ingChange(${i},'kcalTotal',this.value)" title="kcal total">
-      <span style="font-size:10px;color:var(--muted);">kcal</span>
-      <button type="button" class="ing-del-btn" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
-        style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
+    <div class="ai-ing-row">
+      <div class="ai-ing-row-top">
+        <span class="ai-ing-name">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
+        <button type="button" class="ing-del-btn" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
+          style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
+      </div>
+      <div class="ai-ing-row-fields">
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Qté (${ing.unit || 'g'})</span>
+          <input type="number" inputmode="decimal" value="${ing.qty}" min="0" step="1" onchange="_ingChange(${i},'qty',this.value)"></label>
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Kcal/100${ing.unit || 'g'}</span>
+          <input type="number" inputmode="decimal" value="${ing.kcal100}" min="0" step="1" onchange="_ingChange(${i},'kcal100',this.value)"></label>
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Total kcal</span>
+          <input type="number" inputmode="decimal" value="${ing.kcalTotal}" min="0" step="1" onchange="_ingChange(${i},'kcalTotal',this.value)"></label>
+      </div>
     </div>`).join('');
   const total = _aiIngredients.reduce((s, ing) => s + ing.kcalTotal, 0);
-  const totalQty = _aiIngredients.reduce((s, ing) => s + ing.qty, 0);
   el.innerHTML = rows + `
-    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;">
+    <div class="ai-ing-total-row">
       <span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span>
       <span id="ai-ing-total" style="font-size:14px;font-weight:800;color:var(--accent);">${total} kcal</span>
     </div>`;

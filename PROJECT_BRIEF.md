@@ -79,8 +79,9 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ### Session du 10/09/2026
 
-Trois correctifs sur la saisie d'adresse/itinéraire (marche) et le journal, remontés en usage
-réel. Détail complet, preuves testées avec l'API Google réelle : `CHANGELOG_2026-09-10.md`.
+Cinq correctifs sur la saisie d'adresse/itinéraire (marche), le journal et l'assistant IA,
+remontés en usage réel. Détail complet, preuves testées avec l'API Google réelle :
+`CHANGELOG_2026-09-10.md`.
 
 - **Itinéraire marche** : le journal affiche maintenant le nom du lieu (ex. "Laiterie de Lyon")
   plutôt que l'adresse brute, quand l'adresse vient d'une suggestion Google Places ou correspond à
@@ -98,6 +99,16 @@ réel. Détail complet, preuves testées avec l'API Google réelle : `CHANGELOG_
   en cas de rue ambiguë existant dans plusieurs villes, toujours sélectionner une suggestion du menu
   déroulant plutôt que retaper l'adresse à la main — le recalcul d'itinéraire sans sélection ne
   renvoie qu'un seul résultat (biaisé Lyon), sans avertissement d'ambiguïté.
+- **Itinéraire marche, champ "Arrivée" injoignable au clavier** : un listener de scroll global (fermeture
+  du dropdown Google Places) blurait par erreur le champ qu'on venait juste de focuser, à cause du
+  scroll-into-view automatique du navigateur — clavier jamais ouvert. Fix : garde de 600ms après le
+  focus d'un champ d'adresse avant que ce listener ne redevienne actif. **Non vérifié en direct**
+  (extension Claude in Chrome indisponible cette session) — à confirmer par l'utilisateur.
+- **Refonte de la liste d'ingrédients de l'assistant IA** (repas et recette) : rangée par ingrédient
+  trop dense sur mobile (nom écrasé par 3 champs numériques + unités sur une seule ligne) — nom sur
+  sa propre ligne, champs en grille 3 colonnes avec libellés. **Non vérifié en direct** (même
+  blocage d'outillage), y compris sur le signalement initial d'impossibilité de scroller dans cette
+  zone — à reconfirmer par l'utilisateur après déploiement.
 
 ### Session du 04/09/2026
 

@@ -2021,6 +2021,27 @@ outline: none;
    grossir le cercle visuel ni empiéter sur le champ kcalTotal juste avant. */
 .ing-del-btn { position: relative; }
 .ing-del-btn::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: -8px; right: -10px; }
+/* Redesign de la liste d'ingrédients IA (modal-ai, résultat multi-ingrédients — repas ou
+   recette via openRecipeAIModal) : l'ancienne rangée flex à 6 contrôles serrés sur une seule
+   ligne (nom + 3 champs numériques + 2 unités + suppression) écrasait le nom sur mobile
+   étroit, provoquant un retour à la ligne multiple et un rendu perçu comme "rectangle trop
+   petit" (remonté le 10/09/2026). Nom sur sa propre ligne, champs quantité/kcal-100/total en
+   grille 3 colonnes avec label au-dessus — plus lisible et plus facile à toucher (36px de
+   hauteur mini par champ, contre les inputs 22-26px de large de l'ancienne rangée). */
+.ai-ing-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.ai-ing-row:last-of-type { border-bottom: none; }
+.ai-ing-row-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ai-ing-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; }
+.ai-ing-row-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ai-ing-field { display: flex; flex-direction: column; gap: 4px; }
+.ai-ing-field-label { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.ai-ing-field input {
+  width: 100%; min-height: 36px; background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 6px; font-size: 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; text-align: center; outline: none;
+}
+.ai-ing-field input:focus { border-color: var(--accent); }
+.ai-ing-total-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; }
 .walk-calc-btn {
 background: var(--accent);
 color: #fff;
