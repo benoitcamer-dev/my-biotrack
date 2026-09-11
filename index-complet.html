@@ -2455,6 +2455,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <label style="font-size:11px;color:var(--muted);">km/h</label>
 <button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
 </div>
+<div id="walk-not-calculated-hint" style="display:none;align-items:center;gap:7px;font-size:11px;color:var(--orange);background:rgba(232,98,10,0.12);border-radius:8px;padding:8px 10px;margin-bottom:8px;"><i data-lucide="triangle-alert" class="lc-icon-sm"></i> Appuie sur "Calculer" avant de valider, sinon seule une estimation générique sera enregistrée (sans le nom des lieux).</div>
 <!-- Lieux enregistrés -->
 <div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -4589,6 +4590,7 @@ currentRouteData = null;
 routeBaseDistance = 0;
 routeBaseDuration = 0;
 currentWalkFavName = '';
+_updateWalkNotCalcHint();
 document.getElementById('walk-custom-dur-box').style.display = 'none';
 document.getElementById('walk-route-result').style.display = 'none';
 document.getElementById('save-route-btn').style.display = 'none';
@@ -5109,7 +5111,37 @@ if (mode === 'route') {
     setTimeout(() => _attachPlacesAutocomplete(), 50);
   }
 }
+_updateWalkNotCalcHint();
 }
+// Piège UX remonté le 11/09/2026 : le bloc kcal/distance générique (#in-qty/#in-speed/
+// #in-distance, formule durée×vitesse) reste éditable et "a l'air prêt" même sans avoir
+// cliqué "Calculer" — Valider directement enregistre alors une entrée avec une estimation
+// générique et SANS le nom des lieux (submitEntry() ne construit le libellé nommé que si
+// currentRouteData est non-null, voir plus bas). Ce hint rend visible l'état "pas encore
+// calculé", au lieu de le laisser silencieux.
+function _updateWalkNotCalcHint() {
+  const hint = document.getElementById('walk-not-calculated-hint');
+  if (!hint) return;
+  hint.style.display = (currentWalkMode === 'route' && !currentRouteData) ? 'flex' : 'none';
+}
+// Invalide un calcul d'itinéraire déjà fait dès qu'un champ Départ/Arrivée/Étape est modifié
+// après coup (frappe manuelle, chip "Lieux enregistrés" via fillWalkStepFromPlace, ou
+// pré-remplissage Départ via prefillHomeDeparture — les trois dispatchent déjà un événement
+// 'input') : sans ça, currentRouteData gardait le trajet précédemment calculé (nom de lieu et
+// distance inclus) même après avoir changé l'adresse, et Valider aurait silencieusement
+// enregistré l'ancien trajet au lieu du nouveau (audit du 11/09/2026).
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t && t.classList && t.classList.contains('walk-step-input') && currentRouteData) {
+    currentRouteData = null;
+    currentWalkFavName = '';
+    const box = document.getElementById('walk-route-result');
+    if (box) box.style.display = 'none';
+    const saveBtn = document.getElementById('save-route-btn');
+    if (saveBtn) saveBtn.style.display = 'none';
+  }
+  if (t && t.classList && t.classList.contains('walk-step-input')) _updateWalkNotCalcHint();
+});
 // Pré-remplit le champ Départ avec l'adresse marquée comme domicile dans "Mes lieux"
 // (checkbox du formulaire d'ajout/édition), uniquement si le champ est encore vide —
 // ne doit jamais écraser une saisie déjà en cours.
@@ -5154,6 +5186,7 @@ document.getElementById('walk-custom-dur-box').style.display = 'block';
 document.getElementById('walk-custom-dur').value = f.duration;
 document.getElementById('save-route-btn').style.display = 'none';
 updateRouteCalc(f.distance, f.duration);
+_updateWalkNotCalcHint();
 }
 function deleteWalkFav(i) { walkFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderWalkFavsInModal(); renderSportFavsQuick(); }
 function onCustomDurationChange() {
@@ -5233,6 +5266,7 @@ function clearWalkStep(btn) {
   const inp = row && row.querySelector('.walk-step-input');
   if (!inp) return;
   inp.value = '';
+  inp.dispatchEvent(new Event('input')); // invalide un calcul d'itinéraire déjà fait (voir plus bas)
   document.querySelectorAll('.pac-container').forEach(p => { p.style.display = 'none'; });
   inp.focus();
 }
@@ -5577,6 +5611,7 @@ document.getElementById('save-route-btn').dataset.dur = durMin;
 document.getElementById('save-route-btn').dataset.kcal = kcal;
 updateRouteCalc(dist, durMin);
 } catch (e) { box.innerHTML = `❌ ${e.message}`; }
+_updateWalkNotCalcHint();
 }
 function saveCurrentRoute() {
 if (!currentRouteData) return;
@@ -6836,7 +6871,13 @@ const gridLines = [];
 for (let w = minW; w <= maxW; w += gridStep) {
   const y = ys(w);
   gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
-  gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">' + w + '</text>');
+  // w === minW/maxW exclus : déjà affichés par les labels #y-axis-min/#y-axis-max
+  // (positionnés en absolute par-dessus le SVG, voir plus bas) — les redessiner ici les
+  // dupliquait à l'écran, celui du bas chevauchant en plus la date sous le graphique
+  // (audit live du 11/09/2026).
+  if (w !== minW && w !== maxW) {
+    gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">' + w + '</text>');
+  }
 }
 const dots = weightEntries.map(function(e, i) {
   const cx = xs(i), cy = ys(e.weight);
@@ -8319,6 +8360,7 @@ document.getElementById('save-route-btn').dataset.dist = f.distance;
 document.getElementById('save-route-btn').dataset.dur = f.duration;
 document.getElementById('save-route-btn').dataset.kcal = f.kcal;
 updateRouteCalc(f.distance, f.duration);
+_updateWalkNotCalcHint();
 }
 function editBikeFav(i) {
 const f = bikeFavorites[i];
@@ -9791,7 +9833,10 @@ ${!d.isEmpty ? `<text x="${cx}" y="${finalLblY}" text-anchor="middle" fill="${lb
   const yLabels = netTickValues.map(v => {
     const y = ys(v);
     const isZero = v === 0;
-    const lbl = v === 0 ? '0' : (v > 0 ? '+' : '') + fmtNum(Math.abs(v));
+    // Bug corrigé le 11/09/2026 : Math.abs(v) passé à fmtNum() effaçait le signe, et le
+    // "+"/'' conditionnel ne le restituait que pour les valeurs positives — l'axe affichait
+    // "250" au lieu de "-250" sous zéro (audit live du 11/09/2026).
+    const lbl = v === 0 ? '0' : (v > 0 ? '+' : '-') + fmtNum(Math.abs(v));
     return `<text x="${PL-4}" y="${y+3}" text-anchor="end" fill="${isZero ? 'var(--text)' : 'var(--muted)'}" font-size="11" font-family="Inter" font-weight="${isZero ? 700 : 400}">${lbl}</text>
 <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isZero ? 'rgba(255,255,255,0.25)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}" opacity="1"/>`;
   }).join('');

@@ -264,6 +264,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <label style="font-size:11px;color:var(--muted);">km/h</label>
 <button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
 </div>
+<div id="walk-not-calculated-hint" style="display:none;align-items:center;gap:7px;font-size:11px;color:var(--orange);background:rgba(232,98,10,0.12);border-radius:8px;padding:8px 10px;margin-bottom:8px;"><i data-lucide="triangle-alert" class="lc-icon-sm"></i> Appuie sur "Calculer" avant de valider, sinon seule une estimation générique sera enregistrée (sans le nom des lieux).</div>
 <!-- Lieux enregistrés -->
 <div id="walk-saved-places-section" style="margin-bottom:8px;display:none;">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
