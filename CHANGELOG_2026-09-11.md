@@ -179,6 +179,55 @@ identique à l'original après recréation (24min·2.4km·6km/h, -142kcal). Les 
 test ont ensuite été supprimées avec succès, sans nouvel incident, après recadrage
 systématique (crop + zoom) de chaque bouton avant tout tap de suppression.
 
+## 11. Champ édité invisible sous le clavier (footer sticky qui recouvre le formulaire)
+
+**Remonté par l'utilisateur** : en voulant modifier un aliment dans le journal, plus moyen
+de voir le nom ni la quantité en cours d'édition — seules les calories restaient visibles.
+Confirmé aussi sur une entrée vélo.
+
+**Cause réelle** (un premier correctif, qui visait le recalcul différé de `--app-height`
+pour la barre d'autofill numérique, s'est révélé insuffisant — confirmé par test en direct
+via CDP/`elementFromPoint()`, voir méthode ADB+CDP documentée dans
+`conseils_environnement_travail.md` §16bis) : `.modal-sticky-footer` reste `position:sticky`
+en bas du sheet en temps normal. Une fois le clavier virtuel ouvert, l'espace visible
+restant (`--app-height`) peut devenir plus petit que la hauteur propre de ce footer (résumé
+kcal + 3 boutons) — le footer, toujours sticky, se plaque alors par-dessus le nom/la
+quantité en cours d'édition : les champs restent bien dans le DOM (confirmé par
+`getBoundingClientRect()`) mais deviennent invisibles et intouchables. Le flux réel utilisé
+(bouton "Modifier" depuis la fiche détail d'une entrée, `editEntry()`) n'active jamais
+l'ancienne classe `.static-footer` réservée au Sport (posée seulement par `openModal()`,
+jamais par `editEntry()`) — donc même une entrée Sport éditée via ce flux était concernée.
+
+**Fix** : nouvelle classe `kb-static-footer`, posée/retirée en JS sur chaque `resize` de
+`visualViewport` selon que le clavier réduit l'espace visible sous le seuil (indépendante
+de `.static-footer`, les deux peuvent coexister sans conflit).
+
+**Vérifié en direct sur le Pixel 8** (hard-reload SW+cache à chaque test) : nom, quantité,
+kcal/100 et macros restent visibles et modifiables au clavier ouvert sur les trois cas
+testés — aliment simple (œuf), vélo (mode "Kcal machine"), marche.
+
+## 12. Fiche d'ingrédients (entrée composée) trop petite
+
+**Remonté par l'utilisateur** : la fiche détail d'une entrée composée de plusieurs
+ingrédients (ex. "Pâtes aux lardons et parmesan") ne prenait pas assez de place à l'écran,
+rendu perçu comme "trop petit".
+
+**Cause** : `_rebuildEntryIngTable()` gardait l'ancienne rangée flex à une seule ligne (nom
++ 3 champs numériques + 2 unités + suppression) — inputs de 20-26px de large, police de
+10-11px. Même défaut déjà corrigé le 10/09/2026 sur la liste d'ingrédients IA
+(`.ai-ing-row`), mais jamais reporté sur cette fiche du journal. En plus,
+`.entry-detail-note` plafonnait à 200px de hauteur (pensé pour l'ancienne rangée compacte) :
+avec un layout plus haut par ingrédient, 2-3 ingrédients suffisaient déjà à forcer un
+scroll interne dans une popup qui scrolle elle-même (`.entry-detail-popup`, 85vh).
+
+**Fix** : réutilise le layout `.ai-ing-row`/`.ai-ing-row-fields` (nom sur sa propre ligne,
+champs qté/kcal-100/kcal en grille 3 colonnes avec label au-dessus, 36px de hauteur mini
+par champ) ; `.entry-detail-note` relevé à 50vh.
+
+**Vérifié en direct sur le Pixel 8** : les 3 ingrédients de "Pâtes aux lardons et parmesan"
+tiennent à l'écran sans scroll interne forcé, édition d'un champ testée (clavier, focus,
+recalcul) sans régression.
+
 ## Ce qui n'a pas été touché (hors scope de cette session)
 
 - Points "mineurs" de l'audit non liés à un bug utilisateur direct, déjà traités au
@@ -186,3 +235,14 @@ systématique (crop + zoom) de chaque bouton avant tout tap de suppression.
 - Restriction dure `componentRestrictions: { country: 'fr' }` (autocomplete) et
   `countrycodes=fr` (Nominatim) : non modifiées, mêmes raisons que le 10/09/2026 (pas
   soulevé cette session).
+
+## À faire plus tard (demandé par l'utilisateur, pas traité cette session)
+
+Auditer systématiquement **toutes** les modales/popups de l'app sur mobile réel (pas
+seulement `modal-add`/la fiche détail d'entrée touchées aux points 11-12) pour vérifier
+qu'elles utilisent bien tout l'espace écran disponible et qu'il n'y a pas de vide excessif
+au-dessus du contenu (symptôme similaire au point 12, potentiellement présent ailleurs :
+`modal-recipe-editor`, `modal-aliments`, `modal-custom-food`, `modal-settings`,
+`modal-recipe-picker`, `modal-places`, `modal-sport-favs`, `modal-ai`... — voir la liste
+`SHEETS_TO_LIFT` dans `app.js` pour l'inventaire des sheets concernées par le clavier, plus
+les modales sans champ texte qui n'y figurent pas).
