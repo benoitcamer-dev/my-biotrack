@@ -3225,7 +3225,22 @@ if (window.visualViewport) {
   // remonté le 10/09/2026, assistant IA). Recalcul différé pour rattraper ce cas — stable
   // dans le temps quand il se produit (vérifié en direct sur Pixel 8, pas de correction
   // spontanée), donc un nouveau calcul planifié après coup est nécessaire.
-  window.visualViewport.addEventListener('resize', () => setTimeout(_setAppHeight, 350));
+  // Ce rétrécissement différé de --app-height (donc du max-height/clientHeight réel de
+  // .modal-sheet, voir styles.css) survient APRÈS que le navigateur a déjà fait défiler le
+  // champ actif dans la vue, avec le scrollTop calculé pour l'ancienne hauteur (plus
+  // grande). Une fois --app-height réduit, ce même scrollTop peut désormais dépasser le
+  // champ édité (nom/quantité) et n'afficher que la suite du formulaire (résumé kcal,
+  // boutons) — le champ en cours de modification disparaît de l'écran, avec seulement les
+  // calories qui restent visibles (bug remonté le 11/09/2026 : édition d'un aliment ou
+  // d'une entrée vélo, clavier numérique ouvert sur le champ quantité/kcal). Re-scroller le
+  // champ actif dans la vue après ce recalcul corrige le scrollTop pour la nouvelle hauteur.
+  window.visualViewport.addEventListener('resize', () => setTimeout(() => {
+    _setAppHeight();
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      active.scrollIntoView({ block: 'nearest' });
+    }
+  }, 350));
 } else {
   window.addEventListener('resize', _setAppHeight);
 }
