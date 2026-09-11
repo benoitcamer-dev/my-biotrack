@@ -1503,7 +1503,14 @@ body.modal-open::before {
   line-height: 1.6;
   background: var(--surface); border-radius: 12px;
   padding: 12px 14px; margin-bottom: 14px;
-  max-height: 200px;
+  /* 200px d'origine, pensé pour l'ancienne rangée compacte (une ligne par ingrédient) —
+     devenu trop juste avec le redesign .ai-ing-row du 11/09/2026 (nom sur sa propre ligne +
+     grille de champs, ~90-100px par ingrédient) : 2-3 ingrédients suffisaient déjà à
+     déclencher un scroll interne à l'intérieur d'une popup qui scrolle elle-même (voir
+     .entry-detail-popup, max-height 85vh) — sensation de "case trop petite" alors même que
+     la popup avait de la place. Relevé à 50vh : garde un plafond de sécurité pour un plat à
+     beaucoup d'ingrédients, sans brider les cas courants (3-5 ingrédients). */
+  max-height: 50vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;

@@ -4418,24 +4418,36 @@ function _renderEntryIngTable(entryId, note) {
   _rebuildEntryIngTable(entryId);
 }
 
+// Redesign du 11/09/2026 : réutilise le layout .ai-ing-row/.ai-ing-row-fields (styles.css) déjà
+// adopté le 10/09/2026 pour le même problème sur la liste d'ingrédients IA (rangée flex à 6
+// contrôles serrés sur une seule ligne — nom écrasé, rendu perçu comme "trop petit" sur mobile
+// étroit). Nom sur sa propre ligne, champs qté/kcal-100/total en grille 3 colonnes avec label
+// au-dessus (36px de hauteur mini par champ, contre les inputs 20-26px de large d'origine).
 function _rebuildEntryIngTable(entryId) {
   const el = document.getElementById(`entry-ing-table-${entryId}`);
   if (!el) return;
-  const inputStyle = 'width:48px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
   const rows = _entryIngredients.map((ing, i) => `
-    <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${escHtml(ing.name.replace(/\s*\(estimation\)\s*/i,'').trim())}</span>
-      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="${ing.unit || 'g'}">
-      <span style="font-size:10px;color:var(--muted);">${ing.unit || 'g'}</span>
-      <input type="number" inputmode="decimal" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
-      <span style="font-size:10px;color:var(--muted);">k/100</span>
-      <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)" title="kcal">
-      <span style="font-size:10px;color:var(--muted);">kcal</span>
-      <button type="button" onclick="_entryIngRemove('${entryId}',${i})" title="Supprimer cet ingrédient"
-        style="flex-shrink:0;width:20px;height:20px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:12px;line-height:1;cursor:pointer;">✕</button>
+    <div class="ai-ing-row">
+      <div class="ai-ing-row-top">
+        <span class="ai-ing-name">${escHtml(ing.name.replace(/\s*\(estimation\)\s*/i,'').trim())}</span>
+        <button type="button" class="ing-del-btn" onclick="_entryIngRemove('${entryId}',${i})" title="Supprimer cet ingrédient"
+          style="flex-shrink:0;width:26px;height:26px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
+      </div>
+      <div class="ai-ing-row-fields">
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Qté (${ing.unit || 'g'})</span>
+          <input type="number" inputmode="decimal" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)"></label>
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Kcal/100${ing.unit || 'g'}</span>
+          <input type="number" inputmode="decimal" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)"></label>
+        <label class="ai-ing-field"><span class="ai-ing-field-label">Kcal</span>
+          <input type="number" inputmode="decimal" value="${ing.kcalTotal}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcalTotal',this.value)"></label>
+      </div>
     </div>`).join('');
   const total = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
-  el.innerHTML = rows + `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 0;"><span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span><span style="font-size:13px;font-weight:800;color:var(--accent);">${total} kcal</span></div>`;
+  el.innerHTML = rows + `
+    <div class="ai-ing-total-row">
+      <span style="font-size:12px;font-weight:700;color:var(--text);">TOTAL</span>
+      <span style="font-size:14px;font-weight:800;color:var(--accent);">${total} kcal</span>
+    </div>`;
 }
 
 function _entryIngChange(entryId, idx, field, rawVal) {
