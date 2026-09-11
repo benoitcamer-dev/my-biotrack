@@ -77,6 +77,29 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ## Historique des correctifs
 
+### Session du 11/09/2026
+
+Audit multi-agents (code + live sur Pixel 8 en parallèle) suivi de correctifs sécurité/
+cohérence/UX et de deux bugs graphiques. Détail complet : `CHANGELOG_2026-09-11.md`.
+
+- **Itinéraire marche** : nouveau bouton "×" pour effacer rapidement le texte d'un champ
+  Départ/Arrivée/Étape sans supprimer la ligne (`clearWalkStep()`).
+- **XSS critique corrigé** : noms d'ingrédient IA (résultat multi-ingrédients) désormais
+  échappés (`escHtml()`) avant insertion `innerHTML` — trou pré-existant, jamais documenté.
+- **Biais "Lyon" forcé** oublié le 10/09 sur `savePlace()`/`saveQuickPlace()` (cassait
+  l'enregistrement d'un lieu hors de Lyon) — retiré, cohérent avec le fix du 10/09.
+- **Fuite de note IA food→sport** (`_confirmAIEdit()`/`_openAIModalCore()`) : garde
+  `isSport` ajoutée, reset de `_aiLastFoodNote` manquant sur un point d'entrée ajouté.
+- **`SHEETS_TO_LIFT`** (remontage clavier) complété : `modal-places`/`modal-sport-favs`.
+- **Itinéraire marche, piège UX** : bandeau d'avertissement si "Calculer" n'a pas été
+  pressé avant de valider (sinon estimation générique sans nom de lieu enregistrée
+  silencieusement) + invalidation automatique d'un calcul déjà fait dès qu'une adresse
+  change après coup (bug de données périmées trouvé au passage).
+- **2 bugs graphiques corrigés** : signe "-" manquant sur l'axe du Bilan net ; doublon
+  d'étiquettes (100/75) sur l'axe du graphique de poids, qui chevauchait la date.
+- **Cible tactile + anti-double-tap** : `.ing-del-btn` agrandi (22→26px), garde
+  anti-double-tap de `_saveIngEdits()` déplacée avant le premier appel réseau.
+
 ### Session du 10/09/2026
 
 Cinq correctifs sur la saisie d'adresse/itinéraire (marche), le journal et l'assistant IA,
