@@ -938,7 +938,16 @@ border-top: 1px solid var(--border);
    normal : plus de recouvrement, on scrolle jusqu'à lui comme n'importe quel
    bouton de fin de formulaire. */
 .modal-sheet.static-footer .modal-sticky-footer,
-.modal-sheet.search-active-footer .modal-sticky-footer { position: static; }
+.modal-sheet.search-active-footer .modal-sticky-footer,
+.modal-sheet.kb-static-footer .modal-sticky-footer { position: static; }
+/* .kb-static-footer : même parade, déclenchée tant que le clavier virtuel réduit l'espace
+   visible (--app-height) sous la hauteur propre du footer sticky (résumé kcal + boutons) —
+   posée/retirée en JS sur chaque resize de visualViewport (voir app.js, IIFE "Clavier mobile").
+   Sans elle, un sheet pourtant court (ex. éditer un simple aliment via editEntry(), hors Sport)
+   voit son footer sticky se plaquer par-dessus le nom/la quantité en cours d'édition dès que le
+   clavier numérique ouvre (bug remonté le 11/09/2026). Classe additive à .static-footer (Sport,
+   permanent) : les deux peuvent être posées en même temps sans conflit, le sélecteur CSS retombe
+   sur `position: static` dans tous les cas. */
 /* .search-active-footer : même parade que .static-footer (voir commentaire ci-dessus),
    déclenchée cette fois tant que #search-results affiche des résultats (posée/retirée en
    JS par un MutationObserver, voir app.js). Sans elle, le footer sticky se plaque dès le

@@ -17,22 +17,7 @@ if (window.visualViewport) {
   // remonté le 10/09/2026, assistant IA). Recalcul différé pour rattraper ce cas — stable
   // dans le temps quand il se produit (vérifié en direct sur Pixel 8, pas de correction
   // spontanée), donc un nouveau calcul planifié après coup est nécessaire.
-  // Ce rétrécissement différé de --app-height (donc du max-height/clientHeight réel de
-  // .modal-sheet, voir styles.css) survient APRÈS que le navigateur a déjà fait défiler le
-  // champ actif dans la vue, avec le scrollTop calculé pour l'ancienne hauteur (plus
-  // grande). Une fois --app-height réduit, ce même scrollTop peut désormais dépasser le
-  // champ édité (nom/quantité) et n'afficher que la suite du formulaire (résumé kcal,
-  // boutons) — le champ en cours de modification disparaît de l'écran, avec seulement les
-  // calories qui restent visibles (bug remonté le 11/09/2026 : édition d'un aliment ou
-  // d'une entrée vélo, clavier numérique ouvert sur le champ quantité/kcal). Re-scroller le
-  // champ actif dans la vue après ce recalcul corrige le scrollTop pour la nouvelle hauteur.
-  window.visualViewport.addEventListener('resize', () => setTimeout(() => {
-    _setAppHeight();
-    const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
-      active.scrollIntoView({ block: 'nearest' });
-    }
-  }, 350));
+  window.visualViewport.addEventListener('resize', () => setTimeout(_setAppHeight, 350));
 } else {
   window.addEventListener('resize', _setAppHeight);
 }
@@ -7144,6 +7129,23 @@ if ('serviceWorker' in navigator) {
     const sheet = getActiveSheet();
     if (!sheet) return;
     const keyboardHeight = window.innerHeight - window.visualViewport.height;
+    // .modal-sticky-footer (résumé kcal + boutons Enregistrer/Annuler/Fermer) reste sticky en
+    // bas du sheet en temps normal (voir son commentaire CSS) — mais un sheet COURT (ex. un
+    // simple aliment édité via editEntry(), pas de long formulaire Sport) n'a normalement pas
+    // besoin de le neutraliser via .static-footer (réservé jusqu'ici à Sport, voir openModal()).
+    // Une fois le clavier ouvert, l'espace visible restant (--app-height) peut devenir plus
+    // petit que la hauteur propre du footer sticky (résumé + 3 boutons, ~340px sur Pixel 8) :
+    // le footer, toujours sticky et donc rendu par-dessus le flux normal, recouvre alors
+    // entièrement le nom/la quantité/le kcal en cours d'édition — qui restent bien dans le DOM
+    // (confirmé par getBoundingClientRect) mais deviennent inatteignables au toucher ET invisibles
+    // à l'écran, seul le résumé kcal du footer reste visible par-dessus (bug remonté le
+    // 11/09/2026 : édition d'un aliment ou d'une entrée vélo, clavier numérique ouvert sur le
+    // champ quantité/kcal — confirmé via elementFromPoint() en debug distant, `calc-res` du
+    // footer répondait au point du champ nom censé être visible). Repasser le footer en flux
+    // normal (classe dédiée, additive à .static-footer pour ne pas interférer avec la logique
+    // Sport permanente ci-dessus) tant que le clavier réduit l'espace visible : le contenu
+    // devient alors scrollable de bout en bout, footer inclus, comme pour Sport.
+    sheet.classList.toggle('kb-static-footer', keyboardHeight > 80);
     if (keyboardHeight > 80) {
       // Remonter seulement si le sheet déborde sous le clavier
       const sheetRect = sheet.getBoundingClientRect();
