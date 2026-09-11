@@ -1282,11 +1282,13 @@ async function savePlace() {
   const btn = document.querySelector('#place-form .btn-primary');
   if (btn) { btn.textContent = '⏳ Géocodage…'; btn.disabled = true; }
   // Geocode address to store coords (with timeout)
-  const query = address.toLowerCase().includes('lyon') ? address : address + ' Lyon';
+  // Plus de "Lyon" forcé ici (fix du 10/09/2026 sur geocodePlace()/geocodeAddress(), oublié
+  // sur ce point d'entrée-ci — cassait l'enregistrement d'un lieu hors de Lyon, ex. en
+  // voyage). geocodeAddress() applique déjà un biais géographique doux (region/bounds).
   let result = null;
   try {
     const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), 8000));
-    result = await Promise.race([geocodeAddress(query), timeout]);
+    result = await Promise.race([geocodeAddress(address), timeout]);
   } catch(e) {
     if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
     if (await showConfirm('Géocodage échoué. Enregistrer sans coordonnées GPS ?')) {
@@ -1335,9 +1337,9 @@ function updateKnownPlaces() {
 
 // Save a single place from AI result or route form
 async function saveQuickPlace(name, address) {
-  // Geocode address to get coords
-  const query = address.toLowerCase().includes('lyon') ? address : address + ' Lyon';
-  const result = await geocodeAddress(query).catch(() => null);
+  // Geocode address to get coords — plus de "Lyon" forcé (même correctif que savePlace(),
+  // audit du 11/09/2026 : ce point d'entrée avait le même biais dur oublié le 10/09).
+  const result = await geocodeAddress(address).catch(() => null);
   const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null };
   const existing = savedPlaces.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing >= 0) {
@@ -1985,7 +1987,8 @@ function addWalkStep() {
   row.className = 'walk-addr-row';
   row.style.position = 'relative';
   row.innerHTML = `<div class="walk-move-btns"><button onclick="moveWalkStep(this,-1)" class="walk-move-btn walk-move-up" title="Monter"><i data-lucide="chevron-up" class="lc-icon"></i></button><button onclick="moveWalkStep(this,1)" class="walk-move-btn walk-move-down" title="Descendre"><i data-lucide="chevron-down" class="lc-icon"></i></button></div>
-    <input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-left:32px;padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
+    <button onclick="clearWalkStep(this)" title="Effacer" class="walk-clear-btn"><i data-lucide="x" class="lc-icon"></i></button>
+    <input class="walk-addr-input walk-step-input" list="saved-places-list" type="text" placeholder="Étape ${idx}…" data-step="${idx}" style="padding-left:58px;padding-right:96px;" onfocus="_activeWalkStep=${idx}" autocomplete="off">
     <button onclick="removeWalkStep(this)" class="icon-btn icon-btn-danger" style="position:absolute;right:44px;top:50%;transform:translateY(-50%);"><i data-lucide="x" class="lc-icon"></i></button>
     <button onclick="promptSaveStepPlace(this)" title="Sauvegarder ce lieu" class="icon-btn" style="position:absolute;right:0;top:50%;transform:translateY(-50%);"><i data-lucide="save" class="lc-icon"></i></button>`;
   // Insert before last step
@@ -2010,6 +2013,21 @@ function removeWalkStep(btn) {
 function _cleanupWalkStepRow(row) {
   const inp = row.querySelector('.walk-step-input');
   if (inp && inp._pacContainer) { inp._pacContainer.remove(); inp._pacContainer = null; }
+}
+
+// Efface le texte d'un champ Départ/Arrivée/Étape sans retirer la ligne (contrairement à
+// removeWalkStep, réservé aux étapes intermédiaires et qui supprime toute la ligne) —
+// demandé le 11/09/2026 pour effacer facilement une adresse déjà saisie. Le dropdown Google
+// (.pac-container) ne se ferme pas tout seul sur un simple .value = '' (pas d'événement
+// 'input' natif déclenché) : on le force à disparaître comme le fait blurActiveAddressInput,
+// sans blurer le champ pour laisser l'utilisateur retaper immédiatement.
+function clearWalkStep(btn) {
+  const row = btn.closest('.walk-addr-row');
+  const inp = row && row.querySelector('.walk-step-input');
+  if (!inp) return;
+  inp.value = '';
+  document.querySelectorAll('.pac-container').forEach(p => { p.style.display = 'none'; });
+  inp.focus();
 }
 
 // Remet à zéro le sous-formulaire itinéraire (Départ/Arrivée, étapes ajoutées,
@@ -4366,7 +4384,7 @@ function _rebuildEntryIngTable(entryId) {
   const inputStyle = 'width:48px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;';
   const rows = _entryIngredients.map((ing, i) => `
     <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
+      <span style="font-size:11px;color:var(--text);font-weight:500;flex:1;min-width:0;">${escHtml(ing.name.replace(/\s*\(estimation\)\s*/i,'').trim())}</span>
       <input type="number" inputmode="decimal" style="${inputStyle}" value="${ing.qty}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'qty',this.value)" title="${ing.unit || 'g'}">
       <span style="font-size:10px;color:var(--muted);">${ing.unit || 'g'}</span>
       <input type="number" inputmode="decimal" style="width:54px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 4px;font-size:11px;color:var(--text);font-family:Inter,sans-serif;text-align:right;outline:none;" value="${ing.kcal100}" min="0" step="1" onchange="_entryIngChange('${entryId}',${i},'kcal100',this.value)" title="kcal/100g">
@@ -4702,7 +4720,11 @@ async function _confirmAIEdit() {
   const factor = isSport ? q / 60 : q / 100;
   const val = Math.round(k * factor);
   const label = document.getElementById('ai-calc-sub').textContent || '';
-  const aiNote = _aiLastFoodNote || '';
+  // Garde isSport alignée sur addAIEntry() : _aiLastFoodNote n'est mise à jour que par la
+  // branche "food" de la réponse IA, jamais réinitialisée par une réponse "sport" — sans
+  // cette garde, une note food périmée d'un échange précédent pouvait s'accrocher à une
+  // entrée sport (audit du 11/09/2026).
+  const aiNote = isSport ? '' : (_aiLastFoodNote || '');
   const desc = aiNote ? `${label} (${q}${isSport?'min':'g'})||${aiNote}` : `${label} (${q}${isSport?'min':'g'})`;
 
   const { data: { user } } = await sb.auth.getUser();
@@ -5481,6 +5503,10 @@ let _aiLastFoodNote = '';
 
 function _openAIModalCore() {
   aiChatHistory = [];
+  // Reset aligné sur openAIModal()/_editViaAI() : sans lui, une note food laissée par une
+  // session IA précédente pouvait fuiter vers une nouvelle entrée sport (audit du 11/09/2026,
+  // seul ce point d'entrée-ci — via openAIModalGlobal() — ne faisait pas ce reset).
+  _aiLastFoodNote = '';
   document.getElementById('ai-chat-log').innerHTML = '';
   clearAIInput();
   document.getElementById('ai-result').style.display = 'none';
@@ -5550,7 +5576,7 @@ function _rebuildIngredientTable() {
   const rows = _aiIngredients.map((ing, i) => `
     <div class="ai-ing-row">
       <div class="ai-ing-row-top">
-        <span class="ai-ing-name">${ing.name.replace(/\s*\(estimation\)\s*/i,'').trim()}</span>
+        <span class="ai-ing-name">${escHtml(ing.name.replace(/\s*\(estimation\)\s*/i,'').trim())}</span>
         <button type="button" class="ing-del-btn" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
           style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
       </div>
@@ -7038,7 +7064,11 @@ if ('serviceWorker' in navigator) {
   // modal-recipe-picker ajouté le 06/09/2026 : oublié à l'origine, son champ de recherche
   // pouvait laisser le clavier recouvrir la liste de recettes sans remontage (voir
   // openRecipePickerToAdd, dont l'auto-focus a aussi été retiré par prudence ce même jour).
-  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food', 'modal-ai', 'modal-settings', 'modal-recipe-picker'];
+  // modal-places (place-form-addr) et modal-sport-favs (sf-new-from/sf-new-to) ajoutés le
+  // 11/09/2026 : mêmes champs .walk-places-input que ceux touchés par les correctifs
+  // adresse/clavier du 10/09/2026, oubliés de cette liste alors que le même risque de
+  // débordement sous le clavier s'applique (audit du 11/09/2026).
+  const SHEETS_TO_LIFT = ['modal-add', 'modal-recipe-editor', 'modal-aliments', 'modal-custom-food', 'modal-ai', 'modal-settings', 'modal-recipe-picker', 'modal-places', 'modal-sport-favs'];
 
   function getActiveSheet() {
     for (const id of SHEETS_TO_LIFT) {

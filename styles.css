@@ -2046,6 +2046,19 @@ outline: none;
 .walk-move-btn .lc-icon { width: 13px; height: 13px; }
 .walk-move-btn:active:not(:disabled) { color: var(--accent); }
 .walk-move-btn:disabled { opacity: 0.25; cursor: default; }
+/* Effacer le texte d'un champ Départ/Arrivée/Étape en un tap, sans supprimer la ligne
+   (distinct de step-remove-btn, qui retire toute la ligne d'une étape intermédiaire).
+   Placé juste après les boutons monter/descendre, même technique de zone de tap
+   invisible agrandie via ::before que .walk-move-btn (demandé le 11/09/2026). */
+.walk-clear-btn {
+  position: absolute; left: 32px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; border-radius: 50%;
+  touch-action: manipulation;
+}
+.walk-clear-btn::before { content: ''; position: absolute; top: -12px; bottom: -12px; left: -12px; right: -12px; }
+.walk-clear-btn:active { color: var(--danger); background: rgba(255,77,106,0.14); }
+.walk-clear-btn .lc-icon { width: 12px; height: 12px; }
 /* Bouton supprimer d'une ligne d'ingrédient (résultat IA multi-ingrédients, modal-ai) :
    22x22px visuel, en bout d'une rangée de 6 contrôles très rapprochés (audit du
    09/09/2026, lié au fix scroll ci-dessus sur .modal-sheet) — zone de tap agrandie en
