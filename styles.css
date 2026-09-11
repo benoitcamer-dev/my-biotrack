@@ -2060,12 +2060,14 @@ outline: none;
 .walk-clear-btn:active { color: var(--danger); background: rgba(255,77,106,0.14); }
 .walk-clear-btn .lc-icon { width: 12px; height: 12px; }
 /* Bouton supprimer d'une ligne d'ingrédient (résultat IA multi-ingrédients, modal-ai) :
-   22x22px visuel, en bout d'une rangée de 6 contrôles très rapprochés (audit du
-   09/09/2026, lié au fix scroll ci-dessus sur .modal-sheet) — zone de tap agrandie en
-   invisible via ::before (même technique que .walk-move-up/.walk-move-down), sans
-   grossir le cercle visuel ni empiéter sur le champ kcalTotal juste avant. */
+   26x26px visuel (agrandi de 22px le 11/09/2026, cible tactile sous le seuil relevée par
+   l'audit), en bout d'une rangée de 6 contrôles très rapprochés (audit du 09/09/2026, lié
+   au fix scroll ci-dessus sur .modal-sheet) — zone de tap agrandie en invisible via
+   ::before (même technique que .walk-move-up/.walk-move-down) jusqu'à 44x44px, seul
+   élément interactif en bout de ligne (justify-content:space-between sur .ai-ing-row-top)
+   donc sans risque de chevaucher un autre bouton. */
 .ing-del-btn { position: relative; }
-.ing-del-btn::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: -8px; right: -10px; }
+.ing-del-btn::before { content: ''; position: absolute; top: -9px; bottom: -9px; left: -9px; right: -9px; }
 /* Redesign de la liste d'ingrédients IA (modal-ai, résultat multi-ingrédients — repas ou
    recette via openRecipeAIModal) : l'ancienne rangée flex à 6 contrôles serrés sur une seule
    ligne (nom + 3 champs numériques + 2 unités + suppression) écrasait le nom sur mobile

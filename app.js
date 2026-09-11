@@ -4418,8 +4418,13 @@ function _entryIngRemove(entryId, idx) {
 }
 
 async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
+  // Garde anti-double-tap posée avant le premier await (contrairement à l'ancien
+  // btn.disabled placé après 2 aller-retours réseau, laissant une fenêtre pour un second tap
+  // rapide) — même principe que les autres sauvegardes de l'app (audit du 11/09/2026).
+  const btn = document.getElementById(`entry-ing-save-${entryId}`);
+  if (btn) { if (btn.disabled) return; btn.textContent = '⏳'; btn.disabled = true; }
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
+  if (!user) { if (btn) { btn.textContent = 'Enregistrer les modifications'; btn.disabled = false; } return; }
   const totalKcal = _entryIngredients.reduce((s, i) => s + i.kcalTotal, 0);
   const totalQty = _entryIngredients.reduce((s, i) => s + i.qty, 0);
   // Rebuild note string — réutilise l'unité d'origine (g/ml, cl remonté en ml) plutôt qu'un "g"
@@ -4427,7 +4432,7 @@ async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
   const newNote = _entryIngredients.map(i => `${i.name} ${i.qty}${i.unit || 'g'} → ${i.kcalTotal}kcal · ${i.kcal100}kcal/100${i.unit || 'g'}`).join(' | ') + ` | TOTAL : ${totalKcal}kcal`;
   // Get current entry to update desc
   const { data: entry } = await sb.from('entries').select('desc,prot,gluc,lip').eq('id', entryId).eq('user_id', user.id).single();
-  if (!entry) return;
+  if (!entry) { if (btn) { btn.textContent = 'Enregistrer les modifications'; btn.disabled = false; } return; }
   // Replace note in desc (format: "name (qty)||note")
   const descParts = entry.desc.split('||');
   const newDesc = descParts[0] + '||' + newNote;
@@ -4436,8 +4441,6 @@ async function _saveIngEdits(entryId, origVal, origProt, origGluc, origLip) {
   const newProt = Math.round(origProt * ratio * 10) / 10;
   const newGluc = Math.round(origGluc * ratio * 10) / 10;
   const newLip = Math.round(origLip * ratio * 10) / 10;
-  const btn = document.getElementById(`entry-ing-save-${entryId}`);
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   await sb.from('entries').update({ val: totalKcal, prot: newProt, gluc: newGluc, lip: newLip, desc: newDesc }).eq('id', entryId).eq('user_id', user.id);
   _closeDetailPopup();
   loadData();
@@ -5578,7 +5581,7 @@ function _rebuildIngredientTable() {
       <div class="ai-ing-row-top">
         <span class="ai-ing-name">${escHtml(ing.name.replace(/\s*\(estimation\)\s*/i,'').trim())}</span>
         <button type="button" class="ing-del-btn" onclick="_ingRemove(${i})" title="Supprimer cet ingrédient"
-          style="flex-shrink:0;width:22px;height:22px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
+          style="flex-shrink:0;width:26px;height:26px;padding:0;border:none;border-radius:50%;background:rgba(255,77,106,0.12);color:var(--danger);font-size:13px;line-height:1;cursor:pointer;">✕</button>
       </div>
       <div class="ai-ing-row-fields">
         <label class="ai-ing-field"><span class="ai-ing-field-label">Qté (${ing.unit || 'g'})</span>
