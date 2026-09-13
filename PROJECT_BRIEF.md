@@ -77,6 +77,33 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ## Historique des correctifs
 
+### Session du 13/09/2026
+
+Reprise et finalisation de l'audit espace écran des modales (interrompu le 11/09, 5/19 fait) :
+18/19 modales couvertes (méthode ADB+CDP, `AUDIT_MODALES_2026-09-11.md`). Deux pistes initiales
+se sont révélées être des faux positifs après vérification plus poussée, corrigées avant tout
+fix : le bouton flottant "+" **n'est pas** un bug (la règle CSS `body.modal-open
+#fab-btn{display:none!important}` le masque déjà correctement — le chevauchement observé
+venait d'un test qui ouvrait les modales directement en JS sans passer par leur vrai modal
+parent) ; `modal-favs-quick` n'est jamais appelée par aucun bouton réel (code mort) ; le
+pattern de "vide au milieu/bas" sur 4 autres modales (`modal-edit-weight`, `modal-copy-meal`,
+`modal-sport-favs`, `modal-sport-fav-date`) est un choix de design volontaire (règle CSS
+`margin-top:auto` qui épingle exprès le bouton d'action en bas d'écran pour l'atteignabilité
+au pouce), pas un défaut.
+
+**Corrigé réellement** (voir `AUDIT_MODALES_2026-09-11.md` pour le détail) :
+- `.modal-sticky-header` (`styles.css`) chevauchait de 4px la ligne suivante dans **toutes**
+  les modales utilisant ce header (confirmé aussi dans `modal-settings`, juste invisible là où
+  le contenu suivant a sa propre marge) — c'était la vraie cause du clipping de "NOM DE LA
+  RECETTE" resté en suspens depuis le 11/09 (confirmé réel, pas un artefact de capture, via
+  comparaison `adb screencap` / `Page.captureScreenshot` CDP identiques). `margin-bottom`
+  16px → 20px.
+- `modal-dose-fav` (`index.html`) utilisait `inset:0` (hauteur d'écran figée) au lieu de
+  `height:var(--app-height)` comme le reste de l'app — le bouton "Enregistrer la dose" passait
+  sous le clavier virtuel en éditant la quantité. Aligné sur le mécanisme de `.modal-overlay`.
+- `#ai-input` (`index.html`) : `min-height` 50px → 70px, l'exemple de placeholder sur 2 lignes
+  était tronqué.
+
 ### Session du 11/09/2026
 
 Audit multi-agents (code + live sur Pixel 8 en parallèle) suivi de correctifs sécurité/

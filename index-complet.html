@@ -924,7 +924,7 @@ position: sticky;
 top: 0;
 z-index: 8;
 background: var(--surface);
-margin: -20px -18px 16px;
+margin: -20px -18px 20px;
 padding: 20px 18px 0;
 border-radius: 28px 28px 0 0;
 /* Le margin-top négatif fait « saigner » le header jusqu'au bord du sheet, mais la
@@ -937,6 +937,17 @@ border-radius: 28px 28px 0 0;
    au-delà de la boîte, contrairement à background) comble cet interstice sans
    toucher au calcul de position sticky/scroll. */
 box-shadow: 0 -22px 0 0 var(--surface);
+/* margin-bottom porté à 20px (16px avant, 13/09/2026) : le header (poignée + titre,
+   injecté par JS autour de .modal-handle/.modal-title-row) chevauchait de ~4px la
+   ligne suivante dans TOUTE modale utilisant ce header, repeint par-dessus vu son
+   z-index — invisible presque partout (le premier élément suivant a en général sa
+   propre marge/padding qui absorbe ces 4px), mais rognait le haut du texte d'un
+   label 9px collé juste en dessous (`modal-recipe-editor`, label "NOM DE LA
+   RECETTE" — confirmé par capture CDP native ET adb screencap, identique aux deux,
+   donc un vrai chevauchement de rendu et non un artefact de capture). Vérifié que
+   le même écart de -4px existait aussi entre le header et `.bmr-result-box` dans
+   `modal-settings`, simplement sans conséquence visible là où la boîte a sa propre
+   marge intérieure. */
 }
 .modal-sticky-footer {
 position: sticky;
@@ -3172,7 +3183,7 @@ Oui si nécessaire
 </div>
 <div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;touch-action:pan-y;overscroll-behavior:contain;"></div>
 <div style="display:flex;gap:7px;margin-bottom:10px;align-items:flex-end;">
-<textarea id="ai-input" class="search-input" rows="1" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" style="resize:none;min-height:50px;max-height:120px;overflow-y:auto;line-height:1.4;padding-top:13px;padding-bottom:13px;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
+<textarea id="ai-input" class="search-input" rows="1" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" style="resize:none;min-height:70px;max-height:120px;overflow-y:auto;line-height:1.4;padding-top:13px;padding-bottom:13px;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
 <button class="search-btn" onclick="askAI()" style="width:50px;height:50px;font-size:20px;flex-shrink:0;">→</button>
 <button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">🎤</button>
 <label title="Prendre une photo" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
@@ -10619,7 +10630,7 @@ document.addEventListener('touchmove', (e) => {
 
 </script>
 <!-- MODAL DOSE FAVORI -->
-<div id="modal-dose-fav" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:flex-end;justify-content:center;">
+<div id="modal-dose-fav" style="display:none;position:fixed;top:0;left:0;right:0;height:var(--app-height, 100dvh);background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:flex-end;justify-content:center;">
 <div style="background:var(--surface);border:1px solid var(--border2);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:20px 18px 40px;animation:slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);">
 <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;"></div>
 <div style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">📏 Dose par défaut</div>

@@ -903,7 +903,7 @@ position: sticky;
 top: 0;
 z-index: 8;
 background: var(--surface);
-margin: -20px -18px 16px;
+margin: -20px -18px 20px;
 padding: 20px 18px 0;
 border-radius: 28px 28px 0 0;
 /* Le margin-top négatif fait « saigner » le header jusqu'au bord du sheet, mais la
@@ -916,6 +916,17 @@ border-radius: 28px 28px 0 0;
    au-delà de la boîte, contrairement à background) comble cet interstice sans
    toucher au calcul de position sticky/scroll. */
 box-shadow: 0 -22px 0 0 var(--surface);
+/* margin-bottom porté à 20px (16px avant, 13/09/2026) : le header (poignée + titre,
+   injecté par JS autour de .modal-handle/.modal-title-row) chevauchait de ~4px la
+   ligne suivante dans TOUTE modale utilisant ce header, repeint par-dessus vu son
+   z-index — invisible presque partout (le premier élément suivant a en général sa
+   propre marge/padding qui absorbe ces 4px), mais rognait le haut du texte d'un
+   label 9px collé juste en dessous (`modal-recipe-editor`, label "NOM DE LA
+   RECETTE" — confirmé par capture CDP native ET adb screencap, identique aux deux,
+   donc un vrai chevauchement de rendu et non un artefact de capture). Vérifié que
+   le même écart de -4px existait aussi entre le header et `.bmr-result-box` dans
+   `modal-settings`, simplement sans conséquence visible là où la boîte a sa propre
+   marge intérieure. */
 }
 .modal-sticky-footer {
 position: sticky;
