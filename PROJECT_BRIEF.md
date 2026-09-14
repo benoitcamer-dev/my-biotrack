@@ -359,6 +359,36 @@ direct sur le site déployé. Détail des deux points ci-dessus et de cette vér
 
 ## Ce qui reste à faire / hors scope
 
+- **Pattern de bug systémique identifié le 14/09/2026, audit partiel seulement** : tout élément
+  en `overflow-y:auto` (avec son propre `max-height`) qui est **enfant direct** d'un
+  `.modal-sheet`/`.settings-sheet` (flex-column à hauteur fixe, voir `styles.css:813`) est exposé à
+  deux bugs distincts, tous deux déjà rencontrés en usage réel :
+  1. **Scroll tactile silencieusement bloqué** si l'élément n'est pas listé dans le `closest()` du
+     gestionnaire anti-rebond global (`app.js`, bloc "Bloquer le scroll du fond sous les modals")
+     ET que le `.modal-sheet` englobant ne déborde pas lui-même — sinon `preventDefault()`
+     s'applique avant d'atteindre le scroll natif de l'élément. Cas trouvés/corrigés cette session :
+     `#ai-input`, `#search-results`, `#re-search-results` (tous ajoutés à la liste blanche).
+  2. **Écrasement flexbox à quelques px** si l'élément n'a pas `flex-shrink:0` : quand le contenu
+     total du sheet dépasse la hauteur visible, `overflow-y:auto` annule le `min-height:auto`
+     implicite qui protège normalement un enfant flex du sur-rétrécissement, et flexbox concentre
+     tout le rétrécissement sur cet élément pendant que les autres champs (en `overflow:visible`)
+     gardent leur taille. Cas trouvé/corrigé cette session : `#re-search-results` (écrasé à 18px au
+     lieu de 260px, voir historique 14/09/2026). `#search-results` a reçu `flex-shrink:0` par
+     cohérence (même règle CSS partagée) mais n'a jamais été vu écrasé en pratique.
+  - **Non audité / non corrigé** : `#ai-input` n'a pas reçu de `flex-shrink:0` explicite — son
+    absence de casse observée cette session tient au fait que le `.modal-sheet` de l'Assistant IA
+    ne débordait pas encore dans les scénarios testés (pas de long historique de chat + longue
+    liste d'ingrédients simultanés). `#ai-chat-log` (`index.html:966`, `max-height:180px;
+    overflow-y:auto`, enfant direct de `#modal-ai .modal-sheet`) est déjà dans la liste blanche du
+    `closest()` (scroll tactile protégé) mais n'a **pas** `flex-shrink:0` — même risque de
+    sur-rétrécissement que celui trouvé sur `#re-search-results`, jamais testé sous un historique de
+    conversation assez long pour forcer le débordement du sheet. `.entry-detail-popup`/
+    `.entry-detail-note` ne sont **pas** concernés par le risque n°2 (popup en `position:fixed`,
+    pas un enfant flex d'un sheet) mais gardent le risque n°1 déjà couvert (déjà dans la liste
+    blanche). À traiter comme un audit dédié (`flex-shrink:0` systématique sur tout
+    `overflow-y:auto` enfant direct d'un sheet flex) plutôt qu'au coup par coup à chaque nouveau
+    signalement.
+
 - ~~Conversion d'icônes emoji → Lucide (dashboard principal, catégories du journal, menu du bouton "+")~~ **résolu** : vérifié le 04/09/2026, les trois zones citées sont déjà entièrement en Lucide (`ICONS` dans `app.js`, `#stats-grid` et `#fab-menu` dans `index.html`) — ce paragraphe ne reflétait plus l'état du code. Des emoji restent ailleurs (Réglages, Poids/IMC, calendrier, placeholders de recherche...), hors du périmètre décrit ici et pas audités ; à traiter comme un chantier à part si voulu, pas comme la suite de ce point.
 - ~~CSS orphelines à trier~~ **résolu** : la liste trouvée le 14/08/2026 (`.bike-fav-section`, `.builder-item-hover-actions`, etc.) ne reflétait plus l'état du code — `node verify.js` (re-vérifié le 04/09/2026) ne détecte plus aucune classe orpheline, ces classes ont dû être utilisées ou nettoyées au fil des sessions intermédiaires sans que ce paragraphe soit mis à jour. Le check reste actif dans `verify.js` pour signaler toute nouvelle régression.
 - Consolidation des styles inline → classes CSS : partielle, seulement sur le code déjà retouché.
