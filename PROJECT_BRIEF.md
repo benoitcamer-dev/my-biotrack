@@ -77,6 +77,26 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 ## Historique des correctifs
 
+### Session du 14/09/2026
+
+**Bug remonté par l'utilisateur (audit multi-spécialistes, ADB+CDP sur Pixel 8, repro avec la vraie
+clé Gemini de l'utilisateur)** : dans `Assistant IA` (`openAIModal()`), le rectangle de saisie
+`#ai-input` affichait un texte long (plusieurs ingrédients tapés) tronqué à ~3 lignes **sans que le
+scroll tactile ne fonctionne** à l'intérieur — confirmé par swipe réel (`scrollTop` restait à 0
+malgré `scrollHeight` 509px vs `clientHeight` 118px).
+- **Cause racine** : le gestionnaire global anti-rebond iOS (`app.js`, bloc "Bloquer le scroll du
+  fond sous les modals") ne laisse passer le `touchmove` que si `e.target.closest(...)` trouve un
+  élément d'une liste blanche explicite (`.modal-sheet, .settings-sheet, #ai-chat-log, #daily-list,
+  ...`). `#ai-input` n'y figurait pas : `closest()` remontait jusqu'au `.modal-sheet` englobant, qui
+  lui n'a rien à scroller sur cet écran (`scrollHeight === clientHeight`) → `preventDefault()`
+  s'appliquait avant même d'atteindre le scroll natif du textarea. Même famille de bug que celui déjà
+  corrigé le 04/09/2026 sur les listes recettes/aliments/lieux, jamais recoupé sur ce champ ajouté
+  après coup (`#ai-chat-log`, lui, avait bien reçu `touch-action:pan-y` + figurait dans la liste).
+- **Fix** : `#ai-input` ajouté à la liste blanche du `closest()`. Rectangle aussi agrandi
+  (`min-height` 90→100px, `max-height` 120→170px) pour limiter le besoin de scroller. Vérifié en
+  direct sur le Pixel 8 : swipe réel dans le champ → `scrollTop` passe de 0 à 131px, contenu qui
+  défile visiblement.
+
 ### Session du 13/09/2026
 
 Reprise et finalisation de l'audit espace écran des modales (interrompu le 11/09, 5/19 fait) :
