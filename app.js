@@ -7252,7 +7252,7 @@ document.addEventListener('touchmove', (e) => {
   // (recettes, aliments, lieux, favoris sport...) restait bloqué. En les retirant, `closest()`
   // remonte directement jusqu'à `.settings-sheet`, le vrai conteneur qui scrolle (bug remonté :
   // affichage "bizarre" en scrollant la liste de recettes enregistrées).
-  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, #ai-chat-log, #ai-input, #daily-list, .entry-detail-popup, .entry-detail-note');
+  const scrollable = e.target.closest('.modal-sheet, .settings-sheet, #ai-chat-log, #ai-input, #search-results, #daily-list, .entry-detail-popup, .entry-detail-note');
   if (!scrollable) {
     e.preventDefault();
     return;

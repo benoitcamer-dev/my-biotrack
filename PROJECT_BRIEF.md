@@ -108,6 +108,13 @@ vide visible sous les boutons jusqu'au bouton "Fermer" a été investigué (ques
 pouce sur une modale forcée en plein écran (même mécanisme déjà audité et confirmé volontaire le
 13/09/2026 sur `modal-edit-weight`/`modal-copy-meal`). Laissé tel quel sur décision utilisateur.
 
+**Suite (même session, vérification demandée sur l'écran d'ajout normal/non-IA)** : testé en
+direct (recherche "poulet", 47 résultats, swipe réel) — fonctionnel aujourd'hui, mais `#search-
+results` a la même fragilité latente que `#ai-input` avant son fix : absent lui aussi de la liste
+blanche du `closest()` (`app.js`, bloc anti-rebond), ça ne casse rien actuellement seulement parce
+que le `.modal-sheet` englobant déborde par ailleurs (formulaire assez long). Ajouté par précaution
+à la liste blanche pour ne pas dépendre de cette coïncidence.
+
 ### Session du 13/09/2026
 
 Reprise et finalisation de l'audit espace écran des modales (interrompu le 11/09, 5/19 fait) :
