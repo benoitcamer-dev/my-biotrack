@@ -1083,6 +1083,17 @@ margin-bottom: 0;
 display: none;
 box-shadow: 0 12px 40px rgba(0,0,0,0.5);
 margin-top: 4px;
+/* Bug remonté (14/09/2026) : dans l'éditeur de recette, ce bloc n'a pas flex-shrink:0
+   alors qu'il est enfant direct d'un .settings-sheet flex-column à hauteur FIXE
+   (voir plus haut) — quand le contenu total du formulaire dépasse la hauteur visible,
+   flexbox écrase ce bloc à quelques px (au lieu des 260px prévus) car overflow:auto
+   annule le min-height:auto implicite qui protégerait un enfant flex du sur-rétrécissement.
+   Les autres enfants du sheet (champs, boutons) n'ont pas ce souci car ils restent en
+   overflow:visible. Repro : recherche "poulet" dans #re-search-results réduite à 18px de
+   haut, résultats illisibles. flex-shrink:0 force ce bloc à garder sa taille prévue et
+   laisse le sheet lui-même déborder/scroller comme prévu (déjà son comportement normal
+   sur un contenu long, voir .modal-sheet/.settings-sheet plus haut). */
+flex-shrink: 0;
 }
 .result-item {
 padding: 11px 14px;

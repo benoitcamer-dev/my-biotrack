@@ -115,6 +115,27 @@ blanche du `closest()` (`app.js`, bloc anti-rebond), ça ne casse rien actuellem
 que le `.modal-sheet` englobant déborde par ailleurs (formulaire assez long). Ajouté par précaution
 à la liste blanche pour ne pas dépendre de cette coïncidence.
 
+**Suite (même session, vérification demandée sur l'écran de recherche d'ingrédient de l'éditeur de
+recette)** : bug réel trouvé (pas seulement latent, celui-ci) — `#re-search-results` (résultats de
+recherche d'ingrédient dans `modal-recipe-editor`) s'affichait écrasé à ~18px de haut au lieu des
+260px prévus, résultats totalement illisibles. **Cause** : `#re-search-results` est un enfant
+direct de `.settings-sheet`, qui est un flex-column à **hauteur fixe** (`height:var(--app-height)`).
+Quand le contenu total du formulaire (nom, recherche, quantité/macros, résultat calculé, bouton
+ajouter, liste d'ingrédients, enregistrer/fermer) dépasse la hauteur visible, flexbox réduit les
+enfants pour tenir dans l'espace — et comme `#re-search-results` a `overflow-y:auto`, ça annule son
+`min-height:auto` implicite (qui aurait normalement empêché un enfant flex de rétrécir sous la
+taille de son contenu), le rendant seul absorbeur de tout le rétrécissement pendant que les autres
+champs (en `overflow:visible`) restent à taille normale. `#search-results` (écran d'ajout normal)
+a exactement le même style/risque mais n'a jamais été touché car ce formulaire plus court laisse le
+`.modal-sheet` déborder de lui-même, sans jamais forcer flexbox à écraser quoi que ce soit — pure
+coïncidence de mise en page, pas une différence de robustesse. **Fix** : `flex-shrink:0` ajouté à
+la règle partagée `#search-results,#re-search-results` (`styles.css`) — le bloc garde sa taille
+prévue, et c'est désormais `.settings-sheet` qui déborde/scroll normalement si besoin (comportement
+déjà standard sur un contenu long). `#re-search-results` ajouté aussi à la liste blanche du
+`closest()` anti-rebond, même précaution que `#search-results`. Vérifié en direct sur le Pixel 8 :
+hauteur passée de 18px à 260px, résultats lisibles, scroll tactile réel fonctionnel
+(`scrollTop` 0→363px).
+
 ### Session du 13/09/2026
 
 Reprise et finalisation de l'audit espace écran des modales (interrompu le 11/09, 5/19 fait) :
