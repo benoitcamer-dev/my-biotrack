@@ -3182,8 +3182,9 @@ Oui si nécessaire
   <button id="ai-voice-response-btn" onclick="toggleAIVoiceResponse()" title="Réponse vocale" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:15px;cursor:pointer;color:var(--muted);transition:all 0.2s;flex-shrink:0;touch-action:manipulation;">🔇</button>
 </div>
 <div id="ai-chat-log" style="max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;touch-action:pan-y;overscroll-behavior:contain;"></div>
-<div style="display:flex;gap:7px;margin-bottom:10px;align-items:flex-end;">
-<textarea id="ai-input" class="search-input" rows="1" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" style="resize:none;min-height:100px;max-height:170px;overflow-y:auto;line-height:1.4;padding-top:13px;padding-bottom:13px;touch-action:pan-y;overscroll-behavior:contain;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,170)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
+<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+<textarea id="ai-input" class="search-input" rows="1" placeholder="Ex: cuisse de poulet rôtie 180g..." autocomplete="off" style="resize:none;min-height:140px;max-height:260px;overflow-y:auto;line-height:1.4;padding-top:13px;padding-bottom:13px;touch-action:pan-y;overscroll-behavior:contain;" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,260)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askAI();}"></textarea>
+<div style="display:flex;gap:7px;">
 <button class="search-btn" onclick="askAI()" style="width:50px;height:50px;font-size:20px;flex-shrink:0;">→</button>
 <button id="ai-voice-btn" title="Dicter" onclick="toggleVoiceInput()" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">🎤</button>
 <label title="Prendre une photo" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
@@ -3192,6 +3193,7 @@ Oui si nécessaire
 <label title="Choisir depuis la galerie" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:22px;flex-shrink:0;touch-action:manipulation;">
 🖼️<input type="file" id="ai-gallery-input" accept="image/*" style="display:none;" onchange="askAIWithPhoto(this)">
 </label>
+</div>
 </div>
 <div id="ai-result" style="display:none;">
 <div style="background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px;">

@@ -97,6 +97,17 @@ malgré `scrollHeight` 509px vs `clientHeight` 118px).
   direct sur le Pixel 8 : swipe réel dans le champ → `scrollTop` passe de 0 à 131px, contenu qui
   défile visiblement.
 
+**Suite (même session, demande utilisateur)** : layout du bloc de saisie `#ai-input` +
+boutons (envoyer/dicter/photo/galerie) revu — le textarea passe en pleine largeur (au lieu de
+partager la ligne avec les 4 boutons, ce qui le réduisait à ~146px de large) et les boutons
+passent sur une rangée en dessous plutôt qu'à droite. `max-height` du textarea remonté une
+seconde fois à 260px (`min-height` 140px) pour profiter de la largeur gagnée. Le grand espace
+vide visible sous les boutons jusqu'au bouton "Fermer" a été investigué (question utilisateur) :
+**volontaire**, pas un bug — règle CSS `#modal-ai > .modal-sheet > :last-child {margin-top:auto}`
+(`styles.css:869-872`) qui colle le dernier élément en bas de l'écran pour l'atteignabilité au
+pouce sur une modale forcée en plein écran (même mécanisme déjà audité et confirmé volontaire le
+13/09/2026 sur `modal-edit-weight`/`modal-copy-meal`). Laissé tel quel sur décision utilisateur.
+
 ### Session du 13/09/2026
 
 Reprise et finalisation de l'audit espace écran des modales (interrompu le 11/09, 5/19 fait) :
