@@ -9273,7 +9273,9 @@ async function askAIWithPhoto(input) {
     r.readAsDataURL(file);
   });
   const mime = file.type || 'image/jpeg';
-  addChatMessage('user', '📷 Photo envoyée');
+  const userNote = document.getElementById('ai-input').value.trim();
+  clearAIInput();
+  addChatMessage('user', userNote ? `📷 Photo envoyée — ${userNote}` : '📷 Photo envoyée');
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
@@ -9285,12 +9287,15 @@ Reponds TOUJOURS en JSON pur, sans texte autour.
 REPAS SIMPLE : {"type":"food","food":"description courte","qty_g":0,"kcal_per_100g":0,"prot_per_100g":0,"gluc_per_100g":0,"lip_per_100g":0,"note":"detail nutritionnel : source des valeurs et composition si pertinent"}
 REPAS COMPOSE : calcule le total en un seul JSON avec qty_g = poids total.
 Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
+  const userText = userNote
+    ? `Analyse cette photo et estime les calories. Precision de l'utilisateur : ${userNote}`
+    : 'Analyse cette photo et estime les calories.';
   const contents = [{
     role: 'user',
     parts: [
       { text: sysText },
       { inline_data: { mime_type: mime, data: b64 } },
-      { text: 'Analyse cette photo et estime les calories.' }
+      { text: userText }
     ]
   }];
   try {
