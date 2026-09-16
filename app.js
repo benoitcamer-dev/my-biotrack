@@ -1512,6 +1512,12 @@ function selectWalkSimpleQuick() {
   document.getElementById('search-results').style.display = 'none';
   document.getElementById('search-results').innerHTML = '';
 }
+function backToSportPicker() {
+  document.getElementById('walk-advanced').style.display = 'none';
+  document.getElementById('bike-advanced').style.display = 'none';
+  document.getElementById('bike-mode-tabs').style.display = 'none';
+  showAllSports();
+}
 function renderSportFavsQuick() {
 const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
@@ -2480,7 +2486,8 @@ const listHTML = bikeFavorites.length ? bikeFavorites.map((f, i) => `<div class=
 <button class="food-btn danger icon-x-btn" onclick="event.stopPropagation();deleteBikeFav(${i})">✕</button>
 </div>
 </div>`).join('') : '';
-el.innerHTML = `<div class="sport-fav-section" style="margin-bottom:10px;" id="bike-favs-drag-list">
+el.innerHTML = `<button type="button" onclick="backToSportPicker()" style="background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px 10px;display:inline-flex;align-items:center;gap:4px;touch-action:manipulation;">← Retour</button>
+<div class="sport-fav-section" style="margin-bottom:10px;" id="bike-favs-drag-list">
 <div class="sport-fav-title"><i data-lucide="star" class="lc-icon-sm"></i> Sorties favorites</div>
 ${listHTML}
 </div>
