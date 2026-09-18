@@ -21,7 +21,10 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'reload' }) // 'reload' = ignore le cache HTTP du navigateur (sinon
+      // GitHub Pages sert Cache-Control: max-age=600 et ce fetch peut être satisfait par le cache
+      // HTTP local sans jamais toucher le réseau, même si ce handler se veut "network-first" —
+      // voir historique du 18/09/2026.
       .then(response => {
         if (response.ok) {
           const clone = response.clone();
