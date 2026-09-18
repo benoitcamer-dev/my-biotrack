@@ -5703,6 +5703,18 @@ function _syncAIIngredientTotals() {
   recalcAI();
 }
 
+let _aiPatienceTimer = null;
+function showAILoading() {
+  clearTimeout(_aiPatienceTimer);
+  const l = document.getElementById('ai-loading');
+  l.style.display = 'block';
+  l.innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></div> <span id="ai-loading-text">Analyse en cours…</span></div>';
+  _aiPatienceTimer = setTimeout(() => { const s = document.getElementById('ai-loading-text'); if (s) s.textContent = 'Toujours en cours…'; }, 3000);
+}
+function hideAILoading() {
+  clearTimeout(_aiPatienceTimer);
+  document.getElementById('ai-loading').style.display = 'none';
+}
 async function askAI() {
   GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
   if (!GEMINI_KEY) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
@@ -5714,8 +5726,7 @@ async function askAI() {
   addChatMessage('user', query);
   // En mode global (catégorie auto), Gemini peut répondre sport OU nourriture
   const isSport = aiCurrentCat === 'Sport' || document.getElementById('ai-target-cat')?.value === 'Sport';
-  document.getElementById('ai-loading').style.display = 'block';
-document.getElementById('ai-loading').innerHTML = '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;"></div> Analyse en cours…</div>';
+  showAILoading();
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
   const rtEl = document.getElementById('ai-result-text'); if (rtEl) { rtEl.innerHTML = ''; rtEl.style.display = 'none'; }
@@ -5801,7 +5812,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
     ...aiChatHistory.map(m => ({ parts: [{ text: m.parts?.[0]?.text || m.content || '' }], role: m.role === 'user' ? 'user' : 'model' })).filter(m => m.parts[0].text),
     { role: 'user', parts: [{ text: processedQuery }] }
   ];
-    const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
   async function callGemini(modelName, body) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 6000);
@@ -5859,7 +5870,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
     }
     if (!p) throw new Error('Format invalide');
     aiChatHistory.push({ role: 'user', content: query }, { role: 'model', content: text });
-    document.getElementById('ai-loading').style.display = 'none';
+    hideAILoading();
     if (p.type === 'question') {
       addChatMessage('ai', p.message); speakIfEnabled(p.message);
     } else if (p.type === 'recipe') {
@@ -5985,7 +5996,7 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
       document.getElementById('ai-result').style.display = 'block';
       document.getElementById('ai-add-btn').textContent = '✓ Ajouter au journal'; document.getElementById('ai-save-fav-btn').style.display = 'block'; recalcAI();
     }
-  } catch(e) { document.getElementById('ai-loading').style.display = 'none'; showAIError('Erreur : ' + e.message); }
+  } catch(e) { hideAILoading(); showAIError('Erreur : ' + e.message); }
 }
 
 let _voiceRecognition = null;
@@ -6046,7 +6057,7 @@ async function askAIWithPhoto(input) {
   const userNote = document.getElementById('ai-input').value.trim();
   clearAIInput();
   addChatMessage('user', userNote ? `📷 Photo envoyée — ${userNote}` : '📷 Photo envoyée');
-  document.getElementById('ai-loading').style.display = 'block';
+  showAILoading();
   document.getElementById('ai-result').style.display = 'none';
   document.getElementById('ai-error').style.display = 'none';
   const isSport = aiCurrentCat === 'Sport';
@@ -6069,7 +6080,7 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
     ]
   }];
   try {
-    const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+    const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
     let data;
     for (const model of GEMINI_MODELS) {
       const isLast = model === GEMINI_MODELS[GEMINI_MODELS.length - 1];
@@ -6099,7 +6110,7 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
     for (const m of matches) { try { p = JSON.parse(m); if (p && p.type) break; } catch(e) { p = null; } }
     if (!p) { const jm = text.match(/{[\s\S]*}/); if (jm) { try { p = JSON.parse(jm[0]); } catch(e) {} } }
     if (!p) throw new Error('Format invalide');
-    document.getElementById('ai-loading').style.display = 'none';
+    hideAILoading();
     aiChatHistory.push({ role: 'user', content: '[Photo]' }, { role: 'model', content: text });
     if (p.type === 'question') {
       addChatMessage('ai', p.message);
@@ -6132,7 +6143,7 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
       document.getElementById('ai-save-base-btn').style.display = 'block';
       recalcAI();
     }
-  } catch(e) { document.getElementById('ai-loading').style.display = 'none'; showAIError('Erreur : ' + e.message); }
+  } catch(e) { hideAILoading(); showAIError('Erreur : ' + e.message); }
 }
 
 function addChatMessage(role, text) {
