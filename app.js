@@ -5803,11 +5803,22 @@ Volumes : 1 pinte=500ml, 1 verre=25cl, 1 canette=33cl, 1 shot=4cl.`;
   ];
     const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
   async function callGemini(modelName, body) {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_KEY },
-      body: JSON.stringify(body)
-    });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    let r;
+    try {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_KEY },
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+      });
+    } catch(e) {
+      if (e.name === 'AbortError') { const err = new Error(`${modelName} trop lent (>6s)`); err.isOverload = true; throw err; }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
     const d = await r.json();
     if (!r.ok) {
       const msg = d?.error?.message || d?.error?.status || r.status;
@@ -6061,16 +6072,25 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
     const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
     let data;
     for (const model of GEMINI_MODELS) {
+      const isLast = model === GEMINI_MODELS[GEMINI_MODELS.length - 1];
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_KEY },
-          body: JSON.stringify({ contents })
+          body: JSON.stringify({ contents }),
+          signal: ctrl.signal
         });
         const d = await res.json();
-        if (!res.ok) { const msg = d?.error?.message || res.status; const isOv = res.status===503||(msg+'').includes('high demand'); if(isOv&&model!==GEMINI_MODELS[GEMINI_MODELS.length-1]){continue;} throw new Error('API : '+msg); }
+        if (!res.ok) { const msg = d?.error?.message || res.status; const isOv = res.status===503||(msg+'').includes('high demand'); if(isOv&&!isLast){continue;} throw new Error('API : '+msg); }
         data = d; break;
-      } catch(e) { if(e.message&&!e.isOverload&&model===GEMINI_MODELS[GEMINI_MODELS.length-1]) throw e; if(model===GEMINI_MODELS[GEMINI_MODELS.length-1]) throw e; }
+      } catch(e) {
+        if (e.name === 'AbortError' && !isLast) { console.warn(`${model} trop lent (>6s), bascule sur le suivant...`); continue; }
+        throw e;
+      } finally {
+        clearTimeout(timer);
+      }
     }
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) throw new Error('Pas de reponse');
