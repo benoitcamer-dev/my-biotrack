@@ -6201,34 +6201,70 @@ async function addAIEntry() {
   const unit = isSport ? 'min' : 'g';
   // Build description — for walk with steps, show the route
   let label = document.getElementById('ai-calc-sub').textContent || document.getElementById('ai-input').value;
-  let desc;
-  if (isSport && _aiLastSportData?.is_walk && _aiLastSportData?.walk_steps?.length >= 2) {
-    const p2 = _aiLastSportData;
-    const spd = p2.walk_speed_kmh || 6;
-    const dist = p2.walk_distance_km || round1(spd * (q / 60));
-    // Use saved place names if matching, else use raw steps
-    const stepsLabel = p2.walk_steps.map(s => {
-      const match = savedPlaces.find(sp => sp.address && sp.address.toLowerCase() === s.toLowerCase());
-      return match ? match.name : s;
-    }).join(' → ');
-    desc = `🚶 ${stepsLabel} (${q}min · ${dist}km · ${spd}km/h)`;
-  } else if (isSport) {
-    desc = `${label} (${q}${unit})`;
+  const aiNote = !isSport ? (_aiLastFoodNote || '') : '';
+  // Repas composé (plusieurs ingrédients dans la note IA) : une ligne journal par ingrédient
+  // groupées sous un titre 📚, plutôt qu'une seule ligne agrégée — même schéma que l'ajout
+  // d'une recette existante (addRecipeToCurrentMeal), ce qui permet ensuite de les regrouper
+  // en recette via "Lier à une recette" avec le détail par ingrédient conservé.
+  const parsedIngs = aiNote ? _parseNoteIngredients(aiNote) : [];
+  if (parsedIngs.length >= 2) {
+    // Le poids total (originalQty, somme des ingrédients de la note) peut différer de q si
+    // l'utilisateur a modifié la quantité dans le champ avant de valider — ratio permet de
+    // conserver la même mise à l'échelle proportionnelle que le comportement en ligne unique
+    // (qui applique q/100 à une densité kcal/100g fixe).
+    const originalQty = parsedIngs.reduce((s, i) => s + i.qty, 0) || q;
+    const ratio = originalQty > 0 ? q / originalQty : 1;
+    const sumKcalTotal = parsedIngs.reduce((s, i) => s + i.kcalTotal, 0);
+    const totalP = round1(p * factor), totalG = round1(g * factor), totalL = round1(l * factor);
+    await sb.from('entries').insert([{
+      user_id: user.id, type: 'food', category: selectedCat,
+      desc: `📚 ${label}`, val: 0, prot: 0, gluc: 0, lip: 0, date: selectedDate
+    }]);
+    // La note IA ne donne les macros (P/G/L) qu'au total du repas, pas par ingrédient ("FORMAT
+    // NOTE STRICT" du prompt IA précise "Pas de macros dans la note") : on répartit
+    // prot/gluc/lip proportionnellement à la part de kcal de chaque ingrédient, seule clé de
+    // répartition disponible.
+    for (const ing of parsedIngs) {
+      const share = sumKcalTotal > 0 ? ing.kcalTotal / sumKcalTotal : 1 / parsedIngs.length;
+      const iQty = Math.round(ing.qty * ratio);
+      const iVal = Math.round(ing.kcalTotal * ratio);
+      await sb.from('entries').insert([{
+        user_id: user.id, type: 'food', category: selectedCat,
+        desc: `${ing.name} (${iQty}${ing.unit || 'g'})`,
+        val: iVal,
+        prot: round1(totalP * share), gluc: round1(totalG * share), lip: round1(totalL * share),
+        date: selectedDate
+      }]);
+    }
   } else {
-    const aiNote = _aiLastFoodNote || '';
-    desc = aiNote ? `${label} (${q}${unit})||${aiNote}` : `${label} (${q}${unit})`;
+    let desc;
+    if (isSport && _aiLastSportData?.is_walk && _aiLastSportData?.walk_steps?.length >= 2) {
+      const p2 = _aiLastSportData;
+      const spd = p2.walk_speed_kmh || 6;
+      const dist = p2.walk_distance_km || round1(spd * (q / 60));
+      // Use saved place names if matching, else use raw steps
+      const stepsLabel = p2.walk_steps.map(s => {
+        const match = savedPlaces.find(sp => sp.address && sp.address.toLowerCase() === s.toLowerCase());
+        return match ? match.name : s;
+      }).join(' → ');
+      desc = `🚶 ${stepsLabel} (${q}min · ${dist}km · ${spd}km/h)`;
+    } else if (isSport) {
+      desc = `${label} (${q}${unit})`;
+    } else {
+      desc = aiNote ? `${label} (${q}${unit})||${aiNote}` : `${label} (${q}${unit})`;
+    }
+    await sb.from('entries').insert([{
+      user_id: user.id,
+      type: isSport ? 'burn' : 'food',
+      category: selectedCat,
+      desc,
+      val,
+      prot: isSport ? 0 : round1(p * factor),
+      gluc: isSport ? 0 : round1(g * factor),
+      lip: isSport ? 0 : round1(l * factor),
+      date: selectedDate
+    }]);
   }
-  await sb.from('entries').insert([{
-    user_id: user.id,
-    type: isSport ? 'burn' : 'food',
-    category: selectedCat,
-    desc,
-    val,
-    prot: isSport ? 0 : round1(p * factor),
-    gluc: isSport ? 0 : round1(g * factor),
-    lip: isSport ? 0 : round1(l * factor),
-    date: selectedDate
-  }]);
   // Naviguer vers la date IA si différente
   if (selectedDate && selectedDate !== journalDateStr()) {
     journalDate = strToDate(selectedDate);
