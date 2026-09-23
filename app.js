@@ -610,6 +610,11 @@ saveSettingsLocal();
 } else { await pushSettingsRemote(); }
 } catch (e) { console.error('loadSettingsRemote:', e); }
 }
+// Listes volontairement vidées par l'utilisateur (suppression du dernier élément) : sans ça,
+// safeMerge ci-dessous prenait la liste vide pour une perte de données et remettait la
+// version distante — impossible de supprimer son dernier favori/recette/lieu (23/09/2026).
+const _intentionallyEmptied = new Set();
+function markEmptied(key, list) { if (list.length === 0) _intentionallyEmptied.add(key); }
 async function pushSettingsRemote() {
 try {
 const { data: { user } } = await sb.auth.getUser();
@@ -617,8 +622,9 @@ if (!user) return;
 // Sécurité : lire les données existantes avant d'écraser
 // pour ne jamais écraser un tableau non-vide avec un tableau vide
 const { data: existing } = await sb.from('user_settings').select('recipes,walk_favorites,bike_favorites,saved_places').eq('user_id', user.id).maybeSingle();
-const safeMerge = (local, remote) => {
+const safeMerge = (local, remote, key) => {
   if (local && local.length > 0) return local;
+  if (_intentionallyEmptied.has(key)) return local;
   if (remote) { const r = typeof remote === 'string' ? JSON.parse(remote) : remote; return Array.isArray(r) && r.length > 0 ? r : local; }
   return local;
 };
@@ -631,10 +637,10 @@ weight: userWeight,
 height: userHeight,
 age: userAge,
 sexe: userSexe,
-recipes: safeMerge(savedRecipes, existing?.recipes),
-walk_favorites: safeMerge(walkFavorites, existing?.walk_favorites),
-bike_favorites: safeMerge(bikeFavorites, existing?.bike_favorites),
-saved_places: safeMerge(savedPlaces, existing?.saved_places),
+recipes: safeMerge(savedRecipes, existing?.recipes, 'recipes'),
+walk_favorites: safeMerge(walkFavorites, existing?.walk_favorites, 'walk_favorites'),
+bike_favorites: safeMerge(bikeFavorites, existing?.bike_favorites, 'bike_favorites'),
+saved_places: safeMerge(savedPlaces, existing?.saved_places, 'saved_places'),
 updated_at: ts
 }, { onConflict: 'user_id' });
 } catch (e) { console.error('pushSettingsRemote:', e); }
@@ -1325,6 +1331,7 @@ async function savePlace() {
 async function deletePlace(i) {
   if (!(await showConfirm('Supprimer ce lieu ?', {danger:true}))) return;
   savedPlaces.splice(i, 1);
+  markEmptied('saved_places', savedPlaces);
   saveSettingsLocal(); pushSettingsRemote();
   renderPlacesList();
   updateKnownPlaces();
@@ -1990,7 +1997,9 @@ document.getElementById('save-route-btn').style.display = 'none';
 updateRouteCalc(f.distance, f.duration);
 _updateWalkNotCalcHint();
 }
-function deleteWalkFav(i) { walkFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderWalkFavsInModal(); renderSportFavsQuick(); }
+function deleteWalkFav(i) { walkFavorites.splice(i, 1); markEmptied('walk_favorites', walkFavorites); saveSettingsLocal(); pushSettingsRemote(); renderWalkFavsInModal(); renderSportFavsQuick(); refreshSportFavsModal(); }
+// Rafraîchit l'écran "Favoris sport" s'il est ouvert (suppression via son menu ⋯).
+function refreshSportFavsModal() { if (document.getElementById('modal-sport-favs')?.classList.contains('open')) renderSportFavsContent(); }
 function onCustomDurationChange() {
 const dur = parseFloat(document.getElementById('walk-custom-dur').value) || 0;
 if (routeBaseDistance > 0 && dur > 0) updateRouteCalc(routeBaseDistance, dur);
@@ -2507,7 +2516,7 @@ document.getElementById('in-qty').value = f.duration;
 document.getElementById('in-kcal').value = f.speed;
 recalc();
 }
-function deleteBikeFav(i) { bikeFavorites.splice(i, 1); saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); }
+function deleteBikeFav(i) { bikeFavorites.splice(i, 1); markEmptied('bike_favorites', bikeFavorites); saveSettingsLocal(); pushSettingsRemote(); renderBikeFavsInModal(); renderSportFavsQuick(); refreshSportFavsModal(); }
 function saveBikeFav() {
 // La structure des favoris vélo ({name, speed, duration, kcal}) ne sait représenter que le mode
 // "Vitesse" — en mode "Kcal machine", #in-kcal (la vitesse) est masqué et jamais renseigné : sans
@@ -3208,6 +3217,7 @@ showToast('Recette enregistrée.', 'success');
 async function deleteRecipe(rid) {
   if (!(await showConfirm('Supprimer cette recette ?', {danger:true}))) return;
   savedRecipes = savedRecipes.filter(r => r.id !== rid);
+  markEmptied('recipes', savedRecipes);
   await saveAndSyncRecipes();
   renderRecipesPage();
 }
@@ -5898,6 +5908,7 @@ REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
 REPAS COMPOSE ou PLUSIEURS BOISSONS : si l utilisateur mentionne plusieurs aliments OU plusieurs boissons, les lister TOUS dans la note. Ne jamais en oublier. Estime chaque item separement, calcule kcal_per_100g = SOMME_KCAL / qty_g * 100.
 Portions realistes : une sauce d accompagnement = 30-50g par sauce. Une portion de frites = 150-200g. Une portion de viande kebab = 150-200g. Un verre de cocktail = 150-200ml. Un shot = 4cl. Une biere mentionnee SANS quantite/format precise (pas de "canette", "bouteille", "demi", "33cl"...) = 1 pinte = 50cl par defaut.
+Densites de reference boissons (a respecter, ne pas sous-estimer) : biere blonde/lager 5% = 43kcal/100ml. IPA, NEIPA, biere artisanale 6-7% = 60kcal/100ml. Biere forte/triple 8-10% = 75kcal/100ml. Vin = 80kcal/100ml. Champagne = 75kcal/100ml. Soda, ice tea sucre = 20-40kcal/100ml. Jus de fruits = 45kcal/100ml. Cocktail classique (espresso martini, mojito, margarita, pina colada...) = 180-300kcal le verre. Si le degre d alcool est connu : kcal/100ml ≈ degre x 5.5 + sucres.
 FORMAT NOTE STRICT — chaque ingredient/boisson sur une ligne, separees par |, UNIQUEMENT ce format : "NomItem Xg/ml → YYkcal · ZZZkcal/100g". Pas de macros dans la note. Pas de repetition. TOTAL a la fin.
 Exemple note boissons : "Aperol Spritz 180ml → 150kcal · 83kcal/100g | Mai Thai 150ml → 210kcal · 140kcal/100g | Chartreuse 4cl → 52kcal · 130kcal/100ml | Kombucha 250ml → 45kcal · 18kcal/100g | TOTAL : 457kcal"
 Exemple note repas : "Viande kebab 180g → 396kcal · 220kcal/100g | Naan fromage 200g → 580kcal · 290kcal/100g | TOTAL : 976kcal"

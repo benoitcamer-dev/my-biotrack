@@ -817,7 +817,7 @@ border-top: 1px solid rgba(255,255,255,0.08);
 border-radius: 0;
 width: 100%;
 max-width: 480px;
-padding: 20px 18px 40px;
+padding: 20px var(--sheet-px, 18px) 40px;
 /* Plein écran demandé (05/09/2026) : hauteur forcée à --app-height (pas seulement un
    plafond) au lieu de min(92dvh,...) — plus de bande de fond visible au-dessus du sheet.
    --app-height (hauteur réelle visible, clavier ouvert compris — voir app.js
@@ -903,8 +903,8 @@ position: sticky;
 top: 0;
 z-index: 8;
 background: var(--surface);
-margin: -20px -18px 20px;
-padding: 20px 18px 0;
+margin: -20px calc(-1 * var(--sheet-px, 18px)) 20px;
+padding: 20px var(--sheet-px, 18px) 0;
 border-radius: 28px 28px 0 0;
 /* Le margin-top négatif fait « saigner » le header jusqu'au bord du sheet, mais la
    marge négative d'un élément sticky n'est pas repeinte par son propre background
@@ -933,11 +933,22 @@ position: sticky;
 bottom: -40px;
 z-index: 8;
 background: var(--surface);
-margin: 16px -18px -40px;
-padding: 12px 18px 40px;
+margin: 16px calc(-1 * var(--sheet-px, 18px)) -40px;
+padding: 12px var(--sheet-px, 18px) 40px;
 border-top: 1px solid var(--border);
 }
 [data-theme="light"] .modal-sticky-footer { background: #FFFFFF; }
+/* Menus plein écran sur PC (demande du 23/09/2026) : le sheet occupe toute la largeur
+   (plus de colonne de 480px sur fond flouté), mais le contenu reste centré sur 760px
+   comme <main> — des champs étirés sur 1500px seraient illisibles. --sheet-px pilote
+   le padding horizontal du sheet ET les marges négatives du header/footer collants,
+   qui continuent ainsi de s'étendre bord à bord. Mobile inchangé (18px). */
+@media (min-width: 900px) {
+  .modal-sheet, .settings-sheet {
+    max-width: none;
+    --sheet-px: max(18px, calc((100vw - 760px) / 2));
+  }
+}
 /* Le footer collant (Valider/kcal) est pensé pour rester visible pendant qu'on
    scrolle une longue liste de résultats (recherche d'aliments). Pour les contenus
    verticalement longs mais faits de champs de formulaire (ex: itinéraire marche
