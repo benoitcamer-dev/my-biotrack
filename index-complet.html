@@ -8822,12 +8822,11 @@ async function shrinkImageForGroq(mime, b64) {
 }
 
 // Recours Groq (gratuit) quand Gemini est saturé. Clé stockée seulement en localStorage.
-// Modèles vérifiés par appel réel le 23/09/2026 : qwen3.8-27b lit aussi les photos,
-// gpt-oss-120b = texte seul. Convertit le format "contents" Gemini en messages OpenAI.
+// Modèle vérifié par appel réel le 23/09/2026 : qwen3.8-27b (texte + photos).
+// Convertit le format "contents" Gemini en messages OpenAI.
 async function callGroqFallback(contents) {
   const key = localStorage.getItem('groq_api_key') || '';
   if (!key) throw new Error('pas de clé Groq');
-  const hasImage = contents.some(c => c.parts.some(p => p.inline_data));
   const messages = await Promise.all(contents.map(async c => {
     const role = c.role === 'model' ? 'assistant' : 'user';
     if (!c.parts.some(p => p.inline_data)) return { role, content: c.parts.map(p => p.text || '').join('\n') };
@@ -8835,9 +8834,9 @@ async function callGroqFallback(contents) {
       ? { type: 'image_url', image_url: { url: await shrinkImageForGroq(p.inline_data.mime_type, p.inline_data.data) } }
       : { type: 'text', text: p.text || '' })) };
   }));
-  // Texte : gpt-oss-120b d'abord (8/12 estimations justes contre 6/12 pour qwen sur un banc
-  // de 12 repas/boissons, 23/09/2026) ; photo : qwen seul, gpt-oss ne lit pas les images.
-  const models = hasImage ? ['qwen/qwen3.8-27b'] : ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'];
+  // gpt-oss-120b retiré le 24/09/2026 : bière comptée à 220 kcal/100ml, lignes incohérentes
+  // avec son propre total. qwen seul, texte comme photo.
+  const models = ['qwen/qwen3.8-27b'];
   let lastErr;
   for (const model of models) {
     const ctrl = new AbortController();
