@@ -1022,7 +1022,6 @@ document.getElementById('s-height').value = userHeight;
 document.getElementById('s-age').value = userAge;
 document.getElementById('s-sexe').value = userSexe;
 document.getElementById('s-gemini').value = localStorage.getItem('gemini_api_key') || '';
-document.getElementById('s-groq').value = localStorage.getItem('groq_api_key') || '';
 const gcalEl = document.getElementById('s-gcal-client-id');
 if (gcalEl) gcalEl.value = GCAL_CLIENT_ID;
 const gmapsEl = document.getElementById('s-gmaps-key');
@@ -1059,9 +1058,6 @@ else if (gmapsKey === '') { GMAPS_API_KEY = ''; localStorage.removeItem('gmaps_a
 const geminiKey = document.getElementById('s-gemini').value.trim();
 if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
 else localStorage.removeItem('gemini_api_key');
-const groqKey = document.getElementById('s-groq').value.trim();
-if (groqKey) localStorage.setItem('groq_api_key', groqKey);
-else localStorage.removeItem('groq_api_key');
 saveSettingsLocal();
 await pushSettingsRemote();
 closeSettings();
@@ -5539,98 +5535,27 @@ function openCustomFoodFromBarcode() { closeBarcodeScanner(); openCustomFoodModa
 // ── GEMINI AI ────────────────────────────────────────────────────────────────
 let GEMINI_KEY = localStorage.getItem("gemini_api_key") || "";
 
-// Groq refuse les images > 4 Mo en base64 : une photo de téléphone brute dépasse souvent.
-// Réduit à 1536 px max en JPEG (largement suffisant pour reconnaître un plat).
-async function shrinkImageForGroq(mime, b64) {
-  const src = `data:${mime};base64,${b64}`;
-  try {
-    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
-    const scale = Math.min(1, 1536 / Math.max(img.width, img.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.85);
-  } catch(e) {
-    return src;
-  }
-}
+// Recours Groq supprimé le 24/09/2026 (estimations fausses) : on purge la clé éventuellement stockée.
+localStorage.removeItem('groq_api_key');
 
-// Recours Groq (gratuit) quand Gemini est saturé. Clé stockée seulement en localStorage.
-// Modèle vérifié par appel réel le 23/09/2026 : qwen3.8-27b (texte + photos).
-// Convertit le format "contents" Gemini en messages OpenAI.
-async function callGroqFallback(contents) {
-  const key = localStorage.getItem('groq_api_key') || '';
-  if (!key) throw new Error('pas de clé Groq');
-  const messages = await Promise.all(contents.map(async c => {
-    const role = c.role === 'model' ? 'assistant' : 'user';
-    if (!c.parts.some(p => p.inline_data)) return { role, content: c.parts.map(p => p.text || '').join('\n') };
-    return { role, content: await Promise.all(c.parts.map(async p => p.inline_data
-      ? { type: 'image_url', image_url: { url: await shrinkImageForGroq(p.inline_data.mime_type, p.inline_data.data) } }
-      : { type: 'text', text: p.text || '' })) };
-  }));
-  // gpt-oss-120b retiré le 24/09/2026 : bière comptée à 220 kcal/100ml, lignes incohérentes
-  // avec son propre total. qwen seul, texte comme photo.
-  const models = ['qwen/qwen3.8-27b'];
-  let lastErr;
-  for (const model of models) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
-    try {
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model, messages }),
-        signal: ctrl.signal
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(`Groq ${model} : ${d?.error?.message || r.status}`);
-      const text = d.choices?.[0]?.message?.content || '';
-      if (text) return text;
-      throw new Error(`Groq ${model} : réponse vide`);
-    } catch(e) {
-      lastErr = e.name === 'AbortError' ? new Error(`Groq ${model} trop lent (>10s)`) : e;
-      console.warn(lastErr.message);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  throw lastErr;
-}
-
-// Enchaîne : modèles Gemini → Groq (si clé) → nouvel essai Gemini après 2s.
+// Enchaîne les modèles Gemini, puis un nouvel essai après 2s s'ils sont tous saturés.
 // callModel(model) renvoie le texte, ou lève une erreur avec .isOverload (503/"high demand"/timeout).
 const GEMINI_MODELS = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
-async function aiWithFallback(contents, callModel) {
-  const hasGroq = !!localStorage.getItem('groq_api_key');
-  const tryGroq = async () => {
-    if (!hasGroq) return '';
-    try { return await callGroqFallback(contents); }
-    catch(e) { console.warn('Recours Groq échoué :', e.message); return ''; }
-  };
-  if (!GEMINI_KEY) {
-    const t = await tryGroq();
-    if (t) return { text: t, viaGroq: true };
-    throw new Error('Groq indisponible et pas de clé Gemini');
-  }
+async function aiWithFallback(callModel) {
   for (let pass = 0; pass < 2; pass++) {
     if (pass > 0) {
-      const t = await tryGroq();
-      if (t) return { text: t, viaGroq: true };
       console.warn('Tous les modèles saturés, nouvel essai Gemini dans 2s...');
       await new Promise(res => setTimeout(res, 2000));
     }
     for (const model of GEMINI_MODELS) {
-      try { return { text: await callModel(model), viaGroq: false }; }
+      try { return await callModel(model); }
       catch(e) {
         if (!e.isOverload) throw e;
         console.warn(`${model} surchargé ou trop lent, bascule sur le suivant...`);
       }
     }
   }
-  throw new Error(hasGroq
-    ? 'Gemini et Groq sont saturés en ce moment, réessaie dans une minute'
-    : 'les serveurs Gemini de Google sont saturés en ce moment, réessaie dans une minute (astuce : ajoute une clé Groq dans Réglages comme secours)');
+  throw new Error('les serveurs Gemini de Google sont saturés en ce moment, réessaie dans une minute');
 }
 
 let aiCurrentCat = "";
@@ -5826,7 +5751,7 @@ function hideAILoading() {
 }
 async function askAI() {
   GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
-  if (!GEMINI_KEY && !localStorage.getItem('groq_api_key')) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
+  if (!GEMINI_KEY) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
   const query = document.getElementById('ai-input').value.trim();
   if (!query) return;
   clearAIInput();
@@ -5951,10 +5876,9 @@ Volumes : 1 pinte=500ml, 1 demi (biere)=25cl, 1 verre de biere=25cl, 1 verre de 
     return d;
   }
   try {
-    const { text, viaGroq } = await aiWithFallback(contents,
+    const text = await aiWithFallback(
       model => callGemini(model, { contents }).then(d => d.candidates?.[0]?.content?.parts?.[0]?.text || ''));
     if (!text) throw new Error('Pas de reponse');
-    if (viaGroq) addChatMessage('ai', 'Gemini saturé — réponse fournie par Groq.');
     // Extract first valid JSON object from response
     let p = null;
     const matches = text.match(/{[\s\S]*?}/g) || [];
@@ -6140,7 +6064,7 @@ function toggleVoiceInput() {
 
 async function askAIWithPhoto(input) {
   GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
-  if (!GEMINI_KEY && !localStorage.getItem('groq_api_key')) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
+  if (!GEMINI_KEY) { showAIError('Clé API Gemini manquante — Réglages.'); return; }
   const file = input.files[0];
   if (!file) return;
   input.value = '';
@@ -6178,7 +6102,7 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
     ]
   }];
   try {
-    const { text, viaGroq } = await aiWithFallback(contents, async model => {
+    const text = await aiWithFallback(async model => {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 6000);
       try {
@@ -6204,7 +6128,6 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
       }
     });
     if (!text) throw new Error('Pas de reponse');
-    if (viaGroq) addChatMessage('ai', 'Gemini saturé — réponse fournie par Groq.');
     let p = null;
     const matches = text.match(/{[\s\S]*?}/g) || [];
     for (const m of matches) { try { p = JSON.parse(m); if (p && p.type) break; } catch(e) { p = null; } }

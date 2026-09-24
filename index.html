@@ -389,11 +389,6 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button onclick="listGeminiModels()" style="margin-top:6px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:13px 10px;font-size:11px;cursor:pointer;"><i data-lucide="search" class="lc-icon-sm"></i> Lister les modèles disponibles</button>
 <div id="gemini-models-list" style="font-size:10px;color:var(--muted);margin-top:6px;max-height:120px;overflow-y:auto;"></div>
 </div>
-<div class="setting-row">
-<label style="display:flex;align-items:center;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> Clé API Groq (secours IA, gratuite)</label>
-<input id="s-groq" type="text" placeholder="gsk_..." style="font-size:11px;">
-<div style="font-size:11px;color:var(--muted);margin-top:4px;">Utilisée seulement si Gemini est saturé.</div>
-</div>
 <div class="setting-row" style="display:flex;align-items:center;justify-content:space-between;">
 <label style="margin-bottom:0;">☀️ Thème clair</label>
 <button id="theme-toggle-btn" onclick="toggleTheme()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:13px 16px;cursor:pointer;color:var(--text);font-size:12px;font-weight:700;">OFF</button>
