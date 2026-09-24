@@ -5540,10 +5540,13 @@ localStorage.removeItem('groq_api_key');
 
 // Enchaîne les modèles Gemini, puis un nouvel essai après 2s s'ils sont tous saturés.
 // callModel(model) renvoie le texte, ou lève une erreur avec .isOverload (503/429/404/timeout).
-// Versions fixes, pas d'alias "-latest" : le 24/09/2026 gemini-flash-latest renvoyait 503 en
-// continu et gemini-flash-lite-latest (→ 3.5-flash-lite) mettait 54s+ à répondre, alors que
-// 3.6-flash (7s) et 2.5-flash (<1s) répondaient normalement avec la même clé.
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash'];
+// Versions fixes, pas d'alias "-latest" (qui glissent vers des modèles récents, lents et saturés).
+// Réflexion ("thinking") coupée : sur le prompt de l'app (~6 200 tokens), 2.5-flash réfléchissait
+// ~3 400 tokens → 16s, coupé par le timeout et affiché « saturé » ; sans réflexion : 2s, même
+// qualité d'estimation (mesuré sur le téléphone le 24/09/2026). thinkingBudget est propre à la
+// famille 2.5 — les 3.x utilisent thinkingLevel, ne pas y ajouter un modèle 3.x sans l'adapter.
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+const GEMINI_GEN_CONFIG = { thinkingConfig: { thinkingBudget: 0 } };
 async function aiWithFallback(callModel) {
   for (let pass = 0; pass < 2; pass++) {
     if (pass > 0) {
@@ -5880,7 +5883,7 @@ Volumes : 1 pinte=500ml, 1 demi (biere)=25cl, 1 verre de biere=25cl, 1 verre de 
   }
   try {
     const text = await aiWithFallback(
-      model => callGemini(model, { contents }).then(d => d.candidates?.[0]?.content?.parts?.[0]?.text || ''));
+      model => callGemini(model, { contents, generationConfig: GEMINI_GEN_CONFIG }).then(d => d.candidates?.[0]?.content?.parts?.[0]?.text || ''));
     if (!text) throw new Error('Pas de reponse');
     // Extract first valid JSON object from response
     let p = null;
@@ -6112,7 +6115,7 @@ Si tu ne peux pas estimer : {"type":"question","message":"ta question"}.`;
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_KEY },
-          body: JSON.stringify({ contents }),
+          body: JSON.stringify({ contents, generationConfig: GEMINI_GEN_CONFIG }),
           signal: ctrl.signal
         });
         const d = await res.json();
