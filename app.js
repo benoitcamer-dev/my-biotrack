@@ -3332,7 +3332,7 @@ document.getElementById('recipe-date-meal-cal-dropdown').classList.add('open');
 renderRecipeDateMealCalendar();
 setTimeout(() => document.addEventListener('click', closeRecipeDateMealCal, { once: true }), 10);
 } else {
-closeRecipeDateMealCalendar();
+closeRecipeDateMealCal();
 }
 }
 function closeRecipeDateMealCal() {
@@ -3363,7 +3363,7 @@ document.getElementById('recipe-date-meal-cal-grid').innerHTML = html;
 function selectRecipeDateMealCalDate(ds) {
 recipeDateMealDate = strToDate(ds);
 updateRecipeDateMealUI();
-closeRecipeDateMealCalendar();
+closeRecipeDateMealCal();
 }
 function selectRecipeMeal(category) {
 document.getElementById('recipe-date-meal-category').value = category;
@@ -5256,7 +5256,7 @@ document.getElementById('sport-fav-date-cal-dropdown').classList.add('open');
 renderSportFavDateCalendar();
 setTimeout(() => document.addEventListener('click', closeSportFavDateCal, { once: true }), 10);
 } else {
-closeSportFavDateCalendar();
+closeSportFavDateCal();
 }
 }
 function closeSportFavDateCal() {
@@ -5287,7 +5287,7 @@ document.getElementById('sport-fav-date-cal-grid').innerHTML = html;
 function selectSportFavDateCalDate(ds) {
 sportFavDateDate = strToDate(ds);
 updateSportFavDateUI();
-closeSportFavDateCalendar();
+closeSportFavDateCal();
 }
 async function useSportFavOnDate() {
 const rid = document.getElementById('sport-fav-date-rid').value;
