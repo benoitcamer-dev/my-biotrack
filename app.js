@@ -4416,12 +4416,28 @@ function _parseNoteIngredients(note) {
     const kcal100Str = dotIdx > -1 ? rest.substring(dotIdx + 1).trim() : '';
     // Reconnaît g, ml ET cl (le prompt IA autorise les 3 unités) ; le cl est converti en équivalent ml (×10)
     // pour rester cohérent avec la base kcal/100(g|ml) utilisée partout ailleurs.
-    const qtyMatch = namePart.match(/(\d+(?:[.,]\d+)?)\s*(g|ml|cl)\s*$/i);
-    const qty = qtyMatch ? (parseFloat(qtyMatch[1].replace(',', '.')) * (qtyMatch[2].toLowerCase() === 'cl' ? 10 : 1)) : 100;
-    const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
     // Extract first number only (ignore macro annotations like "(15P,35G,11L)/100g")
     const kcalTotal = parseInt((kcalTotalStr.match(/(\d+)/) || [])[1]) || 0;
-    const kcal100 = parseInt((kcal100Str.match(/(\d+)/) || [])[1]) || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
+    const kcal100Parsed = parseInt((kcal100Str.match(/(\d+)/) || [])[1]) || 0;
+    const toQty = m => parseFloat(m[1].replace(',', '.')) * (m[2].toLowerCase() === 'cl' ? 10 : 1);
+    let qtyMatch = namePart.match(/(\d+(?:[.,]\d+)?)\s*(g|ml|cl)\s*$/i);
+    const name = qtyMatch ? namePart.substring(0, qtyMatch.index).trim() : namePart;
+    if (!qtyMatch) {
+      // Quantité pas en fin de nom (ex. "Travers avec os 500g (estimé 300g net)") : on retient,
+      // parmi les quantités citées, celle cohérente avec total/kcal100 ; à défaut la dernière.
+      const cands = [...namePart.matchAll(/(\d+(?:[.,]\d+)?)\s*(g|ml|cl)\b/gi)];
+      if (cands.length) {
+        const fits = m => kcal100Parsed > 0 && kcalTotal > 0 && Math.abs(kcal100Parsed * toQty(m) / 100 - kcalTotal) <= Math.max(2, kcalTotal * 0.05);
+        qtyMatch = cands.find(fits) || cands[cands.length - 1];
+      }
+    }
+    let qty = qtyMatch ? toQty(qtyMatch) : 100;
+    // Dernier filet : si la quantité retenue contredit total et kcal/100, on la déduit des deux
+    // (sinon l'écran affiche p.ex. 100g × 250kcal/100g = 750kcal).
+    if (kcal100Parsed > 0 && kcalTotal > 0 && Math.abs(kcal100Parsed * qty / 100 - kcalTotal) > Math.max(2, kcalTotal * 0.05)) {
+      qty = Math.round(kcalTotal / kcal100Parsed * 100);
+    }
+    const kcal100 = kcal100Parsed || (qty > 0 ? Math.round(kcalTotal / qty * 100) : 0);
     // `qty` est déjà converti en équivalent ml pour le cl (voir ci-dessus) — l'unité mémorisée
     // suit cette même convention (cl -> "ml") plutôt que l'unité brute d'origine, pour rester
     // cohérente avec la valeur numérique réellement stockée/affichée ensuite.
@@ -5842,7 +5858,7 @@ REPAS COMPOSE ou PLUSIEURS BOISSONS : si l utilisateur mentionne plusieurs alime
 Portions realistes : une sauce d accompagnement = 30-50g par sauce. Une portion de frites = 150-200g. Une portion de viande kebab = 150-200g. Un verre de cocktail = 150-200ml. Un shot = 4cl. Une biere mentionnee SANS quantite/format precise (pas de "canette", "bouteille", "demi", "33cl"...) = 1 pinte = 50cl par defaut.
 Densites de reference boissons (a respecter, ne pas sous-estimer) : biere blonde/lager 5% = 43kcal/100ml. Stout type Guinness 4% = 38kcal/100ml. IPA, NEIPA, biere artisanale 6-7% = 60kcal/100ml. Biere forte/triple/abbaye 8-10% (Leffe, Chimay, Delirium...) = 75kcal/100ml. Biere sans alcool = 20kcal/100ml. Cidre = 45kcal/100ml. Kriek, biere fruitee = 50kcal/100ml. Vin = 80kcal/100ml. Champagne = 75kcal/100ml. Soda, ice tea sucre = 20-40kcal/100ml. Jus de fruits = 45kcal/100ml. Cocktail classique (espresso martini, mojito, margarita, pina colada...) = 180-300kcal le verre. Si le degre d alcool est connu : kcal/100ml ≈ degre x 5.5 + sucres.
 Plats complets (compter TOUS les composants, pain compris) : kebab/durum = sandwich complet (pain + viande + crudites) 600-750kcal, hors frites et sauce. Burger complet (pain + steak + fromage + sauce) = 550-750kcal, hors frites. Une part de pizza = 1/6 de pizza = 120-150g. Une salade cesar = 350-450kcal.
-FORMAT NOTE STRICT — chaque ingredient/boisson sur une ligne, separees par |, UNIQUEMENT ce format : "NomItem Xg/ml → YYkcal · ZZZkcal/100g". Pas de macros dans la note. Pas de repetition. TOTAL a la fin.
+FORMAT NOTE STRICT — chaque ingredient/boisson sur une ligne, separees par |, UNIQUEMENT ce format : "NomItem Xg/ml → YYkcal · ZZZkcal/100g". Pas de macros dans la note. La quantite Xg/ml est TOUJOURS juste avant la fleche et c est la quantite reellement mangee (poids net, sans os/peau/dechets) — pas de parentheses ni de 2e poids apres elle. Pas de repetition. TOTAL a la fin.
 Exemple note boissons : "Aperol Spritz 180ml → 150kcal · 83kcal/100g | Mai Thai 150ml → 210kcal · 140kcal/100g | Chartreuse 4cl → 52kcal · 130kcal/100ml | Kombucha 250ml → 45kcal · 18kcal/100g | TOTAL : 457kcal"
 Exemple note repas : "Viande kebab 180g → 396kcal · 220kcal/100g | Naan fromage 200g → 580kcal · 290kcal/100g | TOTAL : 976kcal"
 {"type":"food","food":"description courte","qty_g":POIDS_TOTAL,"kcal_per_100g":CALCULE,"prot_per_100g":CALCULE,"gluc_per_100g":CALCULE,"lip_per_100g":CALCULE,"note":"Item1 Xg → YYkcal · ZZZkcal/100g | Item2 Xg → YYkcal · ZZZkcal/100g | ... | TOTAL : XXXkcal"}
