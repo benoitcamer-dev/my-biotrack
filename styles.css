@@ -484,10 +484,13 @@ letter-spacing: 2.5px;
 margin-bottom: 12px;
 padding-left: 2px;
 }
+/* margin-top à 0 (-4px avant, 28/09/2026) : seule occurrence, dans modal-favs-quick, juste sous
+   le .modal-sticky-header (z-index 8) qui repeignait les 4px du haut — accent de « Sélectionne »
+   coupé. Même famille que le label « NOM DE LA RECETTE » corrigé le 13/09. */
 .helper-line {
 font-size: 11px;
 color: var(--muted);
-margin: -4px 0 10px 2px;
+margin: 0 0 10px 2px;
 }
 .daily-section { margin-bottom: 8px; }
 #daily-list { display: flex; flex-direction: column; gap: 12px; }
