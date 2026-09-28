@@ -2,10 +2,10 @@
 
 Deux bugs signalés par l'utilisateur : des chiffres incohérents dans le tableau d'ingrédients
 de l'Assistant IA, et le déplacement ou la copie d'un exercice qui proposait des catégories
-de repas sans Sport. Puis correction du bug du bouton + (FAB) relevé par l'audit des modales
-(`AUDIT_MODALES_2026-09-11.md`).
+de repas sans Sport. Puis deux points relevés par l'audit des modales
+(`AUDIT_MODALES_2026-09-11.md`) : le bouton + (FAB) et un texte rogné sous le header collant.
 
-Commits : `7ac2512`, `c740e0f`, `0aa0e07`.
+Commits : `7ac2512`, `c740e0f`, `0aa0e07`, `22f6de5`.
 
 ## 1. Assistant IA : quantité ignorée quand l'IA ajoute un 2e poids
 
@@ -84,6 +84,33 @@ enregistré) :
 | Toutes fermées | visible |
 | `modal-dose-fav` ouverte, puis fermée | caché, puis visible |
 
-Pas vérifié sur le téléphone (Brave). Restent de l'audit (cosmétiques) : vide excessif dans
-6 modales, label « NOM DE LA RECETTE » rogné dans `modal-recipe-editor`, placeholder tronqué
-dans `modal-ai`.
+Pas vérifié sur le téléphone (Brave).
+
+## 4. Texte rogné sous le header collant (`modal-favs-quick`)
+
+**Point de départ** : l'audit signalait le label « NOM DE LA RECETTE » rogné dans
+`modal-recipe-editor`. Il était **déjà corrigé depuis le 13/09** (`8836540`,
+`margin-bottom` de `.modal-sticky-header` passé de 16 à 20 px) ; seule la mémoire de l'audit
+n'avait pas été mise à jour. Revérifié en ligne : le haut du label touche le bas du header
+sans chevauchement (écart 0 px).
+
+**Constat** : en mesurant l'écart entre le header et l'élément suivant dans toutes les modales,
+un seul chevauchement restant, de 4 px, dans `modal-favs-quick`. Le texte d'aide
+« Sélectionne un aliment favori. » (`.helper-line`, 11 px) avait `margin-top: -4px` et suit
+directement le header (sticky, z-index 8, fond opaque), qui repeignait le haut du texte :
+accent de « Sélectionne » coupé sur la capture.
+
+**Fix** (`22f6de5`) : `.helper-line { margin: 0 0 10px 2px; }` (`-4px` avant). Seule
+occurrence de la classe dans l'app, aucun autre écran touché.
+
+**Vérifié en ligne** (Chrome via Claude in Chrome, après Ctrl+Shift+R — un `location.reload()`
+simple servait encore l'ancien `styles.css` depuis le cache HTTP) :
+- `modal-favs-quick` : écart 0 px, accent visible sur la capture
+- `modal-recipe-editor` : écart 0 px
+- aucune modale avec un écart négatif entre header et élément suivant
+
+Pas vérifié sur le téléphone (Brave).
+
+**Note pour la suite** : le commit `8836540` du 13/09 a aussi traité le placeholder tronqué
+de `modal-ai` et le bouton de `modal-dose-fav` sous le clavier, et a jugé volontaire le « vide »
+de 4 modales. Revérifier ces points contre ce commit avant d'y retoucher.
