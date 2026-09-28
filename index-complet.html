@@ -7862,6 +7862,8 @@ function _moveEntry(id) {
   _moveEntryId = id;
   const entry = currentEntries.find(e => e.id === id);
   if (!entry) return;
+  // Un exercice reste en Sport : on ne propose que le jour (Sport n'est pas un choix de repas).
+  const isSport = entry.category === 'Sport';
 
   // Créer un mini popup de déplacement
   const overlay = document.createElement('div');
@@ -7873,6 +7875,7 @@ function _moveEntry(id) {
   popup.innerHTML = `
     <div class="detail-handle"></div>
     <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="move" class="lc-icon-lg"></i> Déplacer l'entrée</div>
+    ${isSport ? '' : `
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="move-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
@@ -7883,6 +7886,7 @@ function _moveEntry(id) {
         <option value="Boissons">Boissons</option>
       </select>
     </div>
+    `}
     <div style="margin-bottom:16px;">
       <label class="eyebrow-label-block" style="display:flex;align-items:center;gap:6px;">Date <span id="move-date-badge" style="display:none;font-size:10px;font-weight:700;color:var(--accent);background:rgba(124,111,255,0.12);border-radius:999px;padding:2px 8px;">Aujourd'hui</span></label>
       <input type="date" id="move-date" oninput="_updateTodayBadge('move-date','move-date-badge')" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
@@ -7898,7 +7902,7 @@ function _moveEntry(id) {
   // Pré-remplir avec la catégorie actuelle, mais la date du jour (pas celle de
   // l'entrée d'origine) — c'est le cas d'usage le plus fréquent : reporter un
   // repas déjà saisi vers aujourd'hui.
-  document.getElementById('move-cat').value = entry.category;
+  if (!isSport) document.getElementById('move-cat').value = entry.category;
   document.getElementById('move-date').value = todayStr();
   _updateTodayBadge('move-date', 'move-date-badge');
 }
@@ -7916,7 +7920,7 @@ function _updateTodayBadge(inputId, badgeId) {
 }
 
 async function _confirmMoveEntry() {
-  const cat = document.getElementById('move-cat').value;
+  const cat = document.getElementById('move-cat')?.value || 'Sport';
   const date = document.getElementById('move-date').value;
   if (!_moveEntryId || !cat || !date) return;
   const { data: { user } } = await sb.auth.getUser();
@@ -7935,6 +7939,7 @@ function _copyEntry(id) {
   _copyEntryId = id;
   const entry = currentEntries.find(e => e.id === id);
   if (!entry) return;
+  const isSport = entry.category === 'Sport'; // voir _moveEntry()
 
   const overlay = document.createElement('div');
   overlay.className = 'entry-detail-overlay';
@@ -7945,6 +7950,7 @@ function _copyEntry(id) {
   popup.innerHTML = `
     <div class="detail-handle"></div>
     <div class="entry-detail-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;"><i data-lucide="copy" class="lc-icon-lg"></i> Copier vers un autre jour</div>
+    ${isSport ? '' : `
     <div style="margin-bottom:12px;">
       <label class="eyebrow-label-block">Catégorie</label>
       <select id="copy-entry-cat" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;">
@@ -7955,6 +7961,7 @@ function _copyEntry(id) {
         <option value="Boissons">Boissons</option>
       </select>
     </div>
+    `}
     <div style="margin-bottom:16px;">
       <label class="eyebrow-label-block" style="display:flex;align-items:center;gap:6px;">Date <span id="copy-entry-date-badge" style="display:none;font-size:10px;font-weight:700;color:var(--accent);background:rgba(124,111,255,0.12);border-radius:999px;padding:2px 8px;">Aujourd'hui</span></label>
       <input type="date" id="copy-entry-date" oninput="_updateTodayBadge('copy-entry-date','copy-entry-date-badge')" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
@@ -7969,13 +7976,13 @@ function _copyEntry(id) {
 
   // Pré-remplie avec la date du jour (pas celle de l'entrée d'origine) — voir
   // même choix pour _moveEntry() ci-dessus.
-  document.getElementById('copy-entry-cat').value = entry.category;
+  if (!isSport) document.getElementById('copy-entry-cat').value = entry.category;
   document.getElementById('copy-entry-date').value = todayStr();
   _updateTodayBadge('copy-entry-date', 'copy-entry-date-badge');
 }
 
 async function _confirmCopyEntry() {
-  const cat = document.getElementById('copy-entry-cat').value;
+  const cat = document.getElementById('copy-entry-cat')?.value || 'Sport';
   const date = document.getElementById('copy-entry-date').value;
   if (!_copyEntryId || !cat || !date) return;
   const entry = currentEntries.find(e => e.id === _copyEntryId);
