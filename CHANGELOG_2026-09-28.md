@@ -2,9 +2,10 @@
 
 Deux bugs signalés par l'utilisateur : des chiffres incohérents dans le tableau d'ingrédients
 de l'Assistant IA, et le déplacement ou la copie d'un exercice qui proposait des catégories
-de repas sans Sport.
+de repas sans Sport. Puis correction du bug du bouton + (FAB) relevé par l'audit des modales
+(`AUDIT_MODALES_2026-09-11.md`).
 
-Commits : `7ac2512`, `c740e0f`.
+Commits : `7ac2512`, `c740e0f`, `0aa0e07`.
 
 ## 1. Assistant IA : quantité ignorée quand l'IA ajoute un 2e poids
 
@@ -52,3 +53,37 @@ entrée fictive injectée dans `currentEntries`, sans rien enregistrer :
 
 Base contrôlée en lecture seule : **aucune** entrée `type = 'burn'` hors catégorie Sport,
 donc aucun exercice mal rangé à réparer.
+
+## 3. Bouton + (FAB) visible par-dessus certaines modales
+
+**Constat** (audit des modales du 13/09) : `#fab-btn` (z-index 201) restait visible et
+cliquable au-dessus de plusieurs modales. Sur `modal-edit-weight`, il couvrait ~42 % du
+bouton « Enregistrer », avec un risque d'ouvrir le menu d'ajout au lieu de sauvegarder.
+
+**Cause** : le masquage reposait sur `body.modal-open #fab-btn { display: none }`, or :
+- plusieurs ouvertures ne posent pas `modal-open` (ex. `modal-edit-weight`) ;
+- `modal-open` est retiré à la fermeture d'une modale même si une autre reste ouverte
+  en dessous.
+
+**Fix** (`0aa0e07`) : masquage centralisé plutôt qu'au cas par cas. `_syncFabHidden()`,
+branché sur un `MutationObserver` (`document.body`, sous-arbre, attributs `class`/`style`,
+ajouts/retraits de nœuds), pose `body.has-modal` tant que l'un de ces éléments est affiché :
+`.modal-overlay.open`, `.entry-detail-popup`, `.ctx-popup`, `.app-confirm-overlay`, ou
+`#modal-dose-fav` (affiché via `style.display`, pas via `.open`). CSS :
+`body.has-modal #fab-btn { display: none !important; }`. La règle `modal-open` existante
+est conservée.
+
+**Vérifié en ligne** (Chrome via Claude in Chrome, SW désenregistré + caches vidés, rien
+enregistré) :
+
+| Cas | FAB |
+|---|---|
+| Aucune modale | visible |
+| `modal-edit-weight` ouverte (sans `modal-open`) | caché |
+| `modal-weight` + `modal-edit-weight`, `modal-open` retiré | caché |
+| Toutes fermées | visible |
+| `modal-dose-fav` ouverte, puis fermée | caché, puis visible |
+
+Pas vérifié sur le téléphone (Brave). Restent de l'audit (cosmétiques) : vide excessif dans
+6 modales, label « NOM DE LA RECETTE » rogné dans `modal-recipe-editor`, placeholder tronqué
+dans `modal-ai`.
