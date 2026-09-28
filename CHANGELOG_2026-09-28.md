@@ -2,10 +2,11 @@
 
 Deux bugs signalés par l'utilisateur : des chiffres incohérents dans le tableau d'ingrédients
 de l'Assistant IA, et le déplacement ou la copie d'un exercice qui proposait des catégories
-de repas sans Sport. Puis deux points relevés par l'audit des modales
-(`AUDIT_MODALES_2026-09-11.md`) : le bouton + (FAB) et un texte rogné sous le header collant.
+de repas sans Sport. Puis trois points relevés par l'audit des modales
+(`AUDIT_MODALES_2026-09-11.md`) : le bouton + (FAB), un texte rogné sous le header collant
+et le vide excessif des modales courtes (avec, trouvé au passage, un bug des calendriers).
 
-Commits : `7ac2512`, `c740e0f`, `0aa0e07`, `22f6de5`.
+Commits : `7ac2512`, `c740e0f`, `0aa0e07`, `22f6de5`, `a3d5948`, `6188388`.
 
 ## 1. Assistant IA : quantité ignorée quand l'IA ajoute un 2e poids
 
@@ -112,5 +113,62 @@ simple servait encore l'ancien `styles.css` depuis le cache HTTP) :
 Pas vérifié sur le téléphone (Brave).
 
 **Note pour la suite** : le commit `8836540` du 13/09 a aussi traité le placeholder tronqué
-de `modal-ai` et le bouton de `modal-dose-fav` sous le clavier, et a jugé volontaire le « vide »
-de 4 modales. Revérifier ces points contre ce commit avant d'y retoucher.
+de `modal-ai` et le bouton de `modal-dose-fav` sous le clavier. Revérifier ces points contre
+ce commit avant d'y retoucher.
+
+## 5. Vide excessif dans 6 modales courtes — feuille à la hauteur du contenu
+
+**Constat** (audit du 13/09) : depuis le passage au plein écran (05/09), toutes les feuilles
+font 100 % de la hauteur. Sur les modales à contenu court, 55 à 65 % de l'écran restait vide
+au milieu. Le 13/09, ce vide avait été jugé volontaire sur 4 d'entre elles (`margin-top:auto`
+qui plaque les boutons en bas pour le pouce).
+
+**Décision de l'utilisateur** (entre trois options : feuille à la taille du contenu, plein
+écran avec boutons sous le contenu, ou contenu centré) : **feuille à la taille du contenu**
+pour les modales courtes uniquement, les autres restant en plein écran.
+
+**Fix** (`a3d5948`) : classe `.sheet-fit` posée dans `index.html` sur les feuilles de
+`modal-edit-weight`, `modal-favs-quick`, `modal-sport-favs`, `modal-copy-meal`,
+`modal-recipe-date-meal` et `modal-sport-fav-date` :
+- `height: auto` (le `max-height: var(--app-height)` existant plafonne, clavier compris,
+  avec scroll interne si le contenu grandit), `border-radius: 28px 28px 0 0` ;
+- `:has(.cal-dropdown.open)` → pleine hauteur tant qu'un calendrier déroulant (position
+  absolue, ~256 px) est ouvert, sinon il serait rogné par le scroll d'une feuille courte ;
+- règles `margin-top:auto` de `modal-copy-meal`, `modal-edit-weight`, `modal-sport-favs`
+  et `modal-sport-fav-date` retirées (plus d'espace libre à répartir).
+
+**Vérifié en ligne sur PC** (Chrome via Claude in Chrome, Ctrl+Shift+R, écran de 696 px de
+haut, animation d'entrée neutralisée pour la mesure — l'onglet en arrière-plan la gelait) :
+
+| Modale | Part de l'écran (avant : 100 %) |
+|---|---|
+| `modal-edit-weight` | 40 % |
+| `modal-sport-fav-date` | 51 % |
+| `modal-recipe-date-meal` | 59 % |
+| `modal-favs-quick` | 61 % |
+| `modal-copy-meal` | 61 % |
+| `modal-sport-favs` | 79 % |
+
+Toutes collées en bas, sans vide sous le contenu au-delà du `padding-bottom`. Calendrier
+ouvert : feuille à 100 %, calendrier entièrement visible ; retour à la taille du contenu à la
+fermeture. `modal-weight` (non ciblée) reste en plein écran.
+
+**Pas vérifié au format téléphone** (le redimensionnement de la fenêtre n'a pas pris) ni sur
+le Pixel : même CSS sur mobile, mais hauteurs réelles non mesurées.
+
+## 6. Calendriers de date (recette, sport favori) qui ne se refermaient pas
+
+**Constat** (trouvé en testant le point 5) : `toggleRecipeDateMealCalendar()` a levé
+`ReferenceError: closeRecipeDateMealCalendar is not defined`.
+
+**Cause** : `selectRecipeDateMealCalDate()`, `selectSportFavDateCalDate()` et les deux fonctions
+`toggle…Calendar()` appelaient `closeRecipeDateMealCalendar` / `closeSportFavDateCalendar`,
+qui n'existent pas (les vraies s'appellent `closeRecipeDateMealCal` / `closeSportFavDateCal`).
+Le calendrier arrête les clics (`stopPropagation`) : l'écouteur de fermeture sur `document`
+ne se déclenchait donc pas non plus. Après le choix d'un jour, la date se mettait à jour mais
+le calendrier restait ouvert.
+
+**Fix** (`6188388`) : les 4 appels redirigés vers les fonctions existantes.
+
+**Vérifié en ligne** (après Ctrl+Shift+R) : dans les deux modales, le calendrier s'ouvre, puis
+se referme après le choix d'un jour, sans erreur.
