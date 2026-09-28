@@ -1890,7 +1890,7 @@ font-weight: 700;
 font-size: 12px;
 cursor: pointer;
 }
-body.modal-open #fab-btn { display: none !important; }
+body.modal-open #fab-btn, body.has-modal #fab-btn { display: none !important; }
 .weight-chart-wrap {
 background: var(--surface);
 border: 1px solid var(--border);
@@ -4343,6 +4343,17 @@ const rp = document.getElementById('page-recipes');
 if (rp) rp.classList.remove('active');
 if (page === 'bilan') loadBilan();
 }
+
+// Masque le FAB dès qu'une modale ou un popup est affiché, quelle que soit la fonction qui l'ouvre :
+// body.modal-open n'est pas posé partout (ex. modal-edit-weight) et est retiré à la fermeture d'une
+// modale même si une autre reste ouverte — le FAB (z-index 201) repassait alors par-dessus.
+function _syncFabHidden() {
+  const dose = document.getElementById('modal-dose-fav');
+  const anyOpen = !!document.querySelector('.modal-overlay.open, .entry-detail-popup, .ctx-popup, .app-confirm-overlay')
+    || (!!dose && dose.style.display !== 'none');
+  if (document.body.classList.contains('has-modal') !== anyOpen) document.body.classList.toggle('has-modal', anyOpen);
+}
+new MutationObserver(_syncFabHidden).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
 
 let _editingPlaceIdx = -1;
 

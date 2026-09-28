@@ -1869,7 +1869,7 @@ font-weight: 700;
 font-size: 12px;
 cursor: pointer;
 }
-body.modal-open #fab-btn { display: none !important; }
+body.modal-open #fab-btn, body.has-modal #fab-btn { display: none !important; }
 .weight-chart-wrap {
 background: var(--surface);
 border: 1px solid var(--border);
