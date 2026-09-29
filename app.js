@@ -2408,7 +2408,13 @@ box.style.display = 'block';
 box.innerHTML = '⏳ Calcul…';
 document.getElementById('walk-custom-dur-box').style.display = 'none';
 try {
-const rt = document.getElementById('walk-roundtrip').checked;
+const rtBox = document.getElementById('walk-roundtrip');
+// Itinéraire déjà en boucle (dernière étape = première, ex. A → B → C → A) : le retour est déjà
+// dans les étapes, cocher aussi "aller-retour" doublerait la boucle entière — on ignore la case.
+const _norm = s => (s || '').trim().toLowerCase();
+const isLoop = steps.length > 2 && _norm(steps[0]) === _norm(steps[steps.length-1]);
+if (isLoop && rtBox.checked) { rtBox.checked = false; showToast('Boucle déjà fermée : aller-retour ignoré.', 'info'); }
+const rt = rtBox.checked;
 const userSpd = parseFloat(document.getElementById('walk-route-speed')?.value) || 6;
 const routeResult = await calcMultiLegRoute(steps);
 const dist = round1(routeResult.distanceKm * (rt ? 2 : 1));
