@@ -2122,7 +2122,9 @@ function updateWalkStepIndices() {
     const inp = row.querySelector('.walk-step-input');
     if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); if (i > 0 && i < rows.length - 1) inp.placeholder = `Étape ${i}…`; }
     const removeBtn = row.querySelector('.icon-btn-danger');
-    if (removeBtn) removeBtn.style.display = (rows.length > 2) ? 'block' : 'none';
+    // Jamais sur l'Arrivée (dernière ligne), comme le Départ : la supprimer laissait la
+    // dernière étape jouer l'arrivée sous le libellé "Étape N…" (choix du 29/09/2026).
+    if (removeBtn) removeBtn.style.display = (rows.length > 2 && i < rows.length - 1) ? 'block' : 'none';
     const upBtn = row.querySelector('.walk-move-up');
     if (upBtn) upBtn.disabled = (i === 0);
     const downBtn = row.querySelector('.walk-move-down');
