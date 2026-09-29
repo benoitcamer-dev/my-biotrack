@@ -2661,7 +2661,7 @@ document.getElementById('in-desc').value = cleanLabel;
 if (isSport) {
 const ll = cleanLabel.toLowerCase().replace('🚶', '').replace('🚴', '').trim();
 const perHour = qty > 0 ? Math.round(entry.val / (qty / 60)) : 0;
-if (ll.includes('marche') || ll.includes('trajet') || ll.includes('→')) {
+if (ll.includes('marche') || ll.includes('trajet') || ll.includes('→') || ll.includes('⇄')) {
 const spdMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km\/h/);
 const spd = spdMatch ? parseFloat(spdMatch[1]) : 5;
 document.getElementById('in-desc').value = 'Marche';
@@ -2773,13 +2773,24 @@ const dist = currentRouteData.distance || round1(spd * (q / 60));
 let label;
 if (currentWalkFavName) {
   label = currentWalkFavName;
-} else if (currentRouteData.waypoints && currentRouteData.waypoints.length > 1) {
-  // Use resolved addresses from geocoding
-  label = currentRouteData.waypoints.join(' → ');
-} else if (currentRouteData.steps && currentRouteData.steps.length > 0) {
-  label = currentRouteData.steps.join(' → ');
 } else {
-  label = `${currentRouteData.from} → ${currentRouteData.to}`;
+  let pts;
+  if (currentRouteData.waypoints && currentRouteData.waypoints.length > 1) {
+    // Use resolved addresses from geocoding
+    pts = currentRouteData.waypoints;
+  } else if (currentRouteData.steps && currentRouteData.steps.length > 0) {
+    pts = currentRouteData.steps;
+  } else {
+    pts = [currentRouteData.from, currentRouteData.to];
+  }
+  // Aller-retour : la distance est déjà doublée (calcRoute()), mais le libellé n'affichait que
+  // l'aller ("A → B") — on le marque par ⇄ ("A ⇄ B", ou "A → B → C ⇄" au-delà de 2 points).
+  // Pas pour un favori nommé (branche au-dessus) : son nom dit déjà "Aller-retour …".
+  if (currentRouteData.roundtrip) {
+    label = pts.length === 2 ? pts.join(' ⇄ ') : `${pts.join(' → ')} ⇄`;
+  } else {
+    label = pts.join(' → ');
+  }
 }
 descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'marche') {
