@@ -2105,7 +2105,10 @@ function resetWalkRouteForm() {
   if (container) {
     const rows = Array.from(container.querySelectorAll('.walk-addr-row'));
     rows.forEach((row, i) => {
-      if (i >= 2) { _cleanupWalkStepRow(row); row.remove(); }
+      // Garder Départ (première ligne) et Arrivée (DERNIÈRE ligne) : l'ancien test
+      // i >= 2 gardait la 1re étape intermédiaire et supprimait la vraie Arrivée
+      // (4e champ affiché "Étape 1…" à la réouverture, constaté le 29/09/2026).
+      if (i > 0 && i < rows.length - 1) { _cleanupWalkStepRow(row); row.remove(); }
     });
     updateWalkStepIndices();
   }
