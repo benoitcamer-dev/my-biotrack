@@ -5324,6 +5324,10 @@ function addWalkStep() {
   container.insertBefore(row, lastRow);
   // Re-index + show remove buttons
   updateWalkStepIndices();
+  // Le nouveau champ n'avait jamais l'autocomplétion Google : _attachPlacesAutocomplete()
+  // n'était appelé qu'à l'entrée en mode itinéraire, donc seuls Départ/Arrivée en
+  // bénéficiaient (bug remonté le 29/09/2026 : "à 4 lieux, plus de suggestions Google").
+  if (GMAPS_API_KEY && _googleMapsReady) _attachPlacesAutocomplete();
 }
 
 function removeWalkStep(btn) {
@@ -5383,7 +5387,7 @@ function updateWalkStepIndices() {
   const rows = container.querySelectorAll('.walk-addr-row');
   rows.forEach((row, i) => {
     const inp = row.querySelector('.walk-step-input');
-    if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); }
+    if (inp) { inp.dataset.step = i; inp.setAttribute('onfocus', `_activeWalkStep=${i}`); if (i > 0 && i < rows.length - 1) inp.placeholder = `Étape ${i}…`; }
     const removeBtn = row.querySelector('.icon-btn-danger');
     if (removeBtn) removeBtn.style.display = (rows.length > 2) ? 'block' : 'none';
     const upBtn = row.querySelector('.walk-move-up');
