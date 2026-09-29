@@ -52,3 +52,46 @@ rien enregistrer :
 | Domicile → Psy → Bureau → Domicile | oui | 3,6 km, case décochée (7,2 km avant) |
 | Domicile → Psy → Bureau → Domicile | non | 3,6 km |
 | Domicile → INDEGO | oui | 2,2 km (doublée, comme prévu) |
+
+## 3. Étapes ajoutées sans suggestions Google Places
+
+**Constat** (utilisateur) : « quand j'ai 4 lieux, ça ne me propose plus Google Maps ».
+
+**Diagnostic** : le nombre de lieux n'y était pour rien. `addWalkStep()` créait le champ
+sans jamais appeler `_attachPlacesAutocomplete()`, qui n'était lancé qu'à l'entrée en mode
+itinéraire (`setWalkMode('route')`). Seuls Départ et Arrivée avaient donc les suggestions ;
+toute étape ajoutée via « + Étape » en était privée (`_placesAttached: false`).
+
+**Fix** (`5a73c48`) : `addWalkStep()` appelle `_attachPlacesAutocomplete()` (si la clé Maps
+est configurée et l'API chargée). Au passage, `updateWalkStepIndices()` renumérote les
+placeholders des étapes : ils étaient décalés (« Étape 2 », « Étape 3 » au lieu de 1, 2).
+
+## 4. Réouverture du formulaire : l'Arrivée était supprimée à la place des étapes
+
+**Constat** (découvert en testant le point 3) : après avoir ajouté des étapes puis fermé le
+formulaire, la réouverture affichait un 4e champ « Étape 1… » au lieu de « Arrivée… ».
+
+**Cause** : `resetWalkRouteForm()` gardait les 2 **premières** lignes (`i >= 2` supprimées),
+donc Départ + la 1re étape, et supprimait la vraie ligne Arrivée.
+
+**Fix** (`3e56f73`) : on garde la première et la **dernière** ligne
+(`i > 0 && i < rows.length - 1` supprimées).
+
+## 5. Plus de bouton « supprimer la ligne » sur l'Arrivée
+
+**Contexte** : dès qu'une étape existait, la ligne Arrivée affichait un ✕ de suppression
+(à droite), contrairement au Départ. La supprimer laissait la dernière étape jouer l'arrivée
+sous le libellé « Étape N… », et ce ✕ se confondait avec le ✕ « effacer le texte » de gauche.
+
+**Fix** (`f3bcf63`), option choisie par l'utilisateur : `updateWalkStepIndices()` n'affiche
+ce bouton que sur les étapes intermédiaires. Pour changer d'arrivée : effacer le texte (✕ de
+gauche) ou réordonner avec les flèches.
+
+**Vérifié en ligne** :
+- Chrome (SW désenregistré + caches vidés) : ouverture → 2 étapes → fermeture → réouverture →
+  2 étapes ; les 4 champs ont l'autocomplétion et les bons libellés ; suggestions « Place
+  Bellecour » affichées dans « Étape 2 ».
+- Téléphone (vraie PWA sous Brave, via ADB + CDP, SW actif) : après un rechargement, les 3
+  correctifs sont chargés ; saisie réelle au clavier dans « Étape 2 » → 5 suggestions Google
+  affichées ; ✕ de suppression présent sur les étapes, absent sur l'Arrivée. Formulaire
+  refermé sans rien enregistrer.
