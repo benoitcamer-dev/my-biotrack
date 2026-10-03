@@ -3464,7 +3464,7 @@ async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj, entr
     const gcalResp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ summary: `🚴 ${favName}`, description: `${durationMin} min · ${kcal} kcal`, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() }, colorId: '4' })
+      body: JSON.stringify({ summary: `🚴 ${favName}`, description: durationMin > 0 ? `${durationMin} min · ${kcal} kcal` : `${kcal} kcal`, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() }, colorId: '4' })
     });
     if (gcalResp.ok) {
       const gcalEvent = await gcalResp.json();
@@ -4679,6 +4679,7 @@ document.getElementById('bike-machine-row').style.display = 'none';
 document.getElementById('bike-machine-note').style.display = 'none';
 document.getElementById('bike-advanced').style.display = 'none';
 document.getElementById('in-kcal-box').style.display = '';
+document.getElementById('in-qty').placeholder = '';
 currentBikeMode = 'speed';
 bikeMachineKcalPerHour = 0;
 }
@@ -5167,6 +5168,7 @@ document.getElementById('in-desc').value = 'Marche';
 document.getElementById('label-qty').textContent = 'Durée (min)';
 document.getElementById('label-kcal').textContent = 'Kcal / heure';
 document.getElementById('in-qty').value = '30';
+document.getElementById('in-qty').placeholder = '';
 document.getElementById('in-speed').value = '6';
 document.getElementById('speed-row').style.display = 'grid';
 document.getElementById('search-results').style.display = 'none';
@@ -5732,7 +5734,9 @@ function selectBikeMode() {
 document.getElementById('in-desc').value = 'Vélo';
 document.getElementById('label-qty').textContent = 'Durée (min)';
 document.getElementById('label-kcal').textContent = 'Vitesse (km/h)';
-document.getElementById('in-qty').value = '40';
+// Durée vide : le vélo s'ouvre en mode "Kcal machine", où elle est optionnelle (les kcal viennent
+// du compteur) — setBikeMode('speed') remet 40 min si on bascule en mode vitesse.
+document.getElementById('in-qty').value = '';
 document.getElementById('in-kcal').value = '18';
 document.getElementById('speed-row').style.display = 'none';
 document.getElementById('search-results').style.display = 'none';
@@ -5755,7 +5759,20 @@ document.getElementById('in-kcal-box').style.display = mode === 'machine' ? 'non
 document.getElementById('bike-machine-row').style.display = mode === 'machine' ? 'grid' : 'none';
 document.getElementById('bike-machine-note').style.display = mode === 'machine' ? 'block' : 'none';
 if (mode === 'speed') bikeMachineKcalPerHour = 0;
+// En mode machine la durée est optionnelle (les kcal viennent du compteur) ; en mode vitesse elle
+// est indispensable au calcul — on remet alors 40 min si le champ a été laissé vide.
+const qtyEl = document.getElementById('in-qty');
+document.getElementById('label-qty').textContent = mode === 'machine' ? 'Durée (min) · optionnel' : 'Durée (min)';
+qtyEl.placeholder = mode === 'machine' ? 'Optionnel' : '';
+if (mode === 'speed' && !qtyEl.value) qtyEl.value = '40';
 onBikeMachineKcalInput();
+}
+// Kcal machine après correction — en mode "Kcal machine" c'est directement la dépense enregistrée,
+// indépendamment de la durée (optionnelle, ne sert qu'à l'affichage kcal/h et au libellé).
+function getBikeMachineAdjustedKcal() {
+const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').value) || 0;
+const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
+return Math.round(machineKcal * (1 - correction / 100));
 }
 function onBikeMachineKcalInput() {
 const noteEl = document.getElementById('bike-machine-note');
@@ -5764,9 +5781,9 @@ const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').v
 const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
 localStorage.setItem('bt_bike_correction', correction);
 const durMin = parseFloat(document.getElementById('in-qty').value) || 0;
-if (machineKcal > 0 && durMin > 0) {
+if (machineKcal > 0) {
   const adjustedTotal = machineKcal * (1 - correction / 100);
-  bikeMachineKcalPerHour = Math.round(adjustedTotal / (durMin / 60));
+  bikeMachineKcalPerHour = durMin > 0 ? Math.round(adjustedTotal / (durMin / 60)) : 0;
   noteEl.innerHTML = `${machineKcal} kcal affichées → <strong style="color:var(--text);">${Math.round(adjustedTotal)} kcal</strong> (−${correction}%). Sur un vélo assis, la dépense dépend surtout de la puissance (résistance × cadence), pas de ton poids — les compteurs d'entrée de gamme surestiment généralement de 20 à 30 %. Ajuste le % si besoin.`;
 } else {
   bikeMachineKcalPerHour = 0;
@@ -5864,7 +5881,8 @@ const desc = document.getElementById('in-desc').value.trim().toLowerCase();
 const effectiveG = (_currentFoodUnit && !isSport) ? q * _currentFoodUnit.unitG : q;
 // For beers in cl: convert to ml (×10) then to per-100ml factor
 const effectiveMl = (isDrink && _currentDrinkUnit === 'cl') ? q * 10 : effectiveG;
-const total = isSport ? Math.round(k * (q / 60)) : Math.round(k * (effectiveMl / 100));
+const isBikeMachine = isSport && desc === 'vélo' && currentBikeMode === 'machine';
+const total = isBikeMachine ? getBikeMachineAdjustedKcal() : (isSport ? Math.round(k * (q / 60)) : Math.round(k * (effectiveMl / 100)));
 document.getElementById('calc-res').textContent = total + ' kcal';
 if (isSport && desc === 'marche' && currentWalkMode === 'simple') {
 const spd = parseFloat(document.getElementById('in-speed').value) || 6, dist = round1(spd * (q / 60));
@@ -5873,7 +5891,7 @@ document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h ($
 } else if (isSport && desc === 'vélo') {
 if (currentBikeMode === 'machine') {
   const correction = parseFloat(document.getElementById('in-bike-correction').value) || 0;
-  document.getElementById('calc-sub').textContent = `Correction −${correction}% · ${k} kcal/h`;
+  document.getElementById('calc-sub').textContent = q > 0 ? `Correction −${correction}% · ${k} kcal/h` : `Correction −${correction}%`;
 } else {
   document.getElementById('calc-sub').textContent = `${raw || 0} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 }
@@ -5984,6 +6002,9 @@ const adjustedKcal = parseFloat(machineMatch[2].replace(',', '.'));
 const correction = machineKcal > 0 ? Math.round((1 - adjustedKcal / machineKcal) * 100) : (parseFloat(localStorage.getItem('bt_bike_correction')) || 25);
 document.getElementById('in-bike-machine-kcal').value = machineKcal;
 document.getElementById('in-bike-correction').value = correction;
+// Durée optionnelle en mode machine : pas de "Xmin" dans le libellé -> champ laissé vide
+// (sinon editEntry() y mettait la durée Sport par défaut de 30 min, inventée).
+if (!/\d\s*min/i.test(rawD)) document.getElementById('in-qty').value = '';
 setBikeMode('machine');
 } else {
 const spdMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*km\/h/);
@@ -6033,14 +6054,16 @@ const { data: { user } } = await sb.auth.getUser();
 if (!user) { _isSubmitting = false; return; }
 const isSport = currentCat === 'Sport', isDrink = currentCat === 'Boissons';
 const q = parseFloat(document.getElementById('in-qty').value) || 0;
-if (q <= 0) { showToast('Indique une quantité ou une durée.', 'error'); return; }
+const isBikeMachine = isSport && document.getElementById('in-desc').value.trim().toLowerCase() === 'vélo' && currentBikeMode === 'machine';
+if (isBikeMachine && !(parseFloat(document.getElementById('in-bike-machine-kcal').value) > 0)) { showToast('Indique les kcal affichées sur le vélo.', 'error'); return; }
+if (q <= 0 && !isBikeMachine) { showToast('Indique une quantité ou une durée.', 'error'); return; }
 const rawKcal = parseFloat(document.getElementById('in-kcal').value) || 0;
 // If a custom unit is active, convert qty to grams for macros/kcal calculation
 const effectiveG = (_currentFoodUnit && !isSport) ? q * _currentFoodUnit.unitG : q;
 const effectiveMlS = (isDrink && _currentDrinkUnit === 'cl') ? q * 10 : effectiveG;
 const k = getEffectiveKcal();
 const factor = isSport ? q / 60 : effectiveMlS / 100;
-const val = Math.round(k * factor);
+const val = isBikeMachine ? getBikeMachineAdjustedKcal() : Math.round(k * factor);
 const p = parseFloat(document.getElementById('in-p').value) || 0;
 const g = parseFloat(document.getElementById('in-g').value) || 0;
 const l = parseFloat(document.getElementById('in-l').value) || 0;
@@ -6087,7 +6110,7 @@ const label = currentWalkFavName ? `${currentWalkFavName}` : descName;
 bikeLabel = label;
 if (currentBikeMode === 'machine') {
   const machineKcal = parseFloat(document.getElementById('in-bike-machine-kcal').value) || 0;
-  descFinal = `🚴 ${label} (${q}min · ${machineKcal}kcal machine → ${val}kcal ajusté)`;
+  descFinal = `🚴 ${label} (${q > 0 ? `${q}min · ` : ''}${machineKcal}kcal machine → ${val}kcal ajusté)`;
 } else {
   const spd = rawKcal;
   const dist = round1(spd * (q / 60));
