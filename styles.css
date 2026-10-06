@@ -1421,6 +1421,12 @@ display: flex;
 flex-direction: column;
 gap: 0;
 margin-top: 9px;
+/* Bug remonté (06/10/2026) : liste des ingrédients invisible en modifiant une recette.
+   Même cause que #re-search-results (14/09) : enfant direct d'un .settings-sheet
+   flex-column à hauteur fixe, avec overflow-y:auto inline (#recipe-builder-list) qui
+   annule le min-height:auto implicite — dès que le formulaire dépasse l'écran, flexbox
+   l'écrasait à 0px (mesuré live : 12 éléments, hauteur 0). */
+flex-shrink: 0;
 }
 .builder-main { min-width: 0; flex: 1; }
 .builder-title {
