@@ -4970,8 +4970,19 @@ function closeFab() {
 init();
 
 // Fix mobile cursor bug: blur+refocus input when returning to app
+// + rechargement des données au retour au premier plan (12/10/2026) : Android suspend le
+// WebSocket Realtime quand l'app est en arrière-plan, et les changements faits pendant ce temps
+// (sync Health Connect via hc-webhook, saisie depuis un autre appareil) ne sont jamais rejoués —
+// le journal restait figé jusqu'au bouton 🔄. Seuil de 30 s pour ignorer un simple aller-retour.
+let _hiddenAt = 0;
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { _hiddenAt = Date.now(); return; }
   if (document.visibilityState === 'visible') {
+    if (_hiddenAt && Date.now() - _hiddenAt > 30000) {
+      loadData();
+      if (currentPage === 'bilan') loadBilan();
+    }
+    _hiddenAt = 0;
     const aiModal = document.getElementById('modal-ai');
     if (aiModal && aiModal.classList.contains('open')) {
       const inp = document.getElementById('ai-input');
