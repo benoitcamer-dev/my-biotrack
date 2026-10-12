@@ -32,13 +32,12 @@ Pour chaque jour (heure de Paris) :
 ```
 km comptés = km du jour (Health Connect)
            − km des marches saisies à la main ce jour-là   (évite le double comptage)
-           − km des 3 500 premiers pas                     (base sédentaire)
 kcal       = poids × km comptés × coût net à 5,5 km/h      (≈ 0,58 kcal/kg/km)
 ```
 
 | Élément | Valeur | Pourquoi |
 |---|---|---|
-| Base sédentaire | 3 500 pas (`BASELINE_STEPS`) | Le « Métabolisme » de l'app vaut BMR × 1,2 : ces +20 % couvrent déjà les petits déplacements du quotidien. Convention (une journée sédentaire < ~5 000 pas). |
+| Base sédentaire | aucune (retirée le 12/10/2026, v7) | Le × 1,2 du « Métabolisme » couvre déjà la digestion (~10 %) et laisse peu de marge pour la marche : tous les pas comptent. Avant : 3 500 pas déduits. |
 | Allure de référence | 5,5 km/h (`WALK_SPEED_KMH`) | Allure habituelle donnée par l'utilisateur. |
 | Coût net | (MET(5,5) − 1) / 5,5 ≈ 0,58 kcal/kg/km | On retire le repos (déjà compté dans le BMR). Même courbe MET que l'app (Compendium 2011). |
 | Poids | dernier poids pesé (`weight_entries`), sinon profil, sinon 75 kg | |
@@ -99,7 +98,7 @@ RLS activée sans policy sur `hc_daily` / `hc_webhook_keys` (accès service role
 
 | Symptôme | Vérifier |
 |---|---|
-| Pas d'entrée « Marche du jour » | HC Webhook → Journaux : dernier envoi en **200** ? Moins de 10 kcal comptés (base + marches saisies couvrent tout) ? |
+| Pas d'entrée « Marche du jour » | HC Webhook → Journaux : dernier envoi en **200** ? Moins de 10 kcal comptés (les marches saisies couvrent tout) ? |
 | 401 dans les Journaux | Clé `x-api-key` absente/incorrecte dans l'app. |
 | 500 dans les Journaux | Logs de la fonction : Supabase → Edge Functions → hc-webhook → Logs. |
 | Pas de synchro automatique | Autorisation arrière-plan Health Connect, optimisation batterie, intervalle enregistré. |

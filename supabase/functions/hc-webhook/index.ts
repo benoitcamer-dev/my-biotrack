@@ -15,18 +15,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // de fenêtre, pas minuit) : on garde donc le MAX reçu par jour, jamais une valeur plus petite.
 
 const TZ = "Europe/Paris";
-// Calcul des kcal (choix validé par l'utilisateur le 12/10/2026) : on ne compte que l'activité EN
-// PLUS d'une journée sédentaire, car le "Métabolisme" de l'app vaut déjà BMR × 1,2 (facteur
-// sédentaire, qui couvre les petits déplacements du quotidien).
-// - BASELINE_STEPS : premiers pas de la journée considérés comme déjà inclus dans ce × 1,2.
-//   Convention, pas une mesure (une journée « sédentaire » est usuellement < 5 000 pas).
+// Calcul des kcal : tous les pas du jour sont comptés (hors marches saisies à la main). La base
+// sédentaire de 3 500 pas (supposée incluse dans le × 1,2 du "Métabolisme") a été retirée le
+// 12/10/2026 à la demande de l'utilisateur : ce × 1,2 couvre déjà la digestion (~10 %) et laisse
+// peu de marge pour la marche.
 // - WALK_SPEED_KMH : allure de marche habituelle de l'utilisateur (5,5 km/h, donnée par lui le
 //   12/10/2026 — avant : 5 km/h par défaut). Health Connect n'envoie que des totaux journaliers, pas
 //   de vitesse : on applique cette allure à tous les pas comptés.
 // - NET_KCAL_PER_KG_KM : coût NET de la marche à cette allure (repos exclu, déjà compté dans le
 //   BMR) = (MET(vitesse) − 1) / vitesse, avec la même courbe MET que l'app (WALK_MET_POINTS dans
 //   app.js, Compendium 2011). 5,5 km/h → MET 4,2 → ≈ 0,58 kcal/kg/km.
-const BASELINE_STEPS = 3500;
 const WALK_SPEED_KMH = 5.5;
 const WALK_MET_POINTS = [[2.4, 2.0], [3.2, 2.8], [4.0, 3.0], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [7.2, 7.0], [8.0, 8.3]];
 function metWalk(spd: number): number {
@@ -109,10 +107,7 @@ serve(async (req) => {
 
       const totalKm = distKm > 0 ? distKm : Math.round(steps * 0.00075 * 100) / 100;
       const manualKm = Math.round((await manualWalkKm(sb, user_id, dateStr)) * 100) / 100;
-      // Base sédentaire convertie en km avec la foulée réelle du jour (distance/pas), à défaut 0,75 m.
-      const strideKm = distKm > 0 && steps > 0 ? distKm / steps : 0.00075;
-      const baselineKm = Math.round(Math.min(steps, BASELINE_STEPS) * strideKm * 100) / 100;
-      const finalKm = Math.max(0, Math.round((totalKm - manualKm - baselineKm) * 100) / 100);
+      const finalKm = Math.max(0, Math.round((totalKm - manualKm) * 100) / 100);
       const kcal = Math.round(weight * finalKm * NET_KCAL_PER_KG_KM);
 
       // Libellé "Titre (sous-titre)" SANS parenthèses imbriquées : le journal de l'app découpe
@@ -123,13 +118,13 @@ serve(async (req) => {
       const est = distKm > 0 ? "" : " est.";
       const fmt = (n: number) => String(n).replace(".", ",");
       const tag = `hc:daily-${dateStr}`;
-      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis − ${fmt(baselineKm)} km de base sédentaire (${BASELINE_STEPS} pas) = ${fmt(finalKm)} km comptés à ${fmt(WALK_SPEED_KMH)} km/h`;
+      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km comptés à ${fmt(WALK_SPEED_KMH)} km/h`;
       const desc = `🚶 Marche du jour (${steps} pas · ${fmt(finalKm)} km comptés sur ${fmt(totalKm)})||${tag} · ${note}`;
 
       const { data: existing } = await sb.from("entries").select("id, val, desc")
         .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
       if (existing?.length && kcal < 10) {
-        // Plus rien à compter ce jour-là (base sédentaire / marches saisies couvrent tout) : on
+        // Plus rien à compter ce jour-là (les marches saisies couvrent tout) : on
         // retire l'entrée générée plutôt que d'afficher "−0" — elle revient si les pas augmentent.
         await sb.from("entries").delete().eq("id", existing[0].id);
         result.push({ dateStr, steps, km: finalKm, kcal, action: "removed" });

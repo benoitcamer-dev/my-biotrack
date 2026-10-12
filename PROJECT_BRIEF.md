@@ -88,8 +88,8 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
   Les entrées existantes ne sont jamais recalculées rétroactivement.
 - **Calories Sport — pas Health Connect** (entrée « 🚶 Marche du jour », tag `hc:daily-AAAA-MM-JJ`
   dans la note) : calcul **par km**, coût **net** à l'allure habituelle (5,5 km/h), après déduction
-  des marches saisies à la main ce jour-là et d'une base sédentaire de 3 500 pas (le
-  « Métabolisme » de l'app = BMR × 1,2 couvre déjà les petits déplacements). Détail et
+  des marches saisies à la main ce jour-là (plus de base sédentaire déduite depuis le 12/10/2026,
+  hc-webhook v7 : tous les pas comptent). Détail et
   constantes : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche doit garder « 🚶 » ou
   « marche » et une distance en « km » dans `desc`, sinon `hc-webhook` ne la déduit pas.
 - **Rechargement au retour au premier plan** (12/10/2026) : le journal (et le bilan si ouvert) est

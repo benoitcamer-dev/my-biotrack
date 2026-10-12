@@ -89,6 +89,11 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   coût net calculé avec la même courbe MET que l'app → 0,58 kcal/kg/km. 12/10 : 41 → 44 kcal.
   Option « vitesse réelle minute par minute » (résolution 1 min dans HC Webhook) gardée en réserve.
 
+- `hc-webhook` v7 : **base sédentaire de 3 500 pas retirée** (demande de l'utilisateur) — tous les
+  pas du jour comptent, seules les marches saisies à la main sont déduites. Semaine recalculée par
+  une synchro « 7 derniers jours » : 06/10 57 kcal, 07/10 38, 08/10 69, 11/10 76, 12/10 44 → 160 ;
+  09 et 10/10 sans entrée (marches saisies 17 et 15 km > mesuré), 05/10 ignoré (290 pas).
+
 ## Reste à faire
 
 - `gfit-sync` / `gfit-callback` : neutralisées (410, JWT requis) mais pas supprimées — le MCP
