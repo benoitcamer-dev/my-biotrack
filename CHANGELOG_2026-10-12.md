@@ -59,8 +59,18 @@ présent dans l'app — à retirer.
 ⚠️ Ne pas utiliser le bouton « Tester le Webhook » de l'app : il envoie des données
 fictives qui créeraient une fausse entrée de marche dans le journal.
 
+## 5. Suite de session
+
+- Bouton et code de sync Google Fit retirés de l'app (`4ba843a`, 95 lignes d'`app.js` +
+  2 boutons d'`index.html`). La classe `.tap-target-block` n'est plus utilisée nulle part
+  (signalée par `verify.js`), conservée car utilitaire.
+- `hc-webhook` v3 (`c195a2f`) : recalcule aussi les 7 derniers jours connus de `hc_daily` à
+  chaque synchro. HC Webhook n'envoie plus un jour passé après sa dernière synchro, donc une
+  marche saisie à la main après coup pour ce jour n'aurait jamais été déduite.
+
 ## Reste à faire
 
-- Retirer le bouton Google Fit de l'app (et éventuellement `gfit-sync`/`gfit-callback`).
+- Supprimer les Edge Functions `gfit-sync`/`gfit-callback` et les tables `google_tokens`/
+  `gfit_imported` (plus appelées par l'app).
 - `gfit-sync` reste appelable par n'importe qui connaissant un `user_id` (`verify_jwt = false`,
   pas d'authentification) — sans effet tant que la sync Fit est cassée, mais à supprimer.
