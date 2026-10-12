@@ -68,6 +68,11 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   chaque synchro. HC Webhook n'envoie plus un jour passé après sa dernière synchro, donc une
   marche saisie à la main après coup pour ce jour n'aurait jamais été déduite.
 
+- Vitesse côté Health Connect : étudiée puis écartée. Google Fit n'écrit aucune séance
+  « Exercice » dans Health Connect sur le Pixel (seulement Pas, Distance, Calories actives —
+  vérifié le 12/10), donc pas de durée/vitesse par marche. Alternative possible (pas/distance en
+  résolution 1 min → vitesse minute par minute) proposée, **refusée par l'utilisateur** : on garde
+  le calcul fixe `poids × km × 0,83` (≈ marche à 6,5 km/h).
 ## Reste à faire
 
 - Supprimer les Edge Functions `gfit-sync`/`gfit-callback` et les tables `google_tokens`/
