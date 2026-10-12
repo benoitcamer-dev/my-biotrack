@@ -93,6 +93,13 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   pas du jour comptent, seules les marches saisies à la main sont déduites. Semaine recalculée par
   une synchro « 7 derniers jours » : 06/10 57 kcal, 07/10 38, 08/10 69, 11/10 76, 12/10 44 → 160 ;
   09 et 10/10 sans entrée (marches saisies 17 et 15 km > mesuré), 05/10 ignoré (290 pas).
+- `hc-webhook` v8 : **seules les vraies marches comptent** (demande de l'utilisateur). HC Webhook
+  passe en résolution **Complet** (intervalles bruts ≈ 1 min) pour Pas et Distance, stockés dans
+  la nouvelle table `hc_samples` ; séquences ≥ 5 min à ≥ 60 pas/min (1 min de trou tolérée),
+  vitesse réelle par séquence, coût net MET − 1. Semaine recalculée : seule l'entrée du 12/10 reste
+  (3 séquences, 45 min, 3,16 km − 1,5 km saisis → 70 kcal) ; les autres jours, les marches saisies
+  couvrent les séquences détectées. Vitesses mesurées basses (3,4-4,4 km/h) : distance Fit à
+  calibrer.
 
 ## Reste à faire
 

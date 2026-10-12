@@ -87,9 +87,9 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
   fixes avec sauts et marche rapide sous-estimée. Vitesse par défaut si le champ est vide : 6 km/h.
   Les entrées existantes ne sont jamais recalculées rétroactivement.
 - **Calories Sport — pas Health Connect** (entrée « 🚶 Marche du jour », tag `hc:daily-AAAA-MM-JJ`
-  dans la note) : calcul **par km**, coût **net** à l'allure habituelle (5,5 km/h), après déduction
-  des marches saisies à la main ce jour-là (plus de base sédentaire déduite depuis le 12/10/2026,
-  hc-webhook v7 : tous les pas comptent). Détail et
+  dans la note) : depuis la v8 (12/10/2026), seules les **vraies séquences de marche** comptent
+  (≥ 5 min à ≥ 60 pas/min, détectées sur les intervalles bruts de `hc_samples`), à leur vitesse
+  réelle, coût **net** (MET − 1), après déduction des marches saisies à la main. Détail et
   constantes : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche doit garder « 🚶 » ou
   « marche » et une distance en « km » dans `desc`, sinon `hc-webhook` ne la déduit pas.
 - **Rechargement au retour au premier plan** (12/10/2026) : le journal (et le bilan si ouvert) est
@@ -417,9 +417,9 @@ direct sur le site déployé. Détail des deux points ci-dessus et de cette vér
 - ~~Conversion d'icônes emoji → Lucide (dashboard principal, catégories du journal, menu du bouton "+")~~ **résolu** : vérifié le 04/09/2026, les trois zones citées sont déjà entièrement en Lucide (`ICONS` dans `app.js`, `#stats-grid` et `#fab-menu` dans `index.html`) — ce paragraphe ne reflétait plus l'état du code. Des emoji restent ailleurs (Réglages, Poids/IMC, calendrier, placeholders de recherche...), hors du périmètre décrit ici et pas audités ; à traiter comme un chantier à part si voulu, pas comme la suite de ce point.
 - ~~CSS orphelines à trier~~ **résolu** : la liste trouvée le 14/08/2026 (`.bike-fav-section`, `.builder-item-hover-actions`, etc.) ne reflétait plus l'état du code — `node verify.js` (re-vérifié le 04/09/2026) ne détecte plus aucune classe orpheline, ces classes ont dû être utilisées ou nettoyées au fil des sessions intermédiaires sans que ce paragraphe soit mis à jour. Le check reste actif dans `verify.js` pour signaler toute nouvelle régression.
 - **Synchro des pas** (12/10/2026) : supprimer `gfit-sync`/`gfit-callback` depuis le dashboard
-  Supabase si souhaité (neutralisées, mais impossible à supprimer via le MCP). Piste en réserve :
-  vitesse réelle minute par minute (résolution 1 min dans HC Webhook) si l'allure fixe de 5,5 km/h
-  ne convient plus — voir `SYNC_PAS_HEALTH_CONNECT.md`.
+  Supabase si souhaité (neutralisées, mais impossible à supprimer via le MCP). Calibrer la distance
+  Fit (trajet de distance connue, l'utilisateur le fera) : vitesses mesurées basses (3,4-4,4 km/h)
+  → facteur de correction si écart > 10 % — voir `SYNC_PAS_HEALTH_CONNECT.md`.
 - Consolidation des styles inline → classes CSS : partielle, seulement sur le code déjà retouché.
 - `modal-dose-fav` (popup de dose par défaut) est **volontairement** en dehors du système swipe-to-close standard.
 - Quelques ID HTML dupliqués existent (`sf-edit-*`/`sf-new-*`) mais sans risque réel : templates walk/bike mutuellement exclusifs, jamais présents simultanément dans le DOM.

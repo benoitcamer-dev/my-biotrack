@@ -8,24 +8,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // hc_webhook_keys.api_key_hash — la clé elle-même n'est stockée nulle part côté serveur,
 // elle n'existe que dans la config de l'app sur le téléphone.
 //
-// Format attendu (docs/webhook.md du projet HC Webhook) : résolution "Daily" (défaut pour
-// Steps/Distance) → un enregistrement par jour local du téléphone :
+// Format attendu (docs/webhook.md du projet HC Webhook), résolution "Full" pour Pas et Distance
+// (depuis la v8, 12/10/2026) : un enregistrement par intervalle brut de Health Connect :
 //   { "steps": [{ "count", "start_time", "end_time" }], "distance": [{ "meters", "start_time", "end_time" }] }
-// Le jour le plus ancien de la fenêtre glissante de 48 h n'est que partiel (start_time = début
-// de fenêtre, pas minuit) : on garde donc le MAX reçu par jour, jamais une valeur plus petite.
+// La synchro normale est incrémentale (seuls les intervalles nouveaux/modifiés arrivent) : on les
+// stocke tous dans hc_samples et on recalcule chaque jour à partir de la table, jamais du seul payload.
 
 const TZ = "Europe/Paris";
-// Calcul des kcal : tous les pas du jour sont comptés (hors marches saisies à la main). La base
-// sédentaire de 3 500 pas (supposée incluse dans le × 1,2 du "Métabolisme") a été retirée le
-// 12/10/2026 à la demande de l'utilisateur : ce × 1,2 couvre déjà la digestion (~10 %) et laisse
-// peu de marge pour la marche.
-// - WALK_SPEED_KMH : allure de marche habituelle de l'utilisateur (5,5 km/h, donnée par lui le
-//   12/10/2026 — avant : 5 km/h par défaut). Health Connect n'envoie que des totaux journaliers, pas
-//   de vitesse : on applique cette allure à tous les pas comptés.
-// - NET_KCAL_PER_KG_KM : coût NET de la marche à cette allure (repos exclu, déjà compté dans le
-//   BMR) = (MET(vitesse) − 1) / vitesse, avec la même courbe MET que l'app (WALK_MET_POINTS dans
-//   app.js, Compendium 2011). 5,5 km/h → MET 4,2 → ≈ 0,58 kcal/kg/km.
-const WALK_SPEED_KMH = 5.5;
+// Calcul des kcal (v8, choix de l'utilisateur le 12/10/2026) : seules les VRAIES marches comptent,
+// pas les quelques pas dispersés à la maison. Les pas sont répartis minute par minute ; une minute
+// est « en marche » si elle compte au moins MIN_CADENCE pas ; une séquence = minutes en marche
+// consécutives (trous de MAX_GAP_MIN minutes tolérés : feu rouge, porte…), gardée si elle dure au
+// moins MIN_BOUT_MIN minutes en marche. Seuils de départ, à ajuster selon le journal.
+// - Vitesse réelle de chaque séquence (distance / minutes en marche), plus d'allure fixe.
+// - Coût NET (repos exclu, déjà compté dans le BMR) = (MET(vitesse) − 1) × poids × durée, avec la
+//   même courbe MET que l'app (WALK_MET_POINTS dans app.js, Compendium 2011).
+// - Les km des marches saisies à la main ce jour-là sont retirés (évite le double comptage), au
+//   prorata des kcal des séquences.
+// - Plus de base sédentaire (retirée en v7) : le filtre par séquence la remplace.
+const MIN_CADENCE = 60;
+const MIN_BOUT_MIN = 5;
+const MAX_GAP_MIN = 1;
+const DEFAULT_STRIDE_KM = 0.00075;
+// Garde-fou : un intervalle de plus de 3 h est un agrégat (ex. résolution « Quotidien »), pas une
+// mesure brute — le répartir à la minute fausserait la détection des séquences.
+const MAX_SAMPLE_MS = 3 * 3600000;
 const WALK_MET_POINTS = [[2.4, 2.0], [3.2, 2.8], [4.0, 3.0], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [7.2, 7.0], [8.0, 8.3]];
 function metWalk(spd: number): number {
   const pts = WALK_MET_POINTS;
@@ -36,13 +43,14 @@ function metWalk(spd: number): number {
   }
   return pts[pts.length - 1][1];
 }
-const NET_KCAL_PER_KG_KM = (metWalk(WALK_SPEED_KMH) - 1) / WALK_SPEED_KMH;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-const parisDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(iso));
+const parisFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ });
+const parisDate = (t: string | number | Date) => parisFmt.format(new Date(t));
+const fmt = (n: number) => String(n).replace(".", ",");
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
-// Distance (km) des marches saisies à la main ce jour-là — à retirer du total Health Connect,
-// qui compte TOUS les pas de la journée (même logique que gfit-sync).
+// Distance (km) des marches saisies à la main ce jour-là — à retirer des séquences détectées.
 async function manualWalkKm(sb: any, user_id: string, dateStr: string): Promise<number> {
   const { data } = await sb.from("entries").select("desc")
     .eq("user_id", user_id).eq("date", dateStr).eq("category", "Sport")
@@ -66,6 +74,21 @@ async function currentWeight(sb: any, user_id: string): Promise<number> {
   return (s?.length && Number(s[0].weight) > 0) ? Number(s[0].weight) : 75;
 }
 
+// Répartit chaque intervalle sur les minutes qu'il couvre, au prorata du temps (clé = minute UTC).
+function spreadPerMinute(samples: { kind: string; start_time: string; end_time: string; value: number }[]) {
+  const mins = new Map<number, { steps: number; meters: number }>();
+  for (const s of samples) {
+    const a = Date.parse(s.start_time), b = Date.parse(s.end_time);
+    if (!(b > a) || b - a > MAX_SAMPLE_MS) continue;
+    for (let m = Math.floor(a / 60000) * 60000; m < b; m += 60000) {
+      const share = (Math.min(b, m + 60000) - Math.max(a, m)) / (b - a);
+      const cur = mins.get(m) || mins.set(m, { steps: 0, meters: 0 }).get(m)!;
+      if (s.kind === "steps") cur.steps += s.value * share; else cur.meters += s.value * share;
+    }
+  }
+  return mins;
+}
+
 serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   try {
@@ -79,69 +102,102 @@ serve(async (req) => {
     if (!keyRow) return json({ error: "unauthorized" }, 401);
     const user_id = keyRow.user_id;
 
+    // 1. Stockage des intervalles reçus (un intervalle modifié par Health Connect écrase l'ancien).
     const body = await req.json();
-    const perDay = new Map<string, { steps: number; meters: number }>();
-    const day = (d: string) => perDay.get(d) || perDay.set(d, { steps: 0, meters: 0 }).get(d)!;
-    for (const r of body.steps || []) if (r?.start_time && r.count > 0) day(parisDate(r.start_time)).steps += r.count;
-    for (const r of body.distance || []) if (r?.start_time && r.meters > 0) day(parisDate(r.start_time)).meters += r.meters;
-    // Recalcule aussi les 7 derniers jours déjà connus, même absents de ce payload : l'app
-    // n'envoie plus un jour passé une fois synchronisé après sa fin, donc une marche saisie
-    // à la main après coup pour ce jour-là ne serait jamais déduite (double comptage).
-    const { data: recent } = await sb.from("hc_daily").select("date")
-      .eq("user_id", user_id).gte("date", parisDate(new Date(Date.now() - 7 * 86400000).toISOString()));
-    for (const { date } of recent || []) day(date);
-    if (!perDay.size) return json({ ok: true, days: [] });
+    const now = new Date().toISOString();
+    const rows = [
+      ...(body.steps || []).filter((r: any) => r?.start_time && r?.end_time && r.count > 0)
+        .map((r: any) => ({ user_id, kind: "steps", start_time: r.start_time, end_time: r.end_time, value: r.count, updated_at: now })),
+      ...(body.distance || []).filter((r: any) => r?.start_time && r?.end_time && r.meters > 0)
+        .map((r: any) => ({ user_id, kind: "distance", start_time: r.start_time, end_time: r.end_time, value: r.meters, updated_at: now })),
+    ];
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await sb.from("hc_samples").upsert(rows.slice(i, i + 500));
+      if (error) throw new Error(error.message);
+    }
+
+    // 2. Recalcul des jours touchés par ce payload + des 7 derniers jours (une marche saisie à la main
+    //    après coup doit être déduite à la synchro suivante), à partir de TOUS les intervalles stockés.
+    const days = new Set<string>(rows.map(r => parisDate(r.start_time)));
+    for (let d = 0; d <= 7; d++) days.add(parisDate(Date.now() - d * 86400000));
+    const sorted = [...days].sort();
+    const fromIso = new Date(Date.parse(sorted[0] + "T00:00:00Z") - 86400000).toISOString();
+    const samples: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from("hc_samples").select("kind, start_time, end_time, value")
+        .eq("user_id", user_id).gte("end_time", fromIso).order("start_time").range(from, from + 999);
+      if (error) throw new Error(error.message);
+      samples.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    const perDay = new Map<string, [number, { steps: number; meters: number }][]>();
+    for (const [m, v] of [...spreadPerMinute(samples)].sort((x, y) => x[0] - y[0])) {
+      const d = parisDate(m);
+      if (days.has(d)) (perDay.get(d) || perDay.set(d, []).get(d)!).push([m, v]);
+    }
 
     const weight = await currentWeight(sb, user_id);
     const result = [];
 
-    for (const [dateStr, incoming] of perDay) {
-      const { data: prev } = await sb.from("hc_daily").select("steps, meters")
-        .eq("user_id", user_id).eq("date", dateStr).maybeSingle();
-      const steps = Math.max(prev?.steps || 0, Math.round(incoming.steps));
-      const meters = Math.max(prev?.meters || 0, incoming.meters);
-      await sb.from("hc_daily").upsert({ user_id, date: dateStr, steps, meters, updated_at: new Date().toISOString() });
+    for (const [dateStr, minutes] of perDay) {
+      const totalSteps = Math.round(minutes.reduce((s, [, v]) => s + v.steps, 0));
+      const totalMeters = minutes.reduce((s, [, v]) => s + v.meters, 0);
+      await sb.from("hc_daily").upsert({ user_id, date: dateStr, steps: totalSteps, meters: Math.round(totalMeters), updated_at: now });
+      // Foulée du jour pour les minutes sans distance (Health Connect peut ne pas en fournir).
+      const strideKm = totalSteps > 0 && totalMeters > 0 ? totalMeters / 1000 / totalSteps : DEFAULT_STRIDE_KM;
 
-      const distKm = Math.round(meters / 10) / 100;
-      if (steps < 500 && distKm < 0.1) { result.push({ dateStr, steps, skipped: true }); continue; }
+      // Séquences de marche.
+      const bouts: { min: number; steps: number; km: number }[] = [];
+      let cur: { min: number; steps: number; km: number } | null = null, lastActive = -Infinity;
+      for (const [m, v] of minutes) {
+        if (v.steps < MIN_CADENCE) continue;
+        if (!cur || m - lastActive > (MAX_GAP_MIN + 1) * 60000) { cur = { min: 0, steps: 0, km: 0 }; bouts.push(cur); }
+        cur.min++; cur.steps += v.steps; cur.km += v.meters > 0 ? v.meters / 1000 : v.steps * strideKm;
+        lastActive = m;
+      }
+      const kept = bouts.filter(b => b.min >= MIN_BOUT_MIN);
+      const walkMin = kept.reduce((s, b) => s + b.min, 0);
+      const walkSteps = Math.round(kept.reduce((s, b) => s + b.steps, 0));
+      const walkKm = round2(kept.reduce((s, b) => s + b.km, 0));
+      const walkKcal = kept.reduce((s, b) => s + (metWalk(b.km / (b.min / 60)) - 1) * weight * b.min / 60, 0);
 
-      const totalKm = distKm > 0 ? distKm : Math.round(steps * 0.00075 * 100) / 100;
-      const manualKm = Math.round((await manualWalkKm(sb, user_id, dateStr)) * 100) / 100;
-      const finalKm = Math.max(0, Math.round((totalKm - manualKm) * 100) / 100);
-      const kcal = Math.round(weight * finalKm * NET_KCAL_PER_KG_KM);
+      const manualKm = round2(await manualWalkKm(sb, user_id, dateStr));
+      const finalKm = Math.max(0, round2(walkKm - manualKm));
+      const kcal = walkKm > 0 ? Math.round(walkKcal * finalKm / walkKm) : 0;
+      const speed = walkMin > 0 ? round2(walkKm / (walkMin / 60)) : 0;
 
       // Libellé "Titre (sous-titre)" SANS parenthèses imbriquées : le journal de l'app découpe
       // titre/sous-titre sur la dernière paire de parenthèses (renderEntry, regex /^(.*?)\s*\(([^)]+)\)$/)
       // — une parenthèse dans le sous-titre cassait le découpage et tronquait tout sur une ligne.
       // Sous-titre court (.entry-sub est en nowrap) ; le détail du calcul va dans la note (après
       // "||", affichée dans la fiche de l'entrée), derrière le tag qui sert à retrouver l'entrée.
-      const est = distKm > 0 ? "" : " est.";
-      const fmt = (n: number) => String(n).replace(".", ",");
       const tag = `hc:daily-${dateStr}`;
-      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km comptés à ${fmt(WALK_SPEED_KMH)} km/h`;
-      const desc = `🚶 Marche du jour (${steps} pas · ${fmt(finalKm)} km comptés sur ${fmt(totalKm)})||${tag} · ${note}`;
+      const note = `${kept.length} séquence${kept.length > 1 ? "s" : ""} de marche, ${walkMin} min, ${fmt(walkKm)} km à ${fmt(speed)} km/h en moyenne − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km comptés · journée : ${totalSteps} pas, ${fmt(round2(totalMeters / 1000))} km`;
+      const desc = `🚶 Marche du jour (${walkSteps} pas en marche · ${fmt(finalKm)} km comptés)||${tag} · ${note}`;
 
       const { data: existing } = await sb.from("entries").select("id, val, desc")
         .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
       if (existing?.length && kcal < 10) {
-        // Plus rien à compter ce jour-là (les marches saisies couvrent tout) : on
-        // retire l'entrée générée plutôt que d'afficher "−0" — elle revient si les pas augmentent.
+        // Plus rien à compter ce jour-là (pas de vraie marche, ou marches saisies qui couvrent tout) :
+        // on retire l'entrée générée plutôt que d'afficher "−0" — elle revient si ça change.
         await sb.from("entries").delete().eq("id", existing[0].id);
-        result.push({ dateStr, steps, km: finalKm, kcal, action: "removed" });
+        result.push({ dateStr, walkMin, km: finalKm, kcal, action: "removed" });
       } else if (existing?.length) {
         if (existing[0].val !== kcal || existing[0].desc !== desc) await sb.from("entries").update({ val: kcal, desc }).eq("id", existing[0].id);
-        result.push({ dateStr, steps, km: finalKm, kcal, action: "updated" });
+        result.push({ dateStr, walkMin, km: finalKm, kcal, action: "updated" });
       } else if (kcal >= 10) {
         const { error } = await sb.from("entries").insert({
           user_id, date: dateStr, category: "Sport", type: "burn",
           desc, val: kcal, prot: 0, gluc: 0, lip: 0,
         });
         if (error) throw new Error(error.message);
-        result.push({ dateStr, steps, km: finalKm, kcal, action: "inserted" });
+        result.push({ dateStr, walkMin, km: finalKm, kcal, action: "inserted" });
+      } else {
+        result.push({ dateStr, walkMin, km: finalKm, kcal, action: "none" });
       }
     }
 
-    return json({ ok: true, days: result });
+    return json({ ok: true, stored: rows.length, days: result });
   } catch (e) {
     console.error("hc-webhook error:", e);
     return json({ error: e.message }, 500);
