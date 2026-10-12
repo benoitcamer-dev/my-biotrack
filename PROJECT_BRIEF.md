@@ -18,16 +18,24 @@ Détail produit complet → `PRODUCT.md`. Système visuel (thème, typographie, 
 
 - **Aucun build, pas de `package.json`.** HTML/CSS/JS servis tels quels.
 - Frontend : `index.html` + `app.js` + `styles.css` (fichiers séparés), plus `index-complet.html` qui est un **bundle des trois en un seul fichier** — voir "Point critique" ci-dessous.
-- Backend : **Supabase** (`https://zlbwoxsmmdytoucgyhmc.supabase.co`, auth + Postgres). Tables connues : `entries`, `weight_entries`, `sleep_entries`, `custom_foods`, `favorites`, `user_settings`, `google_tokens`, `ciqual_foods`, `ciqual_hidden`. URL/clé anon Supabase codées en dur en tête de `app.js` (normal pour une clé anon Supabase — la vraie barrière d'isolation entre utilisateurs est la policy RLS côté Postgres, pas le secret de la clé).
+- Backend : **Supabase** (`https://zlbwoxsmmdytoucgyhmc.supabase.co`, auth + Postgres). Tables connues : `entries`, `weight_entries`, `sleep_entries`, `custom_foods`, `favorites`, `user_settings`, `ciqual_foods`, `ciqual_hidden`, `hc_daily` et `hc_webhook_keys` (synchro des pas, voir plus bas). `google_tokens`/`gfit_imported` supprimées le 12/10/2026 (sync Google Fit retirée). Realtime (`postgres_changes`) abonné sur `entries`, `user_settings`, `weight_entries`, `custom_foods`. URL/clé anon Supabase codées en dur en tête de `app.js` (normal pour une clé anon Supabase — la vraie barrière d'isolation entre utilisateurs est la policy RLS côté Postgres, pas le secret de la clé).
 - Intégrations optionnelles à clé API fournie par l'utilisateur (stockée en `localStorage`, chargée conditionnellement au boot) :
   - Gemini (estimation nutritionnelle par photo)
   - Google Maps/Places (recherche d'adresse pour l'onglet "Lieux")
-  - Google Fit / Google Calendar (sync sport, OAuth via une Edge Function Supabase) — **⚠️ scopes Fit
-    retirés du projet Google Cloud partagé le 31/08/2026** (non utilisés, voir `CHANGELOG_2026-08-31.md`) :
-    la connexion Google Fit ne fonctionnera plus tant que les scopes ne sont pas recréés côté Google Cloud.
-    **Remplacée le 12/10/2026** par Health Connect → app Android « HC Webhook » → Edge Function
-    `hc-webhook` (pas/distance quotidiens → entrée marche ; doc de référence `SYNC_PAS_HEALTH_CONNECT.md`)
+  - Google Calendar (sorties vélo ajoutées à l'agenda, OAuth côté navigateur via Google Identity
+    Services, Client ID saisi dans Réglages)
   - OpenRouteService (`ORS_KEY`, calcul d'itinéraires pour le mode marche/vélo)
+- **Synchro des pas (depuis le 12/10/2026)** : Google Fit (téléphone) → Health Connect → app Android
+  « HC Webhook » (toutes les 60 min) → Edge Function Supabase **`hc-webhook`** → une entrée
+  « 🚶 Marche du jour » par jour. Doc de référence complète (calcul, réglages, sécurité de la clé,
+  dépannage) : **`SYNC_PAS_HEALTH_CONNECT.md`**. Remplace la sync Google Fit (API Fit dépréciée par
+  Google, retirée de l'app le 12/10/2026 — bouton, OAuth et code supprimés).
+- **Edge Functions Supabase** : `hc-webhook` (source versionnée dans `supabase/functions/hc-webhook/`,
+  `verify_jwt = false`, authentifiée par en-tête `x-api-key` haché) ; `hyper-action` (nom affiché
+  « search-off », proxy de recherche Open Food Facts, non versionnée) ; `gfit-sync`/`gfit-callback`
+  neutralisées (répondent 410, JWT requis) mais pas supprimées — le MCP Supabase ne sait pas
+  supprimer une fonction. Déploiement via le MCP Supabase (`deploy_edge_function`), pas de CLI
+  Supabase installée sur ce PC.
 - Icônes : Lucide (CDN, rendu par un `MutationObserver` sur `[data-lucide]` car la majorité du contenu est injectée en `innerHTML`). Conversion emoji → Lucide en cours, pas exhaustive (voir "Ce qui reste à faire").
 - Google Fonts (Inter).
 - PWA : `manifest.json` + `sw.js` (service worker, cache `bt-v5`). **Network-first + fallback cache sur tout le même-origine** (HTML, `app.js`, `styles.css` compris — corrigé le 16/08/2026 : avant, `app.js`/`styles.css` étaient en cache-first sans jamais être revalidés, un déploiement pouvait rester invisible indéfiniment même après un reload normal). Une bannière "Nouvelle version disponible" (`showUpdateBanner()` dans `app.js`) se déclenche via l'événement `controllerchange` si l'onglet reste ouvert après un déploiement. Malgré ça, un hard reload naïf reste la vérification la plus fiable en session de dev (voir règle de vérification live dans `CLAUDE.md`).
@@ -73,6 +81,21 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 - Pas de framework de test (irait à l'encontre du choix "sans build"), mais **`node verify.js`** (racine du repo) formalise en une commande les vérifications pré-commit : syntaxe JS, équilibrage `<div>`/`<button>` HTML, équilibrage `{ }` CSS, synchronisation byte-exacte d'`index-complet.html` avec les 3 fichiers séparés, classes CSS orphelines (signalement seulement, non bloquant). Pas de linter configuré à ce jour.
 - **⚠️ Marqueurs de données en emoji dans les descriptions d'entrées — ne jamais convertir en icône ni supprimer.** `📚` (lié à une recette), `🚶` (marche) et `🚴` (vélo) préfixent le texte de `entry.desc` et sont relus par du code de classification à plusieurs endroits d'`app.js` (`.includes('🚶')`, `.replace('🚴','')`, etc.), y compris pour les titres d'événements Google Agenda. Avant de toucher un emoji décoratif quel qu'il soit, vérifier par `grep` qu'il n'est pas aussi utilisé comme marqueur.
+- **Calories Sport — marche saisie à la main** (Simple ou Itinéraire) : `MET(vitesse) × poids × durée`,
+  poids = dernier poids pesé (`getCurrentWeight()`). `getMETWalk()` interpole linéairement entre les
+  points du Compendium 2011 (`WALK_MET_POINTS`, 2,4 → 8 km/h) depuis le 12/10/2026 — avant : paliers
+  fixes avec sauts et marche rapide sous-estimée. Vitesse par défaut si le champ est vide : 6 km/h.
+  Les entrées existantes ne sont jamais recalculées rétroactivement.
+- **Calories Sport — pas Health Connect** (entrée « 🚶 Marche du jour », tag `hc:daily-AAAA-MM-JJ`
+  dans la note) : calcul **par km**, coût **net** à l'allure habituelle (5,5 km/h), après déduction
+  des marches saisies à la main ce jour-là et d'une base sédentaire de 3 500 pas (le
+  « Métabolisme » de l'app = BMR × 1,2 couvre déjà les petits déplacements). Détail et
+  constantes : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche doit garder « 🚶 » ou
+  « marche » et une distance en « km » dans `desc`, sinon `hc-webhook` ne la déduit pas.
+- **Rechargement au retour au premier plan** (12/10/2026) : le journal (et le bilan si ouvert) est
+  rechargé quand l'app redevient visible après plus de 30 s (`visibilitychange`, `_hiddenAt`) —
+  Android suspend le WebSocket Realtime en arrière-plan et les changements faits pendant ce temps
+  ne sont pas rejoués.
 - `.impeccable/` contient l'état du skill Impeccable (audits design, ignores) — ne pas modifier à la main, passer par `hook-admin.mjs`.
 - Secrets/clés utilisateur (Gemini, Google Maps, Google Client ID) : jamais codés en dur, toujours lus depuis `localStorage` et saisis par l'utilisateur dans Réglages.
 - Décision explicite : pas d'intégration Google Maps Directions API ni de bouton "ouvrir dans Google Maps" (évalué le 14/08/2026, écarté par l'utilisateur).
@@ -393,6 +416,10 @@ direct sur le site déployé. Détail des deux points ci-dessus et de cette vér
 
 - ~~Conversion d'icônes emoji → Lucide (dashboard principal, catégories du journal, menu du bouton "+")~~ **résolu** : vérifié le 04/09/2026, les trois zones citées sont déjà entièrement en Lucide (`ICONS` dans `app.js`, `#stats-grid` et `#fab-menu` dans `index.html`) — ce paragraphe ne reflétait plus l'état du code. Des emoji restent ailleurs (Réglages, Poids/IMC, calendrier, placeholders de recherche...), hors du périmètre décrit ici et pas audités ; à traiter comme un chantier à part si voulu, pas comme la suite de ce point.
 - ~~CSS orphelines à trier~~ **résolu** : la liste trouvée le 14/08/2026 (`.bike-fav-section`, `.builder-item-hover-actions`, etc.) ne reflétait plus l'état du code — `node verify.js` (re-vérifié le 04/09/2026) ne détecte plus aucune classe orpheline, ces classes ont dû être utilisées ou nettoyées au fil des sessions intermédiaires sans que ce paragraphe soit mis à jour. Le check reste actif dans `verify.js` pour signaler toute nouvelle régression.
+- **Synchro des pas** (12/10/2026) : supprimer `gfit-sync`/`gfit-callback` depuis le dashboard
+  Supabase si souhaité (neutralisées, mais impossible à supprimer via le MCP). Piste en réserve :
+  vitesse réelle minute par minute (résolution 1 min dans HC Webhook) si l'allure fixe de 5,5 km/h
+  ne convient plus — voir `SYNC_PAS_HEALTH_CONNECT.md`.
 - Consolidation des styles inline → classes CSS : partielle, seulement sur le code déjà retouché.
 - `modal-dose-fav` (popup de dose par défaut) est **volontairement** en dehors du système swipe-to-close standard.
 - Quelques ID HTML dupliqués existent (`sf-edit-*`/`sf-new-*`) mais sans risque réel : templates walk/bike mutuellement exclusifs, jamais présents simultanément dans le DOM.
