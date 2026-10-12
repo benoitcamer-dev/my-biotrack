@@ -64,88 +64,7 @@ let userProtGoal = 0; // 0 = pas fixé
 let editingId = null, currentEntries = [], currentPage = "journal";
 let GCAL_CLIENT_ID = localStorage.getItem('gcal_client_id') || '';
 let _gcalToken = null, _gcalTokenExpiry = 0;
-let _gfitToken = null, _gfitTokenExpiry = 0;
-let _gfitSyncDone = false;
-let _currentUserId = null;
 function gcalIsConfigured() { return !!GCAL_CLIENT_ID; }
-
-async function gfitAuthorize() {
-  const clientId = GCAL_CLIENT_ID;
-  if (!clientId) { showToast('Configure d\'abord ton Client ID Google dans les paramètres', 'error'); return; }
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) { showToast('Tu dois être connecté', 'error'); return; }
-  const redirectUri = 'https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-callback';
-  const scope = 'https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.location.read';
-  const returnUrl = window.location.href.split('?')[0];
-  const state = encodeURIComponent(JSON.stringify({ user_id: user.id, return_url: returnUrl }));
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
-  window.location.href = url;
-}
-
-async function syncGoogleFitFromModal() {
-  const btn = document.getElementById('gfit-sync-btn');
-  const res = document.getElementById('gfit-sync-result');
-  btn.textContent = '⏳ Sync...'; btn.disabled = true;
-  res.style.display = 'none';
-  try {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) { btn.textContent = '📲 Google Fit'; btn.disabled = false; return; }
-    const { data: tokenRow } = await sb.from('google_tokens').select('refresh_token').eq('user_id', user.id).single();
-    if (!tokenRow?.refresh_token) { gfitAuthorize(); return; }
-    const r = await fetch('https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, user_weight: getCurrentWeight(), since_hours: 48, force: true })
-    });
-    const result = await r.json();
-    const newCount = result.imported?.length || 0;
-    const updCount = result.updated?.length || 0;
-    if (newCount || updCount) {
-      loadData();
-      const msgs = [];
-      if (newCount) msgs.push(`${newCount} nouveau${newCount > 1 ? 'x' : ''}`);
-      if (updCount) msgs.push(`${updCount} mis à jour`);
-      res.textContent = '✅ ' + msgs.join(', ');
-      // Show details
-      const details = [...(result.imported || []), ...(result.updated || [])].map(e => `${e.dateStr} : ${e.distKm}km → ${e.kcal}kcal`).join(' | ');
-      if (details) res.textContent += ' — ' + details;
-    } else {
-      res.textContent = 'Aucune nouvelle donnée Google Fit';
-    }
-    res.style.display = 'block';
-  } catch(e) {
-    res.textContent = '❌ Erreur : ' + e.message;
-    res.style.display = 'block';
-  }
-  btn.textContent = '📲 Google Fit'; btn.disabled = false;
-}
-
-async function syncGoogleFit(silent = true) {
-  if (!gcalIsConfigured()) return;
-  try {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    // Check if we have a stored refresh token
-    const { data: tokenRow } = await sb.from('google_tokens').select('refresh_token').eq('user_id', user.id).single();
-    if (!tokenRow?.refresh_token) {
-      if (!silent) gfitAuthorize(); // redirect to Google auth
-      return;
-    }
-    _gfitSyncDone = true;
-    // Call Edge Function to sync
-    const r = await fetch('https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, user_weight: getCurrentWeight(), since_hours: 48, force: !silent })
-    });
-    const result = await r.json();
-    if (result.imported?.length || result.updated?.length) loadData();
-    if (!silent) {
-      const total = (result.imported?.length || 0) + (result.updated?.length || 0);
-      showToast(total > 0 ? `✅ ${result.imported?.length || 0} nouveau(x), ${result.updated?.length || 0} mis à jour` : 'Aucune nouvelle donnée', total > 0 ? 'success' : 'info');
-    }
-  } catch(e) { console.warn('Google Fit sync:', e); }
-}
 
 async function _loadGSI() {
   if (typeof google !== 'undefined' && google?.accounts?.oauth2) return;
@@ -1439,8 +1358,6 @@ document.getElementById('saved-meal-link').style.display = isSport ? 'none' : 'i
 document.getElementById('fav-link-btn').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('scanner-btn').style.display = isSport ? 'none' : 'inline-block';
 document.getElementById('ai-btn').style.display = 'inline-block';
-document.getElementById('gfit-sync-btn').style.display = isSport && gcalIsConfigured() ? 'inline-block' : 'none';
-document.getElementById('gfit-sync-result').style.display = 'none';
 document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
 document.getElementById('calc-sub').textContent = isSport ? 'pour 30 min' : (isDrink ? 'pour 100ml' : 'pour 100g');
 if (isSport) showAllSports();
@@ -3087,20 +3004,8 @@ if (srEl) {
     srEl.scrollTop = _srScrollTop + dy;
   }, { passive: true });
 }
-// Store user id for Google Fit
-const { data: { user: _u } } = await sb.auth.getUser();
-if (_u) _currentUserId = _u.id;
 // Init Google Places if key available
 if (GMAPS_API_KEY) initGooglePlaces();
-// Sync Google Fit silently in background
-const _gfitParam = new URLSearchParams(window.location.search).get('gfit');
-if (_gfitParam === 'connected') {
-  // Just authorized — sync immediately (non-silent)
-  history.replaceState({}, '', window.location.pathname);
-  setTimeout(() => syncGoogleFit(false), 1000);
-} else {
-  setTimeout(() => syncGoogleFit(true), 3000);
-}
 }
 function appendCategoryToRecipe(rid) {
 const r = savedRecipes.find(r => r.id === rid), items = getMealEntries(recipePickerTargetCategory);

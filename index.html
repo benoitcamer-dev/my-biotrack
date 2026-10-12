@@ -219,8 +219,6 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <button id="fav-link-btn" class="fav-link-btn" onclick="openAlimentsFromAdd()"><i data-lucide="star" class="lc-icon-sm"></i> Aliments</button>
 <button id="scanner-btn" class="fav-link-btn" onclick="openBarcodeScanner('main')" style="background:rgba(52,211,153,0.1);color:#34d399;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="camera" class="lc-icon-sm"></i> Scanner</button>
 <button id="ai-btn" class="fav-link-btn tap-target" onclick="openAIModal()" style="background:rgba(124,92,250,0.12);color:#a78bfa;border:1px solid rgba(124,92,250,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;gap:6px;"><i data-lucide="bot" class="lc-icon-sm"></i> IA</button>
-<button id="gfit-sync-btn" class="fav-link-btn tap-target-block" onclick="syncGoogleFitFromModal()" style="display:none;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;touch-action:manipulation;"><i data-lucide="smartphone" class="lc-icon-sm"></i> Google Fit</button>
-<div id="gfit-sync-result" style="display:none;width:100%;font-size:12px;color:#34d399;padding:4px 2px;"></div>
 </div>
 <!-- SPORT FAVS (marche + vélo) -->
 <div id="sport-favs-section" style="display:none;">
@@ -380,7 +378,6 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
 <label style="margin-top:10px;display:block;">🗺️ Google Maps (Clé API)</label>
 <input id="s-gmaps-key" type="text" placeholder="Colle ta clé API Google Maps ici" style="font-size:11px;">
-<button onclick="syncGoogleFit(false)" style="margin-top:8px;width:100%;padding:10px;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><i data-lucide="activity" class="lc-icon-sm"></i>Connecter / Sync Google Fit</button>
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>
 </div>
 <div class="setting-row">
