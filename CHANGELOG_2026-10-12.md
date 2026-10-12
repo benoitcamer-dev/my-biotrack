@@ -100,6 +100,8 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   (3 séquences, 45 min, 3,16 km − 1,5 km saisis → 70 kcal) ; les autres jours, les marches saisies
   couvrent les séquences détectées. Vitesses mesurées basses (3,4-4,4 km/h) : distance Fit à
   calibrer.
+- `hc-webhook` v9 : **plus aucune entrée créée automatiquement** (`AUTO_ENTRIES = false`, demande
+  de l'utilisateur, qui saisit ses marches à la main). Les intervalles restent stockés.
 
 ## Reste à faire
 

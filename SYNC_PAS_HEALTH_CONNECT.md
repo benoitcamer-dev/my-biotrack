@@ -31,6 +31,11 @@ Depuis la **v8** (12/10/2026), HC Webhook envoie les **intervalles bruts** (rés
 
 ## Calcul des calories
 
+> ⚠️ **Depuis la v9 (12/10/2026), aucune entrée n'est créée automatiquement** (`AUTO_ENTRIES =
+> false`) : l'utilisateur saisit ses marches à la main. La synchro ne fait plus que stocker
+> `hc_samples` / `hc_daily`. Le calcul ci-dessous reste en place pour un futur déclenchement à
+> la demande, sur un jour choisi.
+
 Objectif (demande de l'utilisateur) : ne compter que les **vraies marches**, pas les pas dispersés
 à la maison. Pour chaque jour (heure de Paris), à partir de tous les intervalles stockés :
 

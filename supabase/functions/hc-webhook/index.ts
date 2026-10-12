@@ -26,6 +26,10 @@ const TZ = "Europe/Paris";
 // - Les km des marches saisies à la main ce jour-là sont retirés (évite le double comptage), au
 //   prorata des kcal des séquences.
 // - Plus de base sédentaire (retirée en v7) : le filtre par séquence la remplace.
+// AUTO_ENTRIES = false (12/10/2026, demande de l'utilisateur) : la synchro du téléphone ne fait
+// plus que stocker les intervalles (hc_samples) et les totaux (hc_daily) ; aucune entrée de journal
+// n'est créée ou modifiée automatiquement — il saisit ses marches à la main.
+const AUTO_ENTRIES = false;
 const MIN_CADENCE = 60;
 const MIN_BOUT_MIN = 5;
 const MAX_GAP_MIN = 1;
@@ -144,6 +148,7 @@ serve(async (req) => {
       const totalMeters = minutes.reduce((s, [, v]) => s + v.meters, 0);
       await sb.from("hc_daily").upsert({ user_id, date: dateStr, steps: totalSteps, meters: Math.round(totalMeters), updated_at: now });
       // Foulée du jour pour les minutes sans distance (Health Connect peut ne pas en fournir).
+      if (!AUTO_ENTRIES) { result.push({ dateStr, steps: totalSteps, action: "stored" }); continue; }
       const strideKm = totalSteps > 0 && totalMeters > 0 ? totalMeters / 1000 / totalSteps : DEFAULT_STRIDE_KM;
 
       // Séquences de marche.
