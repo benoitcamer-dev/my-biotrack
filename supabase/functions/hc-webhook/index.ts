@@ -15,6 +15,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // de fenêtre, pas minuit) : on garde donc le MAX reçu par jour, jamais une valeur plus petite.
 
 const TZ = "Europe/Paris";
+// Calcul des kcal (choix validé par l'utilisateur le 12/10/2026) : on ne compte que l'activité EN
+// PLUS d'une journée sédentaire, car le "Métabolisme" de l'app vaut déjà BMR × 1,2 (facteur
+// sédentaire, qui couvre les petits déplacements du quotidien).
+// - BASELINE_STEPS : premiers pas de la journée considérés comme déjà inclus dans ce × 1,2.
+//   Convention, pas une mesure (une journée « sédentaire » est usuellement < 5 000 pas).
+// - NET_KCAL_PER_KG_KM : coût NET de la marche (repos exclu, déjà compté dans le BMR), pour une
+//   marche du quotidien à ~5 km/h : (MET 3,7 − 1) / 5 km/h ≈ 0,54 kcal/kg/km (Compendium 2011).
+const BASELINE_STEPS = 3500;
+const NET_KCAL_PER_KG_KM = 0.54;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const parisDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(iso));
@@ -85,23 +94,31 @@ serve(async (req) => {
 
       const totalKm = distKm > 0 ? distKm : Math.round(steps * 0.00075 * 100) / 100;
       const manualKm = Math.round((await manualWalkKm(sb, user_id, dateStr)) * 100) / 100;
-      const finalKm = Math.max(0, Math.round((totalKm - manualKm) * 100) / 100);
-      const kcal = Math.round(weight * finalKm * 0.83);
+      // Base sédentaire convertie en km avec la foulée réelle du jour (distance/pas), à défaut 0,75 m.
+      const strideKm = distKm > 0 && steps > 0 ? distKm / steps : 0.00075;
+      const baselineKm = Math.round(Math.min(steps, BASELINE_STEPS) * strideKm * 100) / 100;
+      const finalKm = Math.max(0, Math.round((totalKm - manualKm - baselineKm) * 100) / 100);
+      const kcal = Math.round(weight * finalKm * NET_KCAL_PER_KG_KM);
 
       // Libellé "Titre (sous-titre)" SANS parenthèses imbriquées : le journal de l'app découpe
       // titre/sous-titre sur la dernière paire de parenthèses (renderEntry, regex /^(.*?)\s*\(([^)]+)\)$/)
       // — une parenthèse dans le sous-titre cassait le découpage et tronquait tout sur une ligne.
+      // Sous-titre court (.entry-sub est en nowrap) ; le détail du calcul va dans la note (après
+      // "||", affichée dans la fiche de l'entrée), derrière le tag qui sert à retrouver l'entrée.
       const est = distKm > 0 ? "" : " est.";
       const fmt = (n: number) => String(n).replace(".", ",");
-      const detail = manualKm > 0
-        ? `${fmt(totalKm)} km − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km${est}`
-        : `${fmt(finalKm)} km${est}`;
       const tag = `hc:daily-${dateStr}`;
-      const desc = `🚶 Marche du jour (${steps} pas · ${detail})||${tag}`;
+      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis − ${fmt(baselineKm)} km de base sédentaire (${BASELINE_STEPS} pas) = ${fmt(finalKm)} km comptés`;
+      const desc = `🚶 Marche du jour (${steps} pas · ${fmt(finalKm)} km comptés sur ${fmt(totalKm)})||${tag} · ${note}`;
 
       const { data: existing } = await sb.from("entries").select("id, val, desc")
         .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
-      if (existing?.length) {
+      if (existing?.length && kcal < 10) {
+        // Plus rien à compter ce jour-là (base sédentaire / marches saisies couvrent tout) : on
+        // retire l'entrée générée plutôt que d'afficher "−0" — elle revient si les pas augmentent.
+        await sb.from("entries").delete().eq("id", existing[0].id);
+        result.push({ dateStr, steps, km: finalKm, kcal, action: "removed" });
+      } else if (existing?.length) {
         if (existing[0].val !== kcal || existing[0].desc !== desc) await sb.from("entries").update({ val: kcal, desc }).eq("id", existing[0].id);
         result.push({ dateStr, steps, km: finalKm, kcal, action: "updated" });
       } else if (kcal >= 10) {
