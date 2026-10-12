@@ -62,6 +62,12 @@ serve(async (req) => {
     const day = (d: string) => perDay.get(d) || perDay.set(d, { steps: 0, meters: 0 }).get(d)!;
     for (const r of body.steps || []) if (r?.start_time && r.count > 0) day(parisDate(r.start_time)).steps += r.count;
     for (const r of body.distance || []) if (r?.start_time && r.meters > 0) day(parisDate(r.start_time)).meters += r.meters;
+    // Recalcule aussi les 7 derniers jours déjà connus, même absents de ce payload : l'app
+    // n'envoie plus un jour passé une fois synchronisé après sa fin, donc une marche saisie
+    // à la main après coup pour ce jour-là ne serait jamais déduite (double comptage).
+    const { data: recent } = await sb.from("hc_daily").select("date")
+      .eq("user_id", user_id).gte("date", parisDate(new Date(Date.now() - 7 * 86400000).toISOString()));
+    for (const { date } of recent || []) day(date);
     if (!perDay.size) return json({ ok: true, days: [] });
 
     const weight = await currentWeight(sb, user_id);
