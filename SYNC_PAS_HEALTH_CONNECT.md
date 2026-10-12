@@ -69,6 +69,10 @@ Objectif (demande de l'utilisateur) : ne compter que les **vraies marches**, pas
   déduite à la synchro suivante (≤ 1 h).
 - Le détail du calcul est dans la **fiche de l'entrée** (note après `||`) : nombre de séquences,
   minutes, km, vitesse moyenne, km saisis, total de la journée.
+- **App Fit ≠ Health Connect** (relevé le 12/10/2026 dans Fit → Parcourir → Activité → Distance) :
+  09/10 16,94 km (HC 15,87), 10/10 15,01 (13,80), 11/10 16,16 (14,85), 12/10 5,1 (4,78) → Fit affiche
+  **+7 à +9 %** les jours de marche ; petits jours irréguliers (06/10 2,00 vs 2,16 ; 08/10 1,08 vs
+  1,42). Les marches saisies à la main reprenaient les chiffres de l'app Fit.
 - ⚠️ La distance Fit semble courte (foulée ≈ 0,65-0,70 m) → vitesses calculées de 3,4 à 4,4 km/h
   au lieu des ~5,5 annoncés. Test de calibration prévu (trajet de distance connue) avant toute
   correction.
