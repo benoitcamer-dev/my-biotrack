@@ -74,9 +74,18 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   résolution 1 min → vitesse minute par minute) proposée, **refusée par l'utilisateur** : on garde
   le calcul fixe `poids × km × 0,83` (≈ marche à 6,5 km/h).
 
+- `hc-webhook` v4 (`af4c017`) : libellé « 🚶 Marche du jour (N pas · X km comptés sur Y) » sans
+  parenthèses imbriquées (le journal découpe titre/sous-titre sur les parenthèses, l'ancien libellé
+  s'affichait tronqué sur une ligne). Détail du calcul dans la note (après `||`, derrière le tag).
+- `hc-webhook` v5 (`d6afd26`), validé par l'utilisateur : ne compte plus que l'activité en plus d'une
+  journée sédentaire — le « Métabolisme » de l'app vaut déjà BMR × 1,2. Coût **net** de la marche
+  0,54 kcal/kg/km (au lieu de 0,83 brut) et **3 500 premiers pas** du jour déduits (convertis en km
+  avec la foulée du jour). Entrée supprimée si < 10 kcal. Effet au 12/10 : 228 → 41 kcal ; entrée
+  du 11/10 retirée (marches saisies + base couvrent tout). Constantes `BASELINE_STEPS` /
+  `NET_KCAL_PER_KG_KM` en tête de `supabase/functions/hc-webhook/index.ts`.
+- Tables `google_tokens` et `gfit_imported` supprimées (autorisation de l'utilisateur).
+
 ## Reste à faire
 
-- Supprimer les Edge Functions `gfit-sync`/`gfit-callback` et les tables `google_tokens`/
-  `gfit_imported` (plus appelées par l'app).
-- `gfit-sync` reste appelable par n'importe qui connaissant un `user_id` (`verify_jwt = false`,
-  pas d'authentification) — sans effet tant que la sync Fit est cassée, mais à supprimer.
+- `gfit-sync` / `gfit-callback` : neutralisées (410, JWT requis) mais pas supprimées — le MCP
+  Supabase ne sait pas supprimer une Edge Function ; à faire depuis le dashboard si souhaité.
