@@ -88,17 +88,21 @@ serve(async (req) => {
       const finalKm = Math.max(0, Math.round((totalKm - manualKm) * 100) / 100);
       const kcal = Math.round(weight * finalKm * 0.83);
 
+      // Libellé "Titre (sous-titre)" SANS parenthèses imbriquées : le journal de l'app découpe
+      // titre/sous-titre sur la dernière paire de parenthèses (renderEntry, regex /^(.*?)\s*\(([^)]+)\)$/)
+      // — une parenthèse dans le sous-titre cassait le découpage et tronquait tout sur une ligne.
       const est = distKm > 0 ? "" : " est.";
-      const distSource = manualKm > 0
-        ? `${finalKm} km${est} hors marches saisies (${totalKm} km au total)`
-        : `${finalKm} km${est}`;
+      const fmt = (n: number) => String(n).replace(".", ",");
+      const detail = manualKm > 0
+        ? `${fmt(totalKm)} km − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km${est}`
+        : `${fmt(finalKm)} km${est}`;
       const tag = `hc:daily-${dateStr}`;
-      const desc = `🚶 Marche (Health Connect, ${distSource}, ${steps} pas)||${tag}`;
+      const desc = `🚶 Marche du jour (${steps} pas · ${detail})||${tag}`;
 
-      const { data: existing } = await sb.from("entries").select("id, val")
+      const { data: existing } = await sb.from("entries").select("id, val, desc")
         .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
       if (existing?.length) {
-        if (existing[0].val !== kcal) await sb.from("entries").update({ val: kcal, desc }).eq("id", existing[0].id);
+        if (existing[0].val !== kcal || existing[0].desc !== desc) await sb.from("entries").update({ val: kcal, desc }).eq("id", existing[0].id);
         result.push({ dateStr, steps, km: finalKm, kcal, action: "updated" });
       } else if (kcal >= 10) {
         const { error } = await sb.from("entries").insert({
