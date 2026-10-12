@@ -20,10 +20,25 @@ const TZ = "Europe/Paris";
 // sédentaire, qui couvre les petits déplacements du quotidien).
 // - BASELINE_STEPS : premiers pas de la journée considérés comme déjà inclus dans ce × 1,2.
 //   Convention, pas une mesure (une journée « sédentaire » est usuellement < 5 000 pas).
-// - NET_KCAL_PER_KG_KM : coût NET de la marche (repos exclu, déjà compté dans le BMR), pour une
-//   marche du quotidien à ~5 km/h : (MET 3,7 − 1) / 5 km/h ≈ 0,54 kcal/kg/km (Compendium 2011).
+// - WALK_SPEED_KMH : allure de marche habituelle de l'utilisateur (5,5 km/h, donnée par lui le
+//   12/10/2026 — avant : 5 km/h par défaut). Health Connect n'envoie que des totaux journaliers, pas
+//   de vitesse : on applique cette allure à tous les pas comptés.
+// - NET_KCAL_PER_KG_KM : coût NET de la marche à cette allure (repos exclu, déjà compté dans le
+//   BMR) = (MET(vitesse) − 1) / vitesse, avec la même courbe MET que l'app (WALK_MET_POINTS dans
+//   app.js, Compendium 2011). 5,5 km/h → MET 4,2 → ≈ 0,58 kcal/kg/km.
 const BASELINE_STEPS = 3500;
-const NET_KCAL_PER_KG_KM = 0.54;
+const WALK_SPEED_KMH = 5.5;
+const WALK_MET_POINTS = [[2.4, 2.0], [3.2, 2.8], [4.0, 3.0], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [7.2, 7.0], [8.0, 8.3]];
+function metWalk(spd: number): number {
+  const pts = WALK_MET_POINTS;
+  if (!(spd > pts[0][0])) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i];
+    if (spd <= x1) { const [x0, y0] = pts[i - 1]; return y0 + (y1 - y0) * (spd - x0) / (x1 - x0); }
+  }
+  return pts[pts.length - 1][1];
+}
+const NET_KCAL_PER_KG_KM = (metWalk(WALK_SPEED_KMH) - 1) / WALK_SPEED_KMH;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const parisDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(iso));
@@ -108,7 +123,7 @@ serve(async (req) => {
       const est = distKm > 0 ? "" : " est.";
       const fmt = (n: number) => String(n).replace(".", ",");
       const tag = `hc:daily-${dateStr}`;
-      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis − ${fmt(baselineKm)} km de base sédentaire (${BASELINE_STEPS} pas) = ${fmt(finalKm)} km comptés`;
+      const note = `${fmt(totalKm)} km${est} au total − ${fmt(manualKm)} km saisis − ${fmt(baselineKm)} km de base sédentaire (${BASELINE_STEPS} pas) = ${fmt(finalKm)} km comptés à ${fmt(WALK_SPEED_KMH)} km/h`;
       const desc = `🚶 Marche du jour (${steps} pas · ${fmt(finalKm)} km comptés sur ${fmt(totalKm)})||${tag} · ${note}`;
 
       const { data: existing } = await sb.from("entries").select("id, val, desc")
