@@ -3781,15 +3781,19 @@ const rawQty = parseFloat(m[2].replace(',', '.'));
 const unit = m[3].toLowerCase();
 return { label: m[1].trim(), qty: unit === 'cl' ? rawQty * 10 : rawQty, unit };
 }
+// Source: Compendium of Physical Activities (Ainsworth 2011), marche sur terrain plat —
+// points [km/h, MET] des codes 17151-17230 (2.0 à 5.0 mph). Interpolation linéaire entre
+// les points (avant le 12/10/2026 : paliers fixes, avec des sauts de +16 % pour 0,1 km/h et
+// une marche rapide sous-estimée jusqu'à −29 % à 7,2 km/h). Bornée aux extrémités.
+const WALK_MET_POINTS = [[2.4, 2.0], [3.2, 2.8], [4.0, 3.0], [4.8, 3.5], [5.6, 4.3], [6.4, 5.0], [7.2, 7.0], [8.0, 8.3]];
 function getMETWalk(spd) {
-// Source: Compendium of Physical Activities (Ainsworth 2011)
-if (spd <= 2.5) return 2.0;  // très lente
-if (spd <= 3.5) return 2.8;  // lente
-if (spd <= 4.5) return 3.3;  // modérée
-if (spd <= 5.5) return 3.8;  // normale
-if (spd <= 6.5) return 4.3;  // rapide (6km/h = ~280 kcal/h pour 65kg)
-if (spd <= 7.5) return 5.0;  // très rapide
-return 6.0;                   // jogging-marche
+const pts = WALK_MET_POINTS;
+if (!(spd > pts[0][0])) return pts[0][1];
+for (let i = 1; i < pts.length; i++) {
+  const [x1, y1] = pts[i];
+  if (spd <= x1) { const [x0, y0] = pts[i - 1]; return y0 + (y1 - y0) * (spd - x0) / (x1 - x0); }
+}
+return pts[pts.length - 1][1];
 }
 function getMETBike(spd) {
 if (spd <= 0) return 0;
@@ -5902,7 +5906,7 @@ if (currentBikeMode === 'machine') {
   document.getElementById('calc-sub').textContent = `${raw || 0} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 }
 } else if (isSport && desc === 'marche') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5;
+const spd = parseFloat(document.getElementById('in-speed').value) || 6;
 document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 } else {
 document.getElementById('in-distance').value = '—';
@@ -6108,7 +6112,7 @@ if (currentWalkFavName) {
 }
 descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'marche') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 5;
+const spd = parseFloat(document.getElementById('in-speed').value) || 6;
 const dist = round1(spd * (q / 60));
 descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'vélo') {
