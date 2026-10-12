@@ -24,7 +24,9 @@ Détail produit complet → `PRODUCT.md`. Système visuel (thème, typographie, 
   - Google Maps/Places (recherche d'adresse pour l'onglet "Lieux")
   - Google Fit / Google Calendar (sync sport, OAuth via une Edge Function Supabase) — **⚠️ scopes Fit
     retirés du projet Google Cloud partagé le 31/08/2026** (non utilisés, voir `CHANGELOG_2026-08-31.md`) :
-    la connexion Google Fit ne fonctionnera plus tant que les scopes ne sont pas recréés côté Google Cloud
+    la connexion Google Fit ne fonctionnera plus tant que les scopes ne sont pas recréés côté Google Cloud.
+    **Remplacée le 12/10/2026** par Health Connect → app Android « HC Webhook » → Edge Function
+    `hc-webhook` (pas/distance quotidiens → entrée marche ; voir `CHANGELOG_2026-10-12.md`)
   - OpenRouteService (`ORS_KEY`, calcul d'itinéraires pour le mode marche/vélo)
 - Icônes : Lucide (CDN, rendu par un `MutationObserver` sur `[data-lucide]` car la majorité du contenu est injectée en `innerHTML`). Conversion emoji → Lucide en cours, pas exhaustive (voir "Ce qui reste à faire").
 - Google Fonts (Inter).
