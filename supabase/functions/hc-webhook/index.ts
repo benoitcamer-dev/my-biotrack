@@ -4,8 +4,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Réception des pas/distance envoyés par l'app Android "HC Webhook" (Health Connect → POST JSON),
 // remplaçant de gfit-sync (API Google Fit en fin de vie en 2026). Créée le 12/10/2026.
 // Déployée via le MCP Supabase (deploy_edge_function), verify_jwt = false : l'authentification
-// se fait par l'en-tête x-api-key, à comparer à hc_webhook_keys.api_key (clé générée en base,
-// jamais affichée ailleurs que dans le Table Editor Supabase).
+// se fait par l'en-tête x-api-key, dont l'empreinte SHA-256 est comparée à
+// hc_webhook_keys.api_key_hash — la clé elle-même n'est stockée nulle part côté serveur,
+// elle n'existe que dans la config de l'app sur le téléphone.
 //
 // Format attendu (docs/webhook.md du projet HC Webhook) : résolution "Daily" (défaut pour
 // Steps/Distance) → un enregistrement par jour local du téléphone :
@@ -50,7 +51,9 @@ serve(async (req) => {
 
     const key = req.headers.get("x-api-key") || "";
     if (key.length < 32) return json({ error: "unauthorized" }, 401);
-    const { data: keyRow } = await sb.from("hc_webhook_keys").select("user_id").eq("api_key", key).maybeSingle();
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))))
+      .map(b => b.toString(16).padStart(2, "0")).join("");
+    const { data: keyRow } = await sb.from("hc_webhook_keys").select("user_id").eq("api_key_hash", hash).maybeSingle();
     if (!keyRow) return json({ error: "unauthorized" }, 401);
     const user_id = keyRow.user_id;
 
