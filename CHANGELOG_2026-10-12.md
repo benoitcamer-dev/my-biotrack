@@ -102,6 +102,9 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
   calibrer.
 - `hc-webhook` v9 : **plus aucune entrée créée automatiquement** (`AUTO_ENTRIES = false`, demande
   de l'utilisateur, qui saisit ses marches à la main). Les intervalles restent stockés.
+- `hc-webhook` v10 + app : **Marche auto à la demande** — bouton dans l'écran Sport, jour et
+  vitesse au choix, aperçu puis ajout (entrée `hc:auto-DATE`). Distance = durée détectée × vitesse
+  choisie. CORS ajouté, authentification par JWT de session (en plus de x-api-key pour le téléphone).
 
 ## Reste à faire
 

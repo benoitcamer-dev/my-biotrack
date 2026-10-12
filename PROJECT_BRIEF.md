@@ -86,12 +86,13 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
   points du Compendium 2011 (`WALK_MET_POINTS`, 2,4 → 8 km/h) depuis le 12/10/2026 — avant : paliers
   fixes avec sauts et marche rapide sous-estimée. Vitesse par défaut si le champ est vide : 6 km/h.
   Les entrées existantes ne sont jamais recalculées rétroactivement.
-- **Calories Sport — pas Health Connect** (entrée « 🚶 Marche du jour », tag `hc:daily-AAAA-MM-JJ`
-  dans la note) : depuis la v8 (12/10/2026), seules les **vraies séquences de marche** comptent
-  (≥ 5 min à ≥ 60 pas/min, détectées sur les intervalles bruts de `hc_samples`), à leur vitesse
-  réelle, coût **net** (MET − 1), après déduction des marches saisies à la main. Détail et
-  constantes : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche doit garder « 🚶 » ou
-  « marche » et une distance en « km » dans `desc`, sinon `hc-webhook` ne la déduit pas.
+- **Calories Sport — pas Health Connect** : la synchro du téléphone (`hc-webhook`) ne crée plus
+  aucune entrée (v9, 12/10/2026 — l'utilisateur saisit ses marches à la main). À la demande :
+  bouton **« 🚶 Marche auto (téléphone) »** de l'écran Sport → modale `#modal-walk-auto` (jour +
+  vitesse), qui appelle `hc-webhook` avec le JWT de session : vraies séquences de marche (≥ 5 min
+  à ≥ 60 pas/min) × vitesse choisie, moins les marches saisies ; entrée « 🚶 Marche auto » (tag
+  `hc:auto-AAAA-MM-JJ`). Détail : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche
+  doit garder « 🚶 » ou « marche » et une distance en « km » dans `desc`, sinon elle n'est pas déduite.
 - **Rechargement au retour au premier plan** (12/10/2026) : le journal (et le bilan si ouvert) est
   rechargé quand l'app redevient visible après plus de 30 s (`visibilitychange`, `_hiddenAt`) —
   Android suspend le WebSocket Realtime en arrière-plan et les changements faits pendant ce temps

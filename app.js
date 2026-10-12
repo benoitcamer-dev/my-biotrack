@@ -1430,6 +1430,7 @@ function showAllSports() {
         <button onclick="selectWalkRouteQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Itinéraire</button>
         <button onclick="selectWalkSimpleQuick()" style="padding:14px 6px;border-radius:14px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Simple</button>
       </div>
+      <button onclick="openWalkAutoModal()" style="width:100%;margin-top:4px;padding:11px 6px;border-radius:14px;background:rgba(52,211,153,0.06);border:1px dashed rgba(52,211,153,0.35);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🚶 Marche auto (téléphone)</button>
       <button onclick="openSportFavsModal()" style="width:100%;background:none;border:none;color:var(--muted);font-size:11px;padding:4px 0 2px;cursor:pointer;text-align:center;">⚙️ Gérer mes favoris</button>
     </div>`;
   renderSportFavsQuick();
@@ -5206,6 +5207,98 @@ document.getElementById('modal-sport-fav-date').classList.add('open');
 }
 function closeSportFavDateModal() {
 document.getElementById('modal-sport-fav-date').classList.remove('open');
+}
+// ── Marche auto (pas Health Connect, à la demande) ─────────────────────────────
+// Aucune entrée de marche n'est créée automatiquement par la synchro du téléphone (hc-webhook v9,
+// choix de l'utilisateur) : ce modal demande à hc-webhook (v10, JWT de session) un aperçu des vraies
+// marches détectées pour le jour choisi, à la vitesse choisie (durée mesurée × vitesse = distance,
+// la distance Google Fit étant jugée trop courte), puis crée/met à jour l'entrée « 🚶 Marche auto »
+// (tag hc:auto-AAAA-MM-JJ) sur validation. Détail du calcul : SYNC_PAS_HEALTH_CONNECT.md.
+const WALK_AUTO_DEFAULT_SPEED = 5.5;
+let _walkAutoTimer = null, _walkAutoReq = 0;
+function openWalkAutoModal() {
+  document.getElementById('walk-auto-date').value = document.getElementById('in-entry-date').value || journalDateStr();
+  let sp = WALK_AUTO_DEFAULT_SPEED;
+  try { const v = parseFloat(localStorage.getItem('walkAutoSpeed')); if (v >= 2 && v <= 9) sp = v; } catch (e) {}
+  document.getElementById('walk-auto-speed').value = sp;
+  document.getElementById('modal-walk-auto').classList.add('open');
+  refreshWalkAuto();
+}
+function closeWalkAutoModal() {
+  clearTimeout(_walkAutoTimer);
+  _walkAutoReq++;
+  document.getElementById('modal-walk-auto').classList.remove('open');
+}
+function onWalkAutoInput() { clearTimeout(_walkAutoTimer); _walkAutoTimer = setTimeout(refreshWalkAuto, 500); }
+async function callWalkAuto(date, speed, commit) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error('Session expirée — reconnecte-toi');
+  const r = await fetch(SUPABASE_URL + '/functions/v1/hc-webhook', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify({ date, speed, commit })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('Erreur ' + r.status));
+  return j;
+}
+function _walkAutoInputs() {
+  const date = document.getElementById('walk-auto-date').value;
+  const speed = parseFloat(String(document.getElementById('walk-auto-speed').value).replace(',', '.'));
+  return { date, speed, ok: /^\d{4}-\d{2}-\d{2}$/.test(date) && speed >= 2 && speed <= 9 };
+}
+async function refreshWalkAuto() {
+  const box = document.getElementById('walk-auto-result');
+  const btn = document.getElementById('walk-auto-add');
+  btn.disabled = true;
+  const { date, speed, ok } = _walkAutoInputs();
+  if (!ok) { box.innerHTML = 'Choisis un jour et une vitesse entre 2 et 9 km/h.'; return; }
+  const req = ++_walkAutoReq;
+  box.innerHTML = 'Calcul…';
+  try {
+    const d = await callWalkAuto(date, speed, false);
+    if (req !== _walkAutoReq) return;
+    const f = n => String(n).replace('.', ',');
+    let sync = '';
+    if (d.lastSync) {
+      const mins = Math.round((Date.now() - Date.parse(d.lastSync)) / 60000);
+      sync = mins < 60 ? `il y a ${mins} min` : new Date(d.lastSync).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      sync = `<div style="margin-top:8px;font-size:11px;opacity:0.75;">Dernière synchro du téléphone : ${sync}</div>`;
+    }
+    if (!d.walkMin) {
+      box.innerHTML = `Aucune marche détectée ce jour-là (${d.totalSteps} pas au total).${sync}`;
+      return;
+    }
+    box.innerHTML = `<strong>${d.bouts} marche${d.bouts > 1 ? 's' : ''} détectée${d.bouts > 1 ? 's' : ''}</strong> · ${d.walkMin} min · ${d.walkSteps} pas`
+      + `<br>À ${f(d.speed)} km/h : ${f(d.km)} km`
+      + (d.manualKm > 0 ? `<br>− ${f(d.manualKm)} km déjà saisis` : '')
+      + `<br>= <strong>${f(d.finalKm)} km · ${d.kcal} kcal</strong>`
+      + `<div style="margin-top:6px;font-size:11px;opacity:0.75;">Mesuré par Fit : ${f(d.fitKm)} km (${f(d.fitSpeed)} km/h)</div>`
+      + sync;
+    if (d.kcal < 1) { box.innerHTML += '<div style="margin-top:6px;">Les marches saisies couvrent déjà tout.</div>'; return; }
+    btn.textContent = d.existing ? "Mettre à jour l'entrée du jour" : 'Ajouter au journal';
+    btn.disabled = false;
+  } catch (e) {
+    if (req !== _walkAutoReq) return;
+    box.innerHTML = 'Erreur : ' + escHtml(e.message);
+  }
+}
+async function saveWalkAuto() {
+  const { date, speed, ok } = _walkAutoInputs();
+  if (!ok) return;
+  const btn = document.getElementById('walk-auto-add');
+  btn.disabled = true;
+  try {
+    const d = await callWalkAuto(date, speed, true);
+    try { localStorage.setItem('walkAutoSpeed', String(speed)); } catch (e) {}
+    showToast(`🚶 Marche auto : ${d.kcal} kcal ${d.existing ? 'mises à jour' : 'ajoutées'}`, 'success');
+    closeWalkAutoModal();
+    closeModal();
+    loadData();
+  } catch (e) {
+    showToast('Erreur : ' + e.message, 'error');
+    btn.disabled = false;
+  }
 }
 function updateSportFavDateUI() {
 const today = new Date(); today.setHours(0, 0, 0, 0);

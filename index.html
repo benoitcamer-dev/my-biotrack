@@ -832,6 +832,25 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <button class="btn-cancel" onclick="closeSportFavDateModal()">Annuler</button>
 </div>
 </div>
+<!-- MODAL MARCHE AUTO : vraies marches détectées par le téléphone (Health Connect), à la demande,
+     pour un jour choisi — calcul côté Edge Function hc-webhook (v10), voir SYNC_PAS_HEALTH_CONNECT.md -->
+<div id="modal-walk-auto" class="modal-overlay z88">
+<div class="settings-sheet sheet-fit">
+<div class="modal-handle"></div>
+<div class="modal-title-row">
+<div class="modal-title">🚶 Marche auto</div>
+<button class="modal-close" aria-label="Fermer" onclick="closeWalkAutoModal()">×</button>
+</div>
+<div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:12px;">Marches détectées par le téléphone (5 min d'affilée ou plus) — pas les petits pas à la maison. Les marches déjà saisies ce jour-là sont déduites.</div>
+<div class="inputs-grid">
+<div class="input-box"><label>Jour</label><input id="walk-auto-date" type="date" onchange="refreshWalkAuto()"></div>
+<div class="input-box"><label>Vitesse (km/h)</label><input id="walk-auto-speed" type="number" inputmode="decimal" step="0.1" min="2" max="9" oninput="onWalkAutoInput()"></div>
+</div>
+<div id="walk-auto-result" class="walk-result-box" style="display:block;margin-bottom:12px;"></div>
+<button class="btn-primary" id="walk-auto-add" onclick="saveWalkAuto()" disabled>Ajouter au journal</button>
+<button class="btn-cancel" onclick="closeWalkAutoModal()">Annuler</button>
+</div>
+</div>
 <!-- MODAL EDIT WEIGHT -->
 <div id="modal-edit-weight" class="modal-overlay z88">
 <div class="settings-sheet sheet-fit">
