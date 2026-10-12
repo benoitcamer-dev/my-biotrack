@@ -81,10 +81,14 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 
 - Pas de framework de test (irait à l'encontre du choix "sans build"), mais **`node verify.js`** (racine du repo) formalise en une commande les vérifications pré-commit : syntaxe JS, équilibrage `<div>`/`<button>` HTML, équilibrage `{ }` CSS, synchronisation byte-exacte d'`index-complet.html` avec les 3 fichiers séparés, classes CSS orphelines (signalement seulement, non bloquant). Pas de linter configuré à ce jour.
 - **⚠️ Marqueurs de données en emoji dans les descriptions d'entrées — ne jamais convertir en icône ni supprimer.** `📚` (lié à une recette), `🚶` (marche) et `🚴` (vélo) préfixent le texte de `entry.desc` et sont relus par du code de classification à plusieurs endroits d'`app.js` (`.includes('🚶')`, `.replace('🚴','')`, etc.), y compris pour les titres d'événements Google Agenda. Avant de toucher un emoji décoratif quel qu'il soit, vérifier par `grep` qu'il n'est pas aussi utilisé comme marqueur.
-- **Calories Sport — marche saisie à la main** (Simple ou Itinéraire) : `MET(vitesse) × poids × durée`,
-  poids = dernier poids pesé (`getCurrentWeight()`). `getMETWalk()` interpole linéairement entre les
-  points du Compendium 2011 (`WALK_MET_POINTS`, 2,4 → 8 km/h) depuis le 12/10/2026 — avant : paliers
-  fixes avec sauts et marche rapide sous-estimée. Vitesse par défaut si le champ est vide : 6 km/h.
+- **Calories Sport — marche saisie à la main** (Simple ou Itinéraire) : coût **net**
+  `(MET(vitesse) − 1) × poids × durée` (`walkNetMET()`, même formule que « Marche auto » — avant le
+  12/10/2026 au soir : MET brut, repos compté deux fois avec le métabolisme, ~+25 %), poids = dernier
+  poids pesé (`getCurrentWeight()`). `getMETWalk()` interpole linéairement entre les points du
+  Compendium 2011 (`WALK_MET_POINTS`, 2,4 → 8 km/h) depuis le 12/10/2026 — avant : paliers fixes avec
+  sauts et marche rapide sous-estimée. Vitesse par défaut : `WALK_DEFAULT_SPEED` = 5,5 km/h (6 avant
+  le 12/10/2026), aussi dans le calcul d'itinéraire et le prompt IA. Les favoris marche affichent des
+  kcal recalculées à leur vitesse et au poids actuel (`walkFavKcal()`), pas le `kcal` stocké.
   Les entrées existantes ne sont jamais recalculées rétroactivement.
 - **Calories Sport — pas Health Connect** : la synchro du téléphone (`hc-webhook`) ne crée plus
   aucune entrée (v9, 12/10/2026 — l'utilisateur saisit ses marches à la main). À la demande :

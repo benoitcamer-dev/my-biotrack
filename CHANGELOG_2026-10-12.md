@@ -111,6 +111,16 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
 - `hc-webhook` v12 + app : correction **+8 % par défaut** (écart app Fit / Health Connect) ; l'aperçu
   affiche les kcal auto avant déduction et les kcal des marches saisies, pour comparer au quotidien.
 
+- App (`60fa979`) : kcal de la marche **saisie à la main** en coût net `(MET − 1) × poids × durée`
+  (le MET brut comptait le repos deux fois, ~+25 %) ; vitesse par défaut **5,5 km/h** (constante
+  `WALK_DEFAULT_SPEED`, aussi itinéraire et prompt IA) ; favoris marche affichés avec des kcal
+  recalculées (`walkFavKcal`). Vérifié en ligne (30 min à 5,5 km/h, 83,8 kg → 134 kcal).
+- Données (demande de l'utilisateur) : marches saisies du 09 au 11/10 (17 / 15 / 13,3 km « à 5 km/h »,
+  ancienne formule, 1081 / 954 / 960 kcal) **remplacées par des « Marche auto » +8 %** : 521 / 525 /
+  579 kcal (marches réelles ≈ 3,7 km/h), soit −1370 kcal. 12/10 : ancienne entrée `hc:daily` (70 kcal)
+  et trajet « Gare Part-Dieu → Domicile » (créé le 08/10, mal daté) supprimés → une seule « Marche
+  auto » de 147 kcal (3 marches, 45 min, 3,4 km).
+
 ## Reste à faire
 
 - `gfit-sync` / `gfit-callback` : neutralisées (410, JWT requis) mais pas supprimées — le MCP
