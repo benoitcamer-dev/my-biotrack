@@ -3371,7 +3371,7 @@ async function syncGoogleFitFromModal() {
     const r = await fetch('https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, user_weight: userWeight, since_hours: 48, force: true })
+      body: JSON.stringify({ user_id: user.id, user_weight: getCurrentWeight(), since_hours: 48, force: true })
     });
     const result = await r.json();
     const newCount = result.imported?.length || 0;
@@ -3412,7 +3412,7 @@ async function syncGoogleFit(silent = true) {
     const r = await fetch('https://zlbwoxsmmdytoucgyhmc.supabase.co/functions/v1/gfit-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, user_weight: userWeight, since_hours: 48, force: !silent })
+      body: JSON.stringify({ user_id: user.id, user_weight: getCurrentWeight(), since_hours: 48, force: !silent })
     });
     const result = await r.json();
     if (result.imported?.length || result.updated?.length) loadData();
