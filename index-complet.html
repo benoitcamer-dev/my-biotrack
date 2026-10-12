@@ -2515,7 +2515,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 </div>
 <div style="display:flex;gap:7px;margin-bottom:10px;align-items:center;">
 <label style="font-size:11px;color:var(--muted);">Vitesse :</label>
-<input id="walk-route-speed" type="number" inputmode="decimal" value="6" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
+<input id="walk-route-speed" type="number" inputmode="decimal" value="5.5" min="1" max="15" step="0.5" style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:12px;">
 <label style="font-size:11px;color:var(--muted);">km/h</label>
 <button class="walk-calc-btn" style="margin-left:auto;" onclick="calcRoute()">Calculer</button>
 </div>
@@ -3740,9 +3740,17 @@ if (spd < 26) return 7.5;
 if (spd < 30) return 8.5;
 return 9.5;
 }
-function calcWalkKcal(spd, durMin) { return Math.round(getMETWalk(spd) * getCurrentWeight() * (durMin / 60)); }
+// Marche : kcal NETTES = (MET − 1) × poids × heures — le repos (1 MET) est déjà compté dans le métabolisme,
+// comme pour la « Marche auto » (hc-webhook). Avant le 12/10/2026 : MET brut, repos compté deux fois (~+25 %).
+// Vitesse par défaut 5,5 km/h (6 avant le 12/10/2026 : l'allure mesurée par le téléphone est plus lente).
+const WALK_DEFAULT_SPEED = 5.5;
+function walkNetMET(spd) { return Math.max(0, getMETWalk(spd) - 1); }
+function calcWalkKcal(spd, durMin) { return Math.round(walkNetMET(spd) * getCurrentWeight() * (durMin / 60)); }
 function calcBikeKcal(spd, durMin) { return Math.round(getMETBike(spd) * getCurrentWeight() * (durMin / 60)); }
-function calcWalkKcalH(spd) { return Math.round(getMETWalk(spd) * getCurrentWeight()); }
+function calcWalkKcalH(spd) { return Math.round(walkNetMET(spd) * getCurrentWeight()); }
+// Kcal d'un trajet favori recalculées à sa propre vitesse (comme à l'ajout rapide) : le f.kcal stocké
+// date de l'enregistrement du favori (poids et formule de l'époque).
+function walkFavKcal(f) { return f.duration > 0 && f.distance > 0 ? calcWalkKcal(round1(f.distance / (f.duration / 60)), f.duration) : (f.kcal || 0); }
 function calcBikeKcalH(spd) { return Math.round(getMETBike(spd) * getCurrentWeight()); }
 const ACCEPTABLE_PROCESSED = ['chipolata', 'saucisse de toulouse', 'saucisse', 'jambon blanc', 'jambon cru', 'jambon de bayonne', 'jambon sec', 'lardons', 'bacon', 'chorizo', 'merguez', 'andouillette', 'boudin noir', 'boudin blanc', 'rillettes', 'pâté', 'terrine', 'confit de canard', 'magret', 'foie gras', 'mousse de canard', 'fromage', 'beurre', 'crème fraîche', 'yaourt', 'yogourt', 'kéfir', 'skyr', 'fromage blanc', 'mozzarella', 'parmesan', 'gruyère', 'emmental', 'comté', 'roquefort', 'camembert', 'brie', 'feta', 'reblochon', 'cantal', 'beaufort', 'ossau', 'raclette', 'chèvre', 'pain de mie', 'pain complet', 'baguette', 'pain', 'farine', 'pâte brisée', 'pâte feuilletée', 'tofu', 'tempeh', 'seitan', 'edamame', 'sardine', 'thon', 'saumon fumé', 'maquereau', 'hareng', 'anchois', 'huile', 'vinaigre', 'miel', 'confiture', 'nutella', 'beurre de cacahuète'];
 const DRINK_DB = [
@@ -4605,7 +4613,7 @@ document.getElementById('in-l').value = '0';
 document.getElementById('search-results').style.display = 'none';
 document.getElementById('search-results').innerHTML = '';
 document.getElementById('speed-row').style.display = 'none';
-document.getElementById('in-speed').value = '6';
+document.getElementById('in-speed').value = String(WALK_DEFAULT_SPEED);
 document.getElementById('in-distance').value = '—';
 document.getElementById('walk-advanced').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
@@ -4756,7 +4764,7 @@ const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
 if (!hasWalk && !hasBike) { section.style.display = 'none'; return; }
 section.style.display = 'block';
-document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
+document.getElementById('walk-favs-quick-list').innerHTML = hasWalk ? `<div class="sport-fav-section"><div class="sport-fav-title">🚶 Trajets marche favoris</div>${walkFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadWalkFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div><div class="sport-fav-meta">${f.distance} km · ~${f.duration} min · ~${walkFavKcal(f)} kcal</div></div></div>`).join('')}</div>` : '';
 document.getElementById('bike-favs-quick-list').innerHTML = hasBike ? `<div class="sport-fav-section"><div class="sport-fav-title"><i data-lucide="bike" class="lc-icon-sm"></i> Sorties vélo favorites</div>${bikeFavorites.map((f, i) => `<div class="sport-fav-item" onclick="loadBikeFavQuick(${i})"><div><div class="sport-fav-name"><i data-lucide="star" class="lc-icon-sm"></i> ${escHtml(f.name)}</div><div class="sport-fav-meta">${f.speed} km/h · ${f.duration} min · ~${f.kcal} kcal</div></div></div>`).join('')}</div>` : '';
 }
 function loadWalkFavQuick(i) {
@@ -5113,7 +5121,7 @@ document.getElementById('label-qty').textContent = 'Durée (min)';
 document.getElementById('label-kcal').textContent = 'Kcal / heure';
 document.getElementById('in-qty').value = '30';
 document.getElementById('in-qty').placeholder = '';
-document.getElementById('in-speed').value = '6';
+document.getElementById('in-speed').value = String(WALK_DEFAULT_SPEED);
 document.getElementById('speed-row').style.display = 'grid';
 document.getElementById('search-results').style.display = 'none';
 document.getElementById('sport-favs-section').style.display = 'none';
@@ -5640,7 +5648,7 @@ const _norm = s => (s || '').trim().toLowerCase();
 const isLoop = steps.length > 2 && _norm(steps[0]) === _norm(steps[steps.length-1]);
 if (isLoop && rtBox.checked) { rtBox.checked = false; showToast('Boucle déjà fermée : aller-retour ignoré.', 'info'); }
 const rt = rtBox.checked;
-const userSpd = parseFloat(document.getElementById('walk-route-speed')?.value) || 6;
+const userSpd = parseFloat(document.getElementById('walk-route-speed')?.value) || WALK_DEFAULT_SPEED;
 const routeResult = await calcMultiLegRoute(steps);
 const dist = round1(routeResult.distanceKm * (rt ? 2 : 1));
 const durMin = Math.round(dist / userSpd * 60); // use user speed, not ORS speed
@@ -5801,7 +5809,7 @@ function onWalkDistInput(val) {
   // Parse distance (accept "3.5", "3.5 km", "3,5")
   const dist = parseFloat(val.replace(',', '.').replace(/[^\d.]/g, '')) || 0;
   if (!dist) return;
-  const spd = parseFloat(document.getElementById('in-speed').value) || 6;
+  const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED;
   // Recalculate duration from distance and speed
   const durMin = Math.round(dist / spd * 60);
   document.getElementById('in-qty').value = durMin;
@@ -5829,7 +5837,7 @@ const isBikeMachine = isSport && desc === 'vélo' && currentBikeMode === 'machin
 const total = isBikeMachine ? getBikeMachineAdjustedKcal() : (isSport ? Math.round(k * (q / 60)) : Math.round(k * (effectiveMl / 100)));
 document.getElementById('calc-res').textContent = total + ' kcal';
 if (isSport && desc === 'marche' && currentWalkMode === 'simple') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 6, dist = round1(spd * (q / 60));
+const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED, dist = round1(spd * (q / 60));
 document.getElementById('in-distance').value = dist + ' km';
 document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 } else if (isSport && desc === 'vélo') {
@@ -5840,7 +5848,7 @@ if (currentBikeMode === 'machine') {
   document.getElementById('calc-sub').textContent = `${raw || 0} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 }
 } else if (isSport && desc === 'marche') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 6;
+const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED;
 document.getElementById('calc-sub').textContent = `${spd} km/h · ${k} kcal/h (${getCurrentWeight()}kg)`;
 } else {
 document.getElementById('in-distance').value = '—';
@@ -5856,7 +5864,7 @@ if (_currentFoodUnit) {
 function getEffectiveKcal() {
 const raw = parseFloat(document.getElementById('in-kcal').value) || 0;
 const desc = document.getElementById('in-desc').value.trim().toLowerCase();
-if (currentCat === 'Sport' && desc === 'marche') { const spd = parseFloat(document.getElementById('in-speed').value) || 6; return calcWalkKcalH(spd); }
+if (currentCat === 'Sport' && desc === 'marche') { const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED; return calcWalkKcalH(spd); }
 if (currentCat === 'Sport' && desc === 'vélo') { return currentBikeMode === 'machine' ? bikeMachineKcalPerHour : calcBikeKcalH(raw); }
 return raw;
 }
@@ -6020,7 +6028,7 @@ let bikeLabel = null;
 if (isSport) {
 const dl = descName.toLowerCase();
 if (dl === 'marche' && currentWalkMode === 'route' && currentRouteData) {
-const spd = parseFloat(document.getElementById('in-speed').value) || 6;
+const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED;
 const dist = currentRouteData.distance || round1(spd * (q / 60));
 let label;
 if (currentWalkFavName) {
@@ -6046,7 +6054,7 @@ if (currentWalkFavName) {
 }
 descFinal = `🚶 ${label} (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'marche') {
-const spd = parseFloat(document.getElementById('in-speed').value) || 6;
+const spd = parseFloat(document.getElementById('in-speed').value) || WALK_DEFAULT_SPEED;
 const dist = round1(spd * (q / 60));
 descFinal = `🚶 Marche (${q}min · ${dist}km · ${spd}km/h)`;
 } else if (dl === 'vélo') {
@@ -8324,7 +8332,7 @@ el.innerHTML = walkFavorites.map((f, i) => {
 <span class="drag-handle" style="cursor:grab;color:var(--muted);font-size:18px;padding:0 4px;touch-action:none;">⠿</span>
 <div class="builder-main" style="flex:1;cursor:pointer;" onclick="loadWalkFavQuick(${i})">
 <div class="builder-title">${escHtml(f.name)}</div>
-<div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${f.kcal} kcal</div>
+<div class="builder-sub">${f.distance} km · ~${f.duration} min · ~${walkFavKcal(f)} kcal</div>
 </div>
 <div class="food-item-actions">
 <button class="food-btn" onclick="event.stopPropagation();showCtxPopup(event,[{icon:'pencil',label:'Modifier',fn:'closeCtxPopup();renderSportFavsContent(${i},\'walk\')'},{icon:'trash-2',label:'Supprimer',fn:'closeCtxPopup();deleteWalkFav(${i})',danger:true}])">⋯</button>
@@ -9173,7 +9181,7 @@ async function askAI() {
     ? 'Aliments perso : ' + customFoods.map(f => `"${f.name}" (${f.kcal_100}kcal/100g)`).join(' | ')
     : '';
   const walkFavCtx = walkFavorites.length > 0
-    ? 'Favoris marche : ' + walkFavorites.map(f => `"${f.name}" (${f.distance}km, ${f.duration}min, ${f.kcal}kcal)`).join(' | ')
+    ? 'Favoris marche : ' + walkFavorites.map(f => `"${f.name}" (${f.distance}km, ${f.duration}min, ${walkFavKcal(f)}kcal)`).join(' | ')
     : '';
   const bikeFavCtx = bikeFavorites.length > 0
     ? 'Favoris velo : ' + bikeFavorites.map(f => `"${f.name}" (${f.speed}km/h, ${f.duration}min, ${f.kcal}kcal)`).join(' | ')
@@ -9194,13 +9202,13 @@ async function askAI() {
     ? `Tu es un assistant sport et nutrition. ${userProfile} ${catHint}
 ${sportFavCtx ? 'Activites favorites enregistrees de l utilisateur : ' + sportFavCtx + '. Si l utilisateur dit utiliser un favori ou mentionne le nom d un favori, utilise exactement ses valeurs (duree, kcal).' : ''}
 Utilise ce profil pour calculer des calories selon poids/taille/sexe.
-Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 6km/h par defaut.
+Pour la MARCHE avec plusieurs etapes (A vers B, puis B vers C) : additionne les distances de chaque segment, estime la duree selon la vitesse indiquee ou 5.5km/h par defaut.
 Tu connais la geographie de Lyon. Sauf mention contraire, tous les lieux sont a Lyon. Tu peux estimer les distances entre lieux lyonnais connus (quartiers, monuments, restaurants connus).
-Vitesse de marche par defaut : 6 km/h sauf indication contraire de l utilisateur.
+Vitesse de marche par defaut : 5.5 km/h sauf indication contraire de l utilisateur.
 ${placesContext}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre, zero explication.
-Format marche SIMPLE (A vers B) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
-Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B","adresse C"],"walk_distance_km":0,"walk_speed_kmh":6,"note":"detail"}
+Format marche SIMPLE (A vers B) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B"],"walk_distance_km":0,"walk_speed_kmh":5.5,"note":"detail"}
+Format marche MULTI-ETAPES (A vers B vers C...) : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":true,"walk_steps":["adresse A","adresse B","adresse C"],"walk_distance_km":0,"walk_speed_kmh":5.5,"note":"detail"}
 Toujours mettre les etapes dans "walk_steps" (tableau). Ne pas mettre walk_from/walk_to.
 Format sport non-marche : {"type":"sport","activity":"description","duration_min":0,"kcal_per_hour":0,"total_kcal":0,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
 Calcul kcal/heure selon poids de l utilisateur et intensite :
@@ -9227,7 +9235,7 @@ Si l utilisateur mentionne une recette enregistree, reponds avec : {"type":"reci
 ${sportFavCtx ? 'Activites favorites : ' + sportFavCtx + '.' : ''}
 Si activite sportive : calcul kcal/heure selon poids ${getCurrentWeight()}kg : velo leger=poids*4, modere=poids*6, soutenu=poids*8, intense=poids*10, course lente=poids*7, rapide=poids*10, natation=poids*7, muscu=poids*4, autre=poids*5.
 Format sport : {"type":"sport","activity":"description","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":false,"walk_steps":[],"walk_distance_km":0,"walk_speed_kmh":0,"note":"detail"}
-Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":6,"note":"detail"}
+Pour la marche : {"type":"sport","activity":"marche","duration_min":DUREE,"kcal_per_hour":KCAL_H,"total_kcal":TOTAL,"is_walk":true,"walk_steps":["depart","arrivee"],"walk_distance_km":DIST,"walk_speed_kmh":5.5,"note":"detail"}
 REGLE ABSOLUE : reponds UNIQUEMENT en JSON valide, zero texte libre.
 REPAS SIMPLE : {"type":"food","food":"nom precis","qty_g":POIDS,"kcal_per_100g":KCAL_100G,"prot_per_100g":PROT,"gluc_per_100g":GLUC,"lip_per_100g":LIP,"note":"courte"}
 REPAS COMPOSE ou PLUSIEURS BOISSONS : si l utilisateur mentionne plusieurs aliments OU plusieurs boissons, les lister TOUS dans la note. Ne jamais en oublier. Estime chaque item separement, calcule kcal_per_100g = SOMME_KCAL / qty_g * 100.
@@ -9337,7 +9345,7 @@ Volumes : 1 pinte=500ml, 1 demi (biere)=25cl, 1 verre de biere=25cl, 1 verre de 
         document.getElementById('ai-loading').style.display = 'block';
         try {
           const routeResult = await calcMultiLegRoute(p.walk_steps);
-          const walkSpd = p.walk_speed_kmh || 6;
+          const walkSpd = p.walk_speed_kmh || WALK_DEFAULT_SPEED;
           p.walk_speed_kmh = walkSpd;
           p.walk_distance_km = routeResult.distanceKm;
           p.walk_from = p.walk_steps[0];
@@ -9358,7 +9366,7 @@ Volumes : 1 pinte=500ml, 1 demi (biere)=25cl, 1 verre de biere=25cl, 1 verre de 
         } catch(geoErr) {
           document.getElementById('ai-loading').style.display = 'none';
           addChatMessage('ai', '⚠️ ' + geoErr.message + ' — durée estimée par l\'IA utilisée.');
-          const walkSpd = p.walk_speed_kmh || 6;
+          const walkSpd = p.walk_speed_kmh || WALK_DEFAULT_SPEED;
           p.walk_speed_kmh = walkSpd;
           const realKcalH = calcWalkKcalH(walkSpd);
           p.kcal_per_hour = realKcalH;
@@ -9366,7 +9374,7 @@ Volumes : 1 pinte=500ml, 1 demi (biere)=25cl, 1 verre de biere=25cl, 1 verre de 
           document.getElementById('ai-kcal').value = realKcalH;
         }
       } else if (p.is_walk) {
-        const walkSpd = p.walk_speed_kmh || 6;
+        const walkSpd = p.walk_speed_kmh || WALK_DEFAULT_SPEED;
         p.walk_speed_kmh = walkSpd;
         const realKcalH = calcWalkKcalH(walkSpd);
         p.kcal_per_hour = realKcalH;
@@ -9661,7 +9669,7 @@ async function addAIEntry() {
     let desc;
     if (isSport && _aiLastSportData?.is_walk && _aiLastSportData?.walk_steps?.length >= 2) {
       const p2 = _aiLastSportData;
-      const spd = p2.walk_speed_kmh || 6;
+      const spd = p2.walk_speed_kmh || WALK_DEFAULT_SPEED;
       const dist = p2.walk_distance_km || round1(spd * (q / 60));
       // Use saved place names if matching, else use raw steps
       const stepsLabel = p2.walk_steps.map(s => {
