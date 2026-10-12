@@ -108,6 +108,8 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
 - `hc-webhook` v11 + app : la vitesse unique de la v10 surestimait les jours de marche lente
   (11/10 : 19,8 km à 5,5 km/h contre 12,35 km mesurés). Chaque marche garde désormais sa vitesse
   mesurée ; le champ Vitesse devient « Correction distance (%) » ; l'aperçu liste les marches.
+- `hc-webhook` v12 + app : correction **+8 % par défaut** (écart app Fit / Health Connect) ; l'aperçu
+  affiche les kcal auto avant déduction et les kcal des marches saisies, pour comparer au quotidien.
 
 ## Reste à faire
 

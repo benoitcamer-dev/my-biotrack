@@ -56,19 +56,20 @@ const parisDate = (t: string | number | Date) => parisFmt.format(new Date(t));
 const fmt = (n: number) => String(n).replace(".", ",");
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-// Distance (km) des marches saisies à la main ce jour-là (hors entrées générées) — à retirer.
-async function manualWalkKm(sb: any, user_id: string, dateStr: string): Promise<number> {
-  const { data } = await sb.from("entries").select("desc")
+// Distance (km) et kcal des marches saisies à la main ce jour-là (hors entrées générées) — km à
+// retirer, kcal affichées pour comparer avec le calcul auto.
+async function manualWalks(sb: any, user_id: string, dateStr: string): Promise<{ km: number; kcal: number }> {
+  const { data } = await sb.from("entries").select("desc, val")
     .eq("user_id", user_id).eq("date", dateStr).eq("category", "Sport")
     .not("desc", "ilike", "%gfit:%").not("desc", "ilike", "%hc:daily-%").not("desc", "ilike", "%hc:auto-%");
-  let km = 0;
-  for (const { desc } of data || []) {
+  let km = 0, kcal = 0;
+  for (const { desc, val } of data || []) {
     const d = String(desc || "");
     if (!(d.includes("🚶") || /marche|trajet/i.test(d))) continue;
     const m = d.match(/(\d+(?:[.,]\d+)?)\s*km(?!\/h)/);
-    if (m) km += parseFloat(m[1].replace(",", "."));
+    if (m) { km += parseFloat(m[1].replace(",", ".")); kcal += Number(val) || 0; }
   }
-  return km;
+  return { km, kcal: Math.round(kcal) };
 }
 
 // Dernier poids pesé, sinon poids du profil, sinon 75 kg.
@@ -188,7 +189,8 @@ async function handleAutoWalk(sb: any, req: Request, jwt: string) {
   const speed = walkMin > 0 ? round2(km / (walkMin / 60)) : 0;
 
   // Marches saisies à la main : km retirés, kcal et minutes au prorata.
-  const manualKm = round2(await manualWalkKm(sb, user_id, dateStr));
+  const manual = await manualWalks(sb, user_id, dateStr);
+  const manualKm = round2(manual.km);
   const finalKm = Math.max(0, round2(km - manualKm));
   const share = km > 0 ? finalKm / km : 0;
   const kcal = Math.round(walkKcal * share);
@@ -201,7 +203,8 @@ async function handleAutoWalk(sb: any, req: Request, jwt: string) {
     .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
   const preview = {
     date: dateStr, correction, bouts: kept.map(({ kcal, ...b }) => ({ ...b, kcal: Math.round(kcal) })),
-    walkMin, walkSteps, totalSteps, km, speed, manualKm, finalKm, finalMin, kcal, weight,
+    walkMin, walkSteps, totalSteps, km, speed, walkKcal: Math.round(walkKcal), manualKm, manualKcal: manual.kcal,
+    finalKm, finalMin, kcal, weight,
     lastSync: last?.[0]?.updated_at || null, existing: !!existing?.length,
   };
   if (!body.commit) return json({ ok: true, ...preview });

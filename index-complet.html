@@ -3089,7 +3089,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 </div>
 <!-- MODAL MARCHE AUTO : vraies marches détectées par le téléphone (Health Connect), à la demande,
-     pour un jour choisi — calcul côté Edge Function hc-webhook (v11), voir SYNC_PAS_HEALTH_CONNECT.md -->
+     pour un jour choisi — calcul côté Edge Function hc-webhook (v12), voir SYNC_PAS_HEALTH_CONNECT.md -->
 <div id="modal-walk-auto" class="modal-overlay z88">
 <div class="settings-sheet sheet-fit">
 <div class="modal-handle"></div>
@@ -8506,10 +8506,13 @@ document.getElementById('modal-sport-fav-date').classList.remove('open');
 // marches détectées pour le jour choisi — chacune à sa vitesse mesurée (une marche lente reste lente),
 // distance Fit corrigée du % choisi (Fit paraît sous-estimer la foulée) — puis crée/met à jour
 // l'entrée « 🚶 Marche auto » (tag hc:auto-AAAA-MM-JJ) sur validation. Détail : SYNC_PAS_HEALTH_CONNECT.md.
+// +8 % par défaut : l'app Fit affiche 7 à 9 % de plus que ce qu'elle écrit dans Health Connect les
+// jours de marche (relevé le 12/10/2026, voir SYNC_PAS_HEALTH_CONNECT.md).
+const WALK_AUTO_DEFAULT_CORRECTION = 8;
 let _walkAutoTimer = null, _walkAutoReq = 0;
 function openWalkAutoModal() {
   document.getElementById('walk-auto-date').value = document.getElementById('in-entry-date').value || journalDateStr();
-  let corr = 0;
+  let corr = WALK_AUTO_DEFAULT_CORRECTION;
   try { const v = parseFloat(localStorage.getItem('walkAutoCorrection')); if (v >= -30 && v <= 60) corr = v; } catch (e) {}
   document.getElementById('walk-auto-corr').value = corr;
   document.getElementById('modal-walk-auto').classList.add('open');
@@ -8562,9 +8565,10 @@ async function refreshWalkAuto() {
       return;
     }
     const list = d.bouts.map(b => `<div style="display:flex;justify-content:space-between;gap:8px;"><span>${b.from}–${b.to}</span><span>${b.min} min · ${f(b.km)} km · ${f(b.speed)} km/h</span></div>`).join('');
-    box.innerHTML = `<strong>${d.bouts.length} marche${d.bouts.length > 1 ? 's' : ''} détectée${d.bouts.length > 1 ? 's' : ''}</strong> · ${d.walkMin} min · ${f(d.km)} km · ${f(d.speed)} km/h en moyenne`
+    // Auto (avant déduction) et saisies à la main côte à côte : l'utilisateur compare les deux au quotidien.
+    box.innerHTML = `<strong>${d.bouts.length} marche${d.bouts.length > 1 ? 's' : ''} détectée${d.bouts.length > 1 ? 's' : ''}</strong> · ${d.walkMin} min · ${f(d.km)} km · ${f(d.speed)} km/h en moyenne · <strong>${d.walkKcal} kcal</strong>`
       + `<div style="margin:6px 0;font-size:11px;opacity:0.8;max-height:140px;overflow-y:auto;">${list}</div>`
-      + (d.manualKm > 0 ? `− ${f(d.manualKm)} km déjà saisis<br>` : '')
+      + (d.manualKm > 0 ? `− ${f(d.manualKm)} km déjà saisis (${d.manualKcal} kcal)<br>` : '')
       + `= <strong>${f(d.finalKm)} km · ${d.kcal} kcal</strong>`
       + sync;
     if (d.kcal < 1) { box.innerHTML += '<div style="margin-top:6px;">Les marches saisies couvrent déjà tout.</div>'; return; }
