@@ -88,6 +88,7 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
 - `hc-webhook` v6 : allure de référence **5,5 km/h** (allure habituelle donnée par l'utilisateur),
   coût net calculé avec la même courbe MET que l'app → 0,58 kcal/kg/km. 12/10 : 41 → 44 kcal.
   Option « vitesse réelle minute par minute » (résolution 1 min dans HC Webhook) gardée en réserve.
+
 ## Reste à faire
 
 - `gfit-sync` / `gfit-callback` : neutralisées (410, JWT requis) mais pas supprimées — le MCP
