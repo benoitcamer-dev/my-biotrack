@@ -3089,7 +3089,7 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 </div>
 <!-- MODAL MARCHE AUTO : vraies marches détectées par le téléphone (Health Connect), à la demande,
-     pour un jour choisi — calcul côté Edge Function hc-webhook (v10), voir SYNC_PAS_HEALTH_CONNECT.md -->
+     pour un jour choisi — calcul côté Edge Function hc-webhook (v11), voir SYNC_PAS_HEALTH_CONNECT.md -->
 <div id="modal-walk-auto" class="modal-overlay z88">
 <div class="settings-sheet sheet-fit">
 <div class="modal-handle"></div>
@@ -3097,10 +3097,10 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 <div class="modal-title">🚶 Marche auto</div>
 <button class="modal-close" aria-label="Fermer" onclick="closeWalkAutoModal()">×</button>
 </div>
-<div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:12px;">Marches détectées par le téléphone (5 min d'affilée ou plus) — pas les petits pas à la maison. Les marches déjà saisies ce jour-là sont déduites.</div>
+<div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:12px;">Marches détectées par le téléphone (5 min d'affilée ou plus), chacune à sa vitesse mesurée — pas les petits pas à la maison. La correction allonge (+) ou raccourcit (−) la distance mesurée par Fit. Les marches déjà saisies ce jour-là sont déduites.</div>
 <div class="inputs-grid">
 <div class="input-box"><label>Jour</label><input id="walk-auto-date" type="date" onchange="refreshWalkAuto()"></div>
-<div class="input-box"><label>Vitesse (km/h)</label><input id="walk-auto-speed" type="number" inputmode="decimal" step="0.1" min="2" max="9" oninput="onWalkAutoInput()"></div>
+<div class="input-box"><label>Correction distance (%)</label><input id="walk-auto-corr" type="number" inputmode="decimal" step="1" min="-30" max="60" oninput="onWalkAutoInput()"></div>
 </div>
 <div id="walk-auto-result" class="walk-result-box" style="display:block;margin-bottom:12px;"></div>
 <button class="btn-primary" id="walk-auto-add" onclick="saveWalkAuto()" disabled>Ajouter au journal</button>
@@ -8502,17 +8502,16 @@ document.getElementById('modal-sport-fav-date').classList.remove('open');
 }
 // ── Marche auto (pas Health Connect, à la demande) ─────────────────────────────
 // Aucune entrée de marche n'est créée automatiquement par la synchro du téléphone (hc-webhook v9,
-// choix de l'utilisateur) : ce modal demande à hc-webhook (v10, JWT de session) un aperçu des vraies
-// marches détectées pour le jour choisi, à la vitesse choisie (durée mesurée × vitesse = distance,
-// la distance Google Fit étant jugée trop courte), puis crée/met à jour l'entrée « 🚶 Marche auto »
-// (tag hc:auto-AAAA-MM-JJ) sur validation. Détail du calcul : SYNC_PAS_HEALTH_CONNECT.md.
-const WALK_AUTO_DEFAULT_SPEED = 5.5;
+// choix de l'utilisateur) : ce modal demande à hc-webhook (v11, JWT de session) un aperçu des vraies
+// marches détectées pour le jour choisi — chacune à sa vitesse mesurée (une marche lente reste lente),
+// distance Fit corrigée du % choisi (Fit paraît sous-estimer la foulée) — puis crée/met à jour
+// l'entrée « 🚶 Marche auto » (tag hc:auto-AAAA-MM-JJ) sur validation. Détail : SYNC_PAS_HEALTH_CONNECT.md.
 let _walkAutoTimer = null, _walkAutoReq = 0;
 function openWalkAutoModal() {
   document.getElementById('walk-auto-date').value = document.getElementById('in-entry-date').value || journalDateStr();
-  let sp = WALK_AUTO_DEFAULT_SPEED;
-  try { const v = parseFloat(localStorage.getItem('walkAutoSpeed')); if (v >= 2 && v <= 9) sp = v; } catch (e) {}
-  document.getElementById('walk-auto-speed').value = sp;
+  let corr = 0;
+  try { const v = parseFloat(localStorage.getItem('walkAutoCorrection')); if (v >= -30 && v <= 60) corr = v; } catch (e) {}
+  document.getElementById('walk-auto-corr').value = corr;
   document.getElementById('modal-walk-auto').classList.add('open');
   refreshWalkAuto();
 }
@@ -8522,13 +8521,13 @@ function closeWalkAutoModal() {
   document.getElementById('modal-walk-auto').classList.remove('open');
 }
 function onWalkAutoInput() { clearTimeout(_walkAutoTimer); _walkAutoTimer = setTimeout(refreshWalkAuto, 500); }
-async function callWalkAuto(date, speed, commit) {
+async function callWalkAuto(date, correction, commit) {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw new Error('Session expirée — reconnecte-toi');
   const r = await fetch(SUPABASE_URL + '/functions/v1/hc-webhook', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
-    body: JSON.stringify({ date, speed, commit })
+    body: JSON.stringify({ date, correction, commit })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || ('Erreur ' + r.status));
@@ -8536,19 +8535,20 @@ async function callWalkAuto(date, speed, commit) {
 }
 function _walkAutoInputs() {
   const date = document.getElementById('walk-auto-date').value;
-  const speed = parseFloat(String(document.getElementById('walk-auto-speed').value).replace(',', '.'));
-  return { date, speed, ok: /^\d{4}-\d{2}-\d{2}$/.test(date) && speed >= 2 && speed <= 9 };
+  const raw = String(document.getElementById('walk-auto-corr').value).replace(',', '.').trim();
+  const correction = raw === '' ? 0 : parseFloat(raw);
+  return { date, correction, ok: /^\d{4}-\d{2}-\d{2}$/.test(date) && correction >= -30 && correction <= 60 };
 }
 async function refreshWalkAuto() {
   const box = document.getElementById('walk-auto-result');
   const btn = document.getElementById('walk-auto-add');
   btn.disabled = true;
-  const { date, speed, ok } = _walkAutoInputs();
-  if (!ok) { box.innerHTML = 'Choisis un jour et une vitesse entre 2 et 9 km/h.'; return; }
+  const { date, correction, ok } = _walkAutoInputs();
+  if (!ok) { box.innerHTML = 'Choisis un jour et une correction entre −30 et +60 %.'; return; }
   const req = ++_walkAutoReq;
   box.innerHTML = 'Calcul…';
   try {
-    const d = await callWalkAuto(date, speed, false);
+    const d = await callWalkAuto(date, correction, false);
     if (req !== _walkAutoReq) return;
     const f = n => String(n).replace('.', ',');
     let sync = '';
@@ -8561,11 +8561,11 @@ async function refreshWalkAuto() {
       box.innerHTML = `Aucune marche détectée ce jour-là (${d.totalSteps} pas au total).${sync}`;
       return;
     }
-    box.innerHTML = `<strong>${d.bouts} marche${d.bouts > 1 ? 's' : ''} détectée${d.bouts > 1 ? 's' : ''}</strong> · ${d.walkMin} min · ${d.walkSteps} pas`
-      + `<br>À ${f(d.speed)} km/h : ${f(d.km)} km`
-      + (d.manualKm > 0 ? `<br>− ${f(d.manualKm)} km déjà saisis` : '')
-      + `<br>= <strong>${f(d.finalKm)} km · ${d.kcal} kcal</strong>`
-      + `<div style="margin-top:6px;font-size:11px;opacity:0.75;">Mesuré par Fit : ${f(d.fitKm)} km (${f(d.fitSpeed)} km/h)</div>`
+    const list = d.bouts.map(b => `<div style="display:flex;justify-content:space-between;gap:8px;"><span>${b.from}–${b.to}</span><span>${b.min} min · ${f(b.km)} km · ${f(b.speed)} km/h</span></div>`).join('');
+    box.innerHTML = `<strong>${d.bouts.length} marche${d.bouts.length > 1 ? 's' : ''} détectée${d.bouts.length > 1 ? 's' : ''}</strong> · ${d.walkMin} min · ${f(d.km)} km · ${f(d.speed)} km/h en moyenne`
+      + `<div style="margin:6px 0;font-size:11px;opacity:0.8;max-height:140px;overflow-y:auto;">${list}</div>`
+      + (d.manualKm > 0 ? `− ${f(d.manualKm)} km déjà saisis<br>` : '')
+      + `= <strong>${f(d.finalKm)} km · ${d.kcal} kcal</strong>`
       + sync;
     if (d.kcal < 1) { box.innerHTML += '<div style="margin-top:6px;">Les marches saisies couvrent déjà tout.</div>'; return; }
     btn.textContent = d.existing ? "Mettre à jour l'entrée du jour" : 'Ajouter au journal';
@@ -8576,13 +8576,13 @@ async function refreshWalkAuto() {
   }
 }
 async function saveWalkAuto() {
-  const { date, speed, ok } = _walkAutoInputs();
+  const { date, correction, ok } = _walkAutoInputs();
   if (!ok) return;
   const btn = document.getElementById('walk-auto-add');
   btn.disabled = true;
   try {
-    const d = await callWalkAuto(date, speed, true);
-    try { localStorage.setItem('walkAutoSpeed', String(speed)); } catch (e) {}
+    const d = await callWalkAuto(date, correction, true);
+    try { localStorage.setItem('walkAutoCorrection', String(correction)); } catch (e) {}
     showToast(`🚶 Marche auto : ${d.kcal} kcal ${d.existing ? 'mises à jour' : 'ajoutées'}`, 'success');
     closeWalkAutoModal();
     closeModal();

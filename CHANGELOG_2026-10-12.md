@@ -105,6 +105,9 @@ fictives qui créeraient une fausse entrée de marche dans le journal.
 - `hc-webhook` v10 + app : **Marche auto à la demande** — bouton dans l'écran Sport, jour et
   vitesse au choix, aperçu puis ajout (entrée `hc:auto-DATE`). Distance = durée détectée × vitesse
   choisie. CORS ajouté, authentification par JWT de session (en plus de x-api-key pour le téléphone).
+- `hc-webhook` v11 + app : la vitesse unique de la v10 surestimait les jours de marche lente
+  (11/10 : 19,8 km à 5,5 km/h contre 12,35 km mesurés). Chaque marche garde désormais sa vitesse
+  mesurée ; le champ Vitesse devient « Correction distance (%) » ; l'aperçu liste les marches.
 
 ## Reste à faire
 

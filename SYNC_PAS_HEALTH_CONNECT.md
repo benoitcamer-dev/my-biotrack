@@ -33,13 +33,15 @@ Depuis la **v8** (12/10/2026), HC Webhook envoie les **intervalles bruts** (rés
 
 > **Depuis la v9 (12/10/2026), aucune entrée n'est créée automatiquement** : l'utilisateur saisit
 > ses marches à la main. La synchro du téléphone ne fait que stocker `hc_samples` / `hc_daily`.
-> **v10 : calcul à la demande** — bouton **« 🚶 Marche auto (téléphone) »** dans l'écran Sport de
-> l'app (modale `#modal-walk-auto`) : jour + vitesse au choix (5,5 km/h par défaut, dernière
-> vitesse utilisée mémorisée), aperçu, puis « Ajouter au journal » → entrée « 🚶 Marche auto »
-> (tag `hc:auto-AAAA-MM-JJ`, mise à jour si on relance le même jour). Appel : `POST hc-webhook`
-> avec `Authorization: Bearer <JWT de session>`, body `{ date, speed, commit }`.
-> **Distance = minutes en marche détectées × vitesse choisie** (la distance Fit, trop courte, est
-> seulement affichée pour info) ; kcal = (MET(vitesse) − 1) × poids × durée.
+> **v10/v11 : calcul à la demande** — bouton **« 🚶 Marche auto (téléphone) »** dans l'écran Sport
+> de l'app (modale `#modal-walk-auto`) : jour + **correction de distance en %** (0 par défaut,
+> dernière valeur utilisée mémorisée), aperçu avec la liste des marches détectées (heure, durée,
+> km, vitesse), puis « Ajouter au journal » → entrée « 🚶 Marche auto » (tag `hc:auto-AAAA-MM-JJ`,
+> mise à jour si on relance le même jour). Appel : `POST hc-webhook` avec `Authorization: Bearer
+> <JWT de session>`, body `{ date, correction, commit }`.
+> **Chaque marche garde sa vitesse mesurée** (distance Fit / durée), distance et vitesse × (1 +
+> correction) ; kcal = (MET(vitesse) − 1) × poids × durée, par marche. (v10 appliquait une vitesse
+> unique à toutes les minutes : surestimait les jours de marche lente, confirmé par l'utilisateur.)
 
 Objectif (demande de l'utilisateur) : ne compter que les **vraies marches**, pas les pas dispersés
 à la maison. Pour chaque jour (heure de Paris), à partir de tous les intervalles stockés :

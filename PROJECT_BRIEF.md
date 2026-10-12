@@ -89,8 +89,9 @@ Méthode de régénération complète (depuis `index-complet.html` vers les 3 fi
 - **Calories Sport — pas Health Connect** : la synchro du téléphone (`hc-webhook`) ne crée plus
   aucune entrée (v9, 12/10/2026 — l'utilisateur saisit ses marches à la main). À la demande :
   bouton **« 🚶 Marche auto (téléphone) »** de l'écran Sport → modale `#modal-walk-auto` (jour +
-  vitesse), qui appelle `hc-webhook` avec le JWT de session : vraies séquences de marche (≥ 5 min
-  à ≥ 60 pas/min) × vitesse choisie, moins les marches saisies ; entrée « 🚶 Marche auto » (tag
+  correction de distance en %), qui appelle `hc-webhook` avec le JWT de session : vraies séquences
+  de marche (≥ 5 min à ≥ 60 pas/min), chacune à sa vitesse mesurée, moins les marches saisies ;
+  entrée « 🚶 Marche auto » (tag
   `hc:auto-AAAA-MM-JJ`). Détail : `SYNC_PAS_HEALTH_CONNECT.md`. Toute nouvelle saisie de marche
   doit garder « 🚶 » ou « marche » et une distance en « km » dans `desc`, sinon elle n'est pas déduite.
 - **Rechargement au retour au premier plan** (12/10/2026) : le journal (et le bilan si ouvert) est

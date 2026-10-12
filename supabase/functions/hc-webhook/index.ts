@@ -11,16 +11,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 //    AUCUNE entrée de journal n'est créée automatiquement (v9, choix de l'utilisateur le 12/10/2026 :
 //    il saisit ses marches à la main).
 //
-// 2. MARCHE AUTO À LA DEMANDE (v10) — bouton « Marche auto » de l'app (POST, Authorization: Bearer
-//    <JWT de session>, body { date, speed, commit }). Aperçu du jour choisi ; avec commit = true,
+// 2. MARCHE AUTO À LA DEMANDE (v11) — bouton « Marche auto » de l'app (POST, Authorization: Bearer
+//    <JWT de session>, body { date, correction, commit }). Aperçu du jour choisi ; avec commit = true,
 //    crée ou met à jour l'entrée « 🚶 Marche auto » de ce jour (tag hc:auto-AAAA-MM-JJ).
 //
 // Calcul (choix de l'utilisateur le 12/10/2026) : seules les VRAIES marches comptent, pas les pas
 // dispersés à la maison. Les pas sont répartis minute par minute ; une minute est « en marche » si
 // elle compte au moins MIN_CADENCE pas ; une séquence = minutes en marche consécutives (trous de
 // MAX_GAP_MIN minutes tolérés : feu rouge, porte…), gardée si elle dure au moins MIN_BOUT_MIN minutes.
-// - Durée = minutes en marche (fiable, capteurs). Distance = durée × vitesse CHOISIE par l'utilisateur
-//   (la distance Google Fit, estimée pas × foulée ≈ 0,65 m, paraît trop courte — affichée pour info).
+// - Chaque séquence garde SA vitesse mesurée (distance Fit / durée) : une marche lente reste lente
+//   (v11 — la v10 appliquait une vitesse unique à toutes les minutes et surestimait les jours de
+//   marche lente, confirmé par l'utilisateur). La distance Fit (pas × foulée ≈ 0,65 m) paraissant
+//   courte, une CORRECTION en % choisie par l'utilisateur multiplie distance et vitesse de chaque
+//   séquence (durée inchangée) — à caler par un test sur un trajet de distance connue.
 // - Les km des marches saisies à la main ce jour-là sont retirés (évite le double comptage).
 // - Coût NET (repos exclu, déjà compté dans le BMR) = (MET(vitesse) − 1) × poids × durée, même courbe
 //   MET que l'app (WALK_MET_POINTS dans app.js, Compendium 2011).
@@ -149,36 +152,47 @@ async function handleAutoWalk(sb: any, req: Request, jwt: string) {
   const user_id = user.id;
   const body = await req.json();
   const dateStr = String(body.date || "");
-  const speed = Number(body.speed);
+  const correction = Number(body.correction ?? 0);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return json({ error: "date invalide" }, 400);
-  if (!(speed >= 2 && speed <= 9)) return json({ error: "vitesse invalide (2 à 9 km/h)" }, 400);
+  if (!(correction >= -30 && correction <= 60)) return json({ error: "correction invalide (−30 à +60 %)" }, 400);
+  const factor = 1 + correction / 100;
 
   const t0 = Date.parse(dateStr + "T00:00:00Z");
   const samples = await loadSamples(sb, user_id, new Date(t0 - 86400000).toISOString(), new Date(t0 + 2 * 86400000).toISOString());
   const minutes = minutesOfDay(samples, dateStr);
   const totalSteps = Math.round(minutes.reduce((s, [, v]) => s + v.steps, 0));
+  const totalMeters = minutes.reduce((s, [, v]) => s + v.meters, 0);
+  // Foulée du jour pour les minutes sans distance (Health Connect peut ne pas en fournir).
+  const strideM = totalSteps > 0 && totalMeters > 0 ? totalMeters / totalSteps : 0.75;
 
   // Séquences de marche.
-  const bouts: { min: number; steps: number; meters: number }[] = [];
-  let cur: { min: number; steps: number; meters: number } | null = null, lastActive = -Infinity;
+  type Bout = { start: number; end: number; min: number; steps: number; meters: number };
+  const bouts: Bout[] = [];
+  let cur: Bout | null = null;
   for (const [m, v] of minutes) {
     if (v.steps < MIN_CADENCE) continue;
-    if (!cur || m - lastActive > (MAX_GAP_MIN + 1) * 60000) { cur = { min: 0, steps: 0, meters: 0 }; bouts.push(cur); }
-    cur.min++; cur.steps += v.steps; cur.meters += v.meters;
-    lastActive = m;
+    if (!cur || m - cur.end > (MAX_GAP_MIN + 1) * 60000) { cur = { start: m, end: m, min: 0, steps: 0, meters: 0 }; bouts.push(cur); }
+    cur.end = m; cur.min++; cur.steps += v.steps; cur.meters += v.meters > 0 ? v.meters : v.steps * strideM;
   }
-  const kept = bouts.filter(b => b.min >= MIN_BOUT_MIN);
+  const weight = await currentWeight(sb, user_id);
+  const hhmm = (t: number) => new Intl.DateTimeFormat("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(t));
+  const kept = bouts.filter(b => b.min >= MIN_BOUT_MIN).map(b => {
+    const km = b.meters / 1000 * factor, speed = km / (b.min / 60);
+    return { from: hhmm(b.start), to: hhmm(b.end + 60000), min: b.min, steps: Math.round(b.steps), km: round2(km), speed: round2(speed),
+      kcal: (metWalk(speed) - 1) * weight * b.min / 60 };
+  });
   const walkMin = kept.reduce((s, b) => s + b.min, 0);
-  const walkSteps = Math.round(kept.reduce((s, b) => s + b.steps, 0));
-  const fitKm = round2(kept.reduce((s, b) => s + b.meters, 0) / 1000);
-  const fitSpeed = walkMin > 0 ? round2(fitKm / (walkMin / 60)) : 0;
+  const walkSteps = kept.reduce((s, b) => s + b.steps, 0);
+  const km = round2(kept.reduce((s, b) => s + b.km, 0));
+  const walkKcal = kept.reduce((s, b) => s + b.kcal, 0);
+  const speed = walkMin > 0 ? round2(km / (walkMin / 60)) : 0;
 
-  const km = round2(speed * walkMin / 60);
+  // Marches saisies à la main : km retirés, kcal et minutes au prorata.
   const manualKm = round2(await manualWalkKm(sb, user_id, dateStr));
   const finalKm = Math.max(0, round2(km - manualKm));
-  const finalMin = Math.round(finalKm / speed * 60);
-  const weight = await currentWeight(sb, user_id);
-  const kcal = Math.round((metWalk(speed) - 1) * weight * finalKm / speed);
+  const share = km > 0 ? finalKm / km : 0;
+  const kcal = Math.round(walkKcal * share);
+  const finalMin = Math.round(walkMin * share);
 
   const { data: last } = await sb.from("hc_samples").select("updated_at")
     .eq("user_id", user_id).order("updated_at", { ascending: false }).limit(1);
@@ -186,9 +200,9 @@ async function handleAutoWalk(sb: any, req: Request, jwt: string) {
   const { data: existing } = await sb.from("entries").select("id")
     .eq("user_id", user_id).ilike("desc", `%${tag}%`).limit(1);
   const preview = {
-    date: dateStr, bouts: kept.length, walkMin, walkSteps, totalSteps, fitKm, fitSpeed, speed, km,
-    manualKm, finalKm, finalMin, kcal, weight, lastSync: last?.[0]?.updated_at || null,
-    existing: !!existing?.length,
+    date: dateStr, correction, bouts: kept.map(({ kcal, ...b }) => ({ ...b, kcal: Math.round(kcal) })),
+    walkMin, walkSteps, totalSteps, km, speed, manualKm, finalKm, finalMin, kcal, weight,
+    lastSync: last?.[0]?.updated_at || null, existing: !!existing?.length,
   };
   if (!body.commit) return json({ ok: true, ...preview });
   if (kcal < 1) return json({ error: "rien à ajouter ce jour-là" }, 400);
@@ -196,7 +210,8 @@ async function handleAutoWalk(sb: any, req: Request, jwt: string) {
   // Libellé "Titre (sous-titre)" SANS parenthèses imbriquées : le journal découpe titre/sous-titre sur
   // la dernière paire de parenthèses (renderEntry) ; sous-titre court (.entry-sub en nowrap). Détail du
   // calcul dans la note (après "||", affichée dans la fiche de l'entrée), derrière le tag.
-  const note = `${kept.length} séquence${kept.length > 1 ? "s" : ""} de marche détectée${kept.length > 1 ? "s" : ""}, ${walkMin} min (Fit : ${fmt(fitKm)} km, ${fmt(fitSpeed)} km/h) · à ${fmt(speed)} km/h : ${fmt(km)} km − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km`;
+  const corr = correction ? `, distance Fit ${correction > 0 ? "+" : ""}${fmt(correction)} %` : "";
+  const note = `${kept.length} marche${kept.length > 1 ? "s" : ""} détectée${kept.length > 1 ? "s" : ""} : ${walkMin} min, ${fmt(km)} km à ${fmt(speed)} km/h en moyenne${corr} − ${fmt(manualKm)} km saisis = ${fmt(finalKm)} km`;
   const desc = `🚶 Marche auto (${finalMin} min · ${fmt(finalKm)} km · ${fmt(speed)} km/h)||${tag} · ${note}`;
   if (existing?.length) {
     const { error } = await sb.from("entries").update({ val: kcal, desc }).eq("id", existing[0].id);
