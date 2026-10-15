@@ -1249,7 +1249,9 @@ async function savePlace() {
   const place = { name, address, coords: result?.coords || null, resolvedLabel: result?.label || null, home: isHome };
   // Show resolved address for confirmation
   if (result) {
-    const confirmed = await showConfirm(`Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
+    const confirmed = await showConfirm(result.approx
+      ? `⚠️ Numéro introuvable, position approximative (milieu de la rue) :\n${result.label}\n\nLes distances d'itinéraire peuvent être fausses. Précise l'adresse (code postal, ville) ou confirme quand même.`
+      : `Lieu trouvé :\n${result.label}\n\nConfirmer ?`);
     if (!confirmed) {
       if (btn) { btn.textContent = '✓ Enregistrer'; btn.disabled = false; }
       return;
@@ -2278,7 +2280,22 @@ document.addEventListener('click', (e) => {
 }, true);
 
 // Override geocodeAddress to use Google if available
+// Numéro de rue : ORS renvoie parfois le milieu de la rue au lieu du numéro demandé, sans le dire
+// (bug du 15/10/2026 : "24 rue Vendôme" résolu en "Rue Vendôme, Lyon" à ~1 km du vrai n° 24,
+// itinéraire Domicile → Psy sous-estimé ×4). Un résultat dont le libellé ne contient pas le
+// numéro saisi est donc mis de côté et on essaie le service suivant ; si aucun ne le trouve,
+// on garde le premier résultat, marqué approx: true (savePlace() avertit alors l'utilisateur).
+function _houseNumberOf(query) { const m = (query || '').trim().match(/^(\d+)\s*(bis|ter)?\b/i); return m ? m[1] : null; }
+function _labelHasNumber(label, num) { return new RegExp('(^|[^\d])' + num + '([^\d]|$)').test(label || ''); }
 async function geocodeAddress(query) {
+  const num = _houseNumberOf(query);
+  let fallback = null;
+  const accept = (res) => {
+    if (!res) return null;
+    if (!num || _labelHasNumber(res.label, num)) return res;
+    if (!fallback) fallback = { ...res, approx: true };
+    return null;
+  };
   // Try Google Geocoding first if key available
   // Ni "Lyon"/"France" ni aucune ville ne sont injectés dans le texte de recherche :
   // ça cassait la recherche en voyage (une adresse hors de Lyon se voyait accoler
@@ -2290,7 +2307,8 @@ async function geocodeAddress(query) {
       const d = await r.json();
       if (d.results?.[0]) {
         const loc = d.results[0].geometry.location;
-        return { coords: [loc.lng, loc.lat], label: d.results[0].formatted_address };
+        const ok = accept({ coords: [loc.lng, loc.lat], label: d.results[0].formatted_address });
+        if (ok) return ok;
       }
     } catch(e) {}
   }
@@ -2302,16 +2320,22 @@ async function geocodeAddress(query) {
     const r = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(query)}&size=1${lyonBias}`);
     const d = await r.json();
     const f = d.features?.[0];
-    if (f) return { coords: f.geometry.coordinates, label: f.properties.label };
+    if (f) { const ok = accept({ coords: f.geometry.coordinates, label: f.properties.label }); if (ok) return ok; }
   } catch(e) {}
   try {
-    const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`, {
+    const nr = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr&addressdetails=1`, {
       headers: { 'User-Agent': 'LeGrosBarbu/1.0' }
     });
     const nd = await nr.json();
-    if (nd[0]) return { coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label: nd[0].display_name.split(',').slice(0,2).join(',') };
+    if (nd[0]) {
+      const a = nd[0].address || {};
+      const city = a.city || a.town || a.village || '';
+      const label = a.house_number && a.road ? `${a.house_number} ${a.road}${city ? ', ' + city : ''}` : nd[0].display_name.split(',').slice(0,2).join(',');
+      const ok = accept({ coords: [parseFloat(nd[0].lon), parseFloat(nd[0].lat)], label });
+      if (ok) return ok;
+    }
   } catch(e) {}
-  return null;
+  return fallback;
 }
 
 // Calculate multi-leg walking route through N waypoints
