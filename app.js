@@ -482,7 +482,7 @@ const DRINK_DB = [
 { name: "Amaretto Sour", k: 240, pr: 1, gl: 14, lp: 0, defaultQty: 75, kind: 'cocktail', degres: 15 },
 { name: "Bière 4°", k: 34, pr: 0.4, gl: 3.0, lp: 0, defaultQty: 50, kind: 'beer', degres: 4 },
 { name: "Bière 5°", k: 40, pr: 0.4, gl: 3.2, lp: 0, defaultQty: 50, kind: 'beer', degres: 5 },
-{ name: "Bière 6°", k: 47, pr: 0.5, gl: 3.5, lp: 0, defaultQty: 50, kind: 'beer', degres: 6 },
+{ name: "Bière 6°", k: 52, pr: 0.5, gl: 4.0, lp: 0, defaultQty: 50, kind: 'beer', degres: 6 },
 { name: "Bière 7°", k: 55, pr: 0.5, gl: 4.0, lp: 0, defaultQty: 50, kind: 'beer', degres: 7 },
 { name: "Bière 8°", k: 62, pr: 0.5, gl: 4.5, lp: 0, defaultQty: 50, kind: 'beer', degres: 8 },
 { name: "Vin rouge", k: 85, pr: 0.1, gl: 2.6, lp: 0, defaultQty: 120, kind: 'wine', degres: 13 },
@@ -2629,7 +2629,11 @@ currentCat = entry.category;
 const isSport = entry.type === 'burn', isDrink = entry.category === 'Boissons';
 const rawD = entry.desc || '';
 const qtyMatch = rawD.match(/(\d+(?:[.,]\d+)?)\s*(min|g|ml)/i);
-const cleanLabel = rawD.replace(/\s*\(.*$/, '').trim();
+// Boisson : "Bière 6° · 2 pintes (100cl)" -> nom "Bière 6°", unité cl/ml, nombre de portions. Sans ça, le nom
+// gardait "· 2 pintes" (dupliqué à l'enregistrement) et la quantité en cl était relue comme des ml (kcal/100 ×10).
+const drinkM = isDrink ? rawD.match(/^(.*?)(?:\s*·\s*(\d+(?:[.,]\d+)?)\s+[^·(]+?)?\s*\((\d+(?:[.,]\d+)?)\s*(cl|ml)\)\s*$/i) : null;
+const drinkIsCl = !!drinkM && drinkM[4].toLowerCase() === 'cl';
+const cleanLabel = (drinkM ? drinkM[1] : rawD.replace(/\s*\(.*$/, '')).trim();
 let qty;
 // Priority: stored qty column > parsed from desc > default_qty from base > fallback
 if (entry.qty != null) {
@@ -2643,8 +2647,8 @@ if (entry.qty != null) {
   qty = matchedFood?.default_qty || 100;
 }
 document.getElementById('modal-title').textContent = isSport ? 'Modifier activité' : 'Modifier entrée';
-_currentDrinkUnit = 'ml';
-document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? 'Quantité (ml)' : 'Quantité (g)');
+_currentDrinkUnit = drinkIsCl ? 'cl' : 'ml';
+document.getElementById('label-qty').textContent = isSport ? 'Durée (min)' : (isDrink ? (drinkIsCl ? 'Total (cl)' : 'Quantité (ml)') : 'Quantité (g)');
 document.getElementById('label-kcal').textContent = isSport ? 'Kcal / heure' : 'Kcal / 100';
 document.getElementById('macro-fields').style.display = (isSport || isDrink) ? 'none' : 'grid';
 document.getElementById('saved-meal-link').style.display = 'none';
@@ -2715,11 +2719,21 @@ document.getElementById('in-p').value = '0';
 document.getElementById('in-g').value = '0';
 document.getElementById('in-l').value = '0';
 } else {
-const per100 = qty > 0 ? Math.round(entry.val / (qty / 100)) : 0;
+const qtyBase = drinkIsCl ? qty * 10 : qty; // quantité en ml (ou g) pour les valeurs /100
+const per100 = qtyBase > 0 ? Math.round(entry.val / (qtyBase / 100)) : 0;
 document.getElementById('in-kcal').value = per100;
-document.getElementById('in-p').value = round1((entry.prot || 0) / (qty / 100));
-document.getElementById('in-g').value = round1((entry.gluc || 0) / (qty / 100));
-document.getElementById('in-l').value = round1((entry.lip || 0) / (qty / 100));
+document.getElementById('in-p').value = round1((entry.prot || 0) / (qtyBase / 100));
+document.getElementById('in-g').value = round1((entry.gluc || 0) / (qtyBase / 100));
+document.getElementById('in-l').value = round1((entry.lip || 0) / (qtyBase / 100));
+if (drinkM) {
+  const portions = parseFloat((drinkM[2] || '1').replace(',', '.')) || 1;
+  const dose = Math.round(qty / portions * 10) / 10;
+  _drinkPortionQty = dose;
+  document.getElementById('in-portions').value = portions;
+  document.getElementById('in-portion-unit').value = dose;
+  document.getElementById('label-portion-unit').textContent = drinkIsCl ? 'Dose (cl)' : 'Dose (ml)';
+  document.getElementById('drink-portions-row').style.display = 'grid';
+}
 }
 document.getElementById('submit-btn').textContent = 'Enregistrer';
 document.getElementById('cancel-edit-btn').style.display = 'block';
@@ -7087,8 +7101,8 @@ async function toggleEntryFavorite(entryId, btn) {
     btn.textContent = '⏳';
     btn.disabled = true;
     if (!foodId) {
-      const qtyMatch = raw.match(/(\d+(?:[.,]\d+)?)\s*g/i);
-      const qty = qtyMatch ? parseFloat(qtyMatch[1]) : 100;
+      const qtyMatch = raw.match(/(\d+(?:[.,]\d+)?)\s*(g|ml|cl)\b/i);
+      const qty = qtyMatch ? parseFloat(qtyMatch[1]) * (qtyMatch[2].toLowerCase() === 'cl' ? 10 : 1) : 100;
       const factor = qty / 100;
       const kcal_100 = factor > 0 ? Math.round(entry.val / factor) : entry.val;
       const prot_100 = factor > 0 ? Math.round((entry.prot||0)/factor*10)/10 : 0;
