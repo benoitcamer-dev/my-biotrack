@@ -154,6 +154,11 @@ function renderSavedPlacesChips() {
   if (!section || !chips) return;
   if (!savedPlaces.length) { section.style.display = 'none'; return; }
   section.style.display = 'block';
+// Au-delà de 4 favoris, repliés derrière un bouton (sinon ils repoussent le formulaire).
+const nFavs = walkFavorites.length + bikeFavorites.length, collapse = nFavs > 4 && !_sportFavsOpen;
+const tg = document.getElementById('sport-favs-toggle');
+if (tg) { tg.style.display = nFavs > 4 ? 'block' : 'none'; tg.textContent = (_sportFavsOpen ? '▾ Masquer' : '▸ Afficher') + ' mes favoris (' + nFavs + ')'; }
+document.getElementById('walk-favs-quick-list').style.display = document.getElementById('bike-favs-quick-list').style.display = collapse ? 'none' : '';
   // Respecte l'ordre choisi par l'utilisateur (réordonnable dans Lieux ⋯) au lieu d'un tri alphabétique forcé.
   chips.innerHTML = savedPlaces.map(p => `<button onclick="fillWalkStepFromPlace('${esc(p.name)}','${esc(p.address)}')"
     style="background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap;touch-action:manipulation;">
@@ -1371,7 +1376,7 @@ document.getElementById('ai-btn').style.display = 'inline-block';
 document.getElementById('in-desc').placeholder = isSport ? 'Rechercher une activité...' : 'Rechercher un aliment...';
 document.getElementById('calc-sub').textContent = isSport ? 'pour 30 min' : (isDrink ? 'pour 100ml' : 'pour 100g');
 if (isSport) showAllSports();
-else if (isDrink) showDrinkSuggestions();
+else if (isDrink) { _drinkListOpen = false; showDrinkSuggestions(); }
 else showCustomFoodsSuggestions();
 recalc();
 _savedScrollY = window.scrollY;
@@ -1469,6 +1474,8 @@ function backToSportPicker() {
   document.getElementById('bike-mode-tabs').style.display = 'none';
   showAllSports();
 }
+let _sportFavsOpen = false;
+function toggleSportFavs() { _sportFavsOpen = !_sportFavsOpen; renderSportFavsQuick(); }
 function renderSportFavsQuick() {
 const section = document.getElementById('sport-favs-section');
 const hasWalk = walkFavorites.length > 0, hasBike = bikeFavorites.length > 0;
@@ -1501,12 +1508,17 @@ const quickBtns = `<div style="display:flex;gap:6px;padding:8px 4px;border-botto
     <div class="result-name" style="color:#fbbf24;display:flex;align-items:center;gap:6px;"><i data-lucide="star" class="lc-icon-sm"></i> Aliments</div>
   </div>
 </div>`;
-div.innerHTML = quickBtns + DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
+// Liste repliée par défaut : l'afficher d'office (260 px, sans bouton de fermeture) repoussait
+// le reste du formulaire sous la ligne de flottaison sur PC.
+const listHtml = _drinkListOpen ? DRINK_DB.map(a => `<div class="result-item" onclick="event.stopPropagation();fillDrink('${esc(a.name)}',${a.k},${a.pr},${a.gl},${a.lp},${a.defaultQty},'${a.kind}')">
 <div><span class="result-tag">Base locale</span></div>
 <div class="result-name">${escHtml(a.name)}</div>
 <div class="result-kcal">${a.k} kcal/100ml</div>
-</div>`).join('');
+</div>`).join('') : '';
+div.innerHTML = quickBtns + `<div class="result-item" onclick="event.stopPropagation();toggleDrinkList()"><div class="result-name" style="color:var(--muted);">${_drinkListOpen ? '▾ Masquer' : '▸ Afficher'} les boissons courantes (${DRINK_DB.length})</div></div>` + listHtml;
 }
+let _drinkListOpen = false;
+function toggleDrinkList() { _drinkListOpen = !_drinkListOpen; showDrinkSuggestions(); }
 function startSearch() {
 const v = document.getElementById('in-desc').value.trim();
 if (!v) { if (currentCat === 'Sport') showAllSports(); else if (currentCat === 'Boissons') showDrinkSuggestions(); else showCustomFoodsSuggestions(); return; }
