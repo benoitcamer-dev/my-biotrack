@@ -3688,11 +3688,7 @@ function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt
 function todayStr() { return dateToStr(new Date()); } // date locale (pas UTC)
 function dateToStr(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d, 0, 0, 0, 0); }
-// Restore saved journal date from localStorage
-(function() {
-  const saved = localStorage.getItem('bt_journal_date');
-  if (saved) { try { journalDate = strToDate(saved); } catch(e) {} }
-})();
+// Pas de restauration de la date au démarrage : le journal s'ouvre toujours sur aujourd'hui.
 function formatDateFR(ds, opts = { weekday: 'short', day: 'numeric', month: 'short' }) { return new Date(ds + 'T12:00:00').toLocaleDateString('fr-FR', opts); }
 function round1(n) { return Math.round(n * 10) / 10; }
 function emptyStateHTML(icon, text, padding) {
@@ -3882,7 +3878,7 @@ document.getElementById('journal-date-label').textContent = isToday ? "Aujourd'h
 document.getElementById('journal-date-sub').textContent = isToday ? formatDateFR(journalDateStr(), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(journalDateStr(), { year: 'numeric' });
 document.getElementById('today-btn').style.display = isToday ? 'none' : 'block';
 }
-function moveJournalDay(d) { closeCalendar(); journalDate.setDate(journalDate.getDate() + d); localStorage.setItem('bt_journal_date', dateToStr(journalDate)); updateJournalDateUI(); loadData(); }
+function moveJournalDay(d) { closeCalendar(); journalDate.setDate(journalDate.getDate() + d); updateJournalDateUI(); loadData(); }
 function goToToday() { closeCalendar(); journalDate = new Date(); journalDate.setHours(0, 0, 0, 0); localStorage.setItem('bt_journal_date', dateToStr(journalDate)); updateJournalDateUI(); loadData(); }
 function toggleCalendar() {
 calOpen = !calOpen;
@@ -7990,7 +7986,7 @@ async function _confirmMoveEntry() {
   document.querySelectorAll('.entry-detail-popup,.entry-detail-overlay').forEach(e => e.remove());
   document.body.classList.remove('modal-open');
   haptic(10);
-  loadData();
+  goToJournalDate(date); // affiche le jour de destination
 }
 
 // ── Copier une seule entrée vers un autre jour (sans toucher au reste du repas) ─
@@ -8066,7 +8062,7 @@ async function _confirmCopyEntry() {
   if (error) { console.error(error); showToast('Erreur : ' + error.message, 'error'); return; }
   haptic(10);
   showToast('Copié ✓', 'success');
-  if (date === journalDateStr()) loadData();
+  goToJournalDate(date); // affiche le jour de destination
 }
 
 // ── Modifier via IA ───────────────────────────────────────────────────────────
@@ -8197,8 +8193,7 @@ async function confirmCopyMeal() {
   }
   btn.textContent = '📋 Copier'; btn.disabled = false;
   closeCopyMealModal();
-  // If dest date is current date, reload
-  if (destDate === journalDateStr()) loadData();
+  goToJournalDate(destDate); // affiche le jour de destination
   // Show toast
   const toast = document.createElement('div');
   toast.textContent = `📋 ${sourceEntries.length} entrée(s) copiée(s) vers ${destCat}`;
@@ -8805,10 +8800,8 @@ await Promise.all([loadSettingsRemote(), loadCustomFoods(), loadFavorites(), loa
     await importLocalFoodDBIfNeeded();
 updateKnownPlaces();
 migrateEntryQty().catch(e => console.warn('Migration:', e));
-// Restore saved date or use today
-const savedDate = localStorage.getItem('bt_journal_date');
-if (savedDate) { try { journalDate = strToDate(savedDate); } catch(e) { journalDate = new Date(); journalDate.setHours(0,0,0,0); } }
-else { journalDate = new Date(); journalDate.setHours(0,0,0,0); }
+// Toujours aujourd'hui au démarrage (la date vue avant un rechargement n'est pas conservée)
+journalDate = new Date(); journalDate.setHours(0,0,0,0);
 // Restore saved page
 const savedPage = localStorage.getItem('bt_current_page');
 if (savedPage && (savedPage === 'journal' || savedPage === 'bilan')) showPage(savedPage);
