@@ -1,0 +1,8 @@
+# Changelog 28/10/2026
+
+- **Journal — date après copie / déplacement** : après « Copier » (entrée repas ou sport, `_confirmCopyEntry`), « Copier ce repas » (`confirmCopyMeal`) et « Déplacer » (`_confirmMoveEntry`), le journal affiche désormais le **jour de destination** (`goToJournalDate`) au lieu de rester sur le jour source.
+- **Journal — ouverture sur aujourd'hui** : au (re)démarrage de l'app, le journal s'ouvre **toujours sur aujourd'hui**. La restauration de la dernière date vue (`bt_journal_date`, IIFE de tête + bloc d'init) est supprimée. `bt_journal_date` est encore écrit par `selectCalDate`/`goToToday`/`goToJournalDate` mais n'est plus relu : clé orpheline, inoffensive.
+- **Cause du symptôme initial** (« ça revient sur aujourd'hui ») : `moveJournalDay` (flèches/swipe) n'enregistrait pas la date, donc un rechargement retombait sur la dernière date enregistrée. Le premier correctif (persister la date) a été remplacé par le choix ci-dessus (toujours aujourd'hui).
+- **`todayStr()`** : date locale (`dateToStr(new Date())`) au lieu de `toISOString()` (UTC) — entre 0 h et 2 h, les popups Copier/Déplacer et leur badge « Aujourd'hui » proposaient la veille.
+- **Vérification** : test live sur le site déployé (SW actif, nouveau code confirmé) avec entrées `TEST-CLAUDE` en vraies catégories (Snack → Petit-déjeuner / Dîner / Boissons) : journal sur la date de destination après chaque opération, « Aujourd'hui » après rechargement. Entrées de test supprimées (0 restante, relu).
+- **Piège de test** : une catégorie inventée (ex. « Collation ») n'existe pas dans les menus Copier/Déplacer → catégorie retombe sur « Sport » / vide. Utiliser Petit-déjeuner / Déjeuner / Dîner / Snack / Boissons.
