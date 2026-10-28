@@ -3685,7 +3685,7 @@ function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").r
 // chaîne JS dans un attribut onclick) — à utiliser pour tout texte libre utilisateur inséré
 // via innerHTML en contenu (pas en attribut), afin d'éviter une injection HTML/JS stockée.
 function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() { return dateToStr(new Date()); } // date locale (pas UTC)
 function dateToStr(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function strToDate(s) { const [y, m, d] = s.split('-'); return new Date(+y, +m - 1, +d, 0, 0, 0, 0); }
 // Restore saved journal date from localStorage
@@ -3882,7 +3882,7 @@ document.getElementById('journal-date-label').textContent = isToday ? "Aujourd'h
 document.getElementById('journal-date-sub').textContent = isToday ? formatDateFR(journalDateStr(), { day: 'numeric', month: 'long', year: 'numeric' }) : formatDateFR(journalDateStr(), { year: 'numeric' });
 document.getElementById('today-btn').style.display = isToday ? 'none' : 'block';
 }
-function moveJournalDay(d) { closeCalendar(); journalDate.setDate(journalDate.getDate() + d); updateJournalDateUI(); loadData(); }
+function moveJournalDay(d) { closeCalendar(); journalDate.setDate(journalDate.getDate() + d); localStorage.setItem('bt_journal_date', dateToStr(journalDate)); updateJournalDateUI(); loadData(); }
 function goToToday() { closeCalendar(); journalDate = new Date(); journalDate.setHours(0, 0, 0, 0); localStorage.setItem('bt_journal_date', dateToStr(journalDate)); updateJournalDateUI(); loadData(); }
 function toggleCalendar() {
 calOpen = !calOpen;
