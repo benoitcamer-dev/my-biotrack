@@ -85,7 +85,7 @@ async function gcalPreAuth(silent = false) {
   if (!gcalIsConfigured()) return;
   await _loadGSI();
   if (_gcalToken && Date.now() < _gcalTokenExpiry) return;
-  return new Promise((resolve, reject) => {
+  const request = (prompt) => new Promise((resolve, reject) => {
     google.accounts.oauth2.initTokenClient({
       client_id: GCAL_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/calendar.events',
@@ -96,8 +96,12 @@ async function gcalPreAuth(silent = false) {
         resolve();
       },
       error_callback: (e) => reject(e)
-    }).requestAccessToken({ prompt: silent ? 'none' : '' });
+    }).requestAccessToken({ prompt });
   });
+  // Renouvellement silencieux d'abord (pas de fenêtre si Google a déjà le consentement et la session) ;
+  // la fenêtre de consentement n'apparaît qu'en cas d'échec, sauf en mode silent où l'échec est remonté.
+  try { await request('none'); return; } catch (e) { if (silent) throw e; }
+  await request('');
 }
 
 async function addBikeToGoogleCalendar(favName, durationMin, kcal, dateObj, entryId) {
