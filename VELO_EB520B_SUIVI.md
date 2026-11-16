@@ -57,7 +57,7 @@ Conservée. Sur 1292 s (149 kcal console) : −25 % = 112 ; effort seul (sans so
 ## Supabase (projet zlbwoxsmmdytoucgyhmc)
 - Table **`bike_sessions`** créée le 16/11/2026 (migration `create_bike_sessions`) : 1 ligne/séance — date, ended_at, end_reason (manual/idle/disconnect/draft), duration_s, measured_s, partial, avg_w, max_w, mech_kj, avg_rpm, avg_kmh, distance_m, avg_hr, console_kcal, correction_pct, kcal_saved, kcal_from_watts, entry_id. RLS activée, 4 policies `authenticated` (own rows). Vérifié : 0 ligne. Aucune entrée vélo dans `entries` depuis le 14/11.
 
-## Décisions validées (à construire — rien n'est encore codé)
+## Décisions validées (codées le 16/11/2026 — voir « Fin de session » en bas ; jamais testées sur le vélo)
 - Séance en direct DANS la PWA Brave (modal vélo, mode « Kcal machine »). Affichage : watts, kcal (corrigées + estimation « effort seul » depuis les watts), durée écoulée et restante **en minutes**, distance, km/h, pouls. Durée cible réglable (min), mémorisée.
 - Option **A** : enregistrement automatique de l'entrée à la fin, avec message + bouton Annuler. Option **B** : une ligne `bike_sessions` par séance.
 - Fin de séance : bouton « Terminer » / 3 min sans pédaler (watts et cadence à 0, compte à rebours) / déconnexion du vélo. Brouillon local toutes les 10 s → proposition de reprise si l'app a été fermée.
@@ -76,3 +76,37 @@ Conservée. Sur 1292 s (149 kcal console) : −25 % = 112 ; effort seul (sans so
 - **Conséquences pour l'app** : (1) fin de séance « arrêt de pédalage » = W=0 et tr/min=0 pendant **30 s d'horloge** (seuil choisi par l'utilisateur ; une pause plus longue donne 2 séances, accepté) — le chrono console ne peut pas servir à détecter l'arrêt puisqu'il se fige ; (2) la couverture reste `secondes mesurées (en temps console) ÷ durée console` ; (3) vélo éteint = événement de déconnexion ou plus aucun paquet pendant ~10 s → fin « disconnect » ; (4) la table `bike_sessions` a `duration_s` (temps console = pédalage) mais pas la durée d'horloge : envisager une colonne `wall_s` (migration à faire) pour l'heure de début de l'événement Agenda.
 3. Test Kinomap → Health Connect non fait (droits d'écriture Kinomap à accorder) ; essai Kinomap jusqu'au ~10/12.
 4. Session ADB : veille remise à 60000 (vérifié). Page de test jetable (scratchpad, non conservée) : un bouton `requestDevice({filters:[{services:[0x1826]}]})` + `startNotifications` sur `0x2AD2`.
+
+---
+
+# Fin de session du 16/11/2026 (soir) — état et reprise
+
+## Fait (vérifié)
+- **Panneau vélo en direct codé et déployé** (commits `d9642cc`, `609ee55` ; vérifié en ligne par `curl` sur `app.js`) : modal Sport → Vélo → « Kcal machine » → bouton **Connecter le vélo** → watts, kcal corrigées, écoulé/restant (min), km, km/h, pouls, kcal « effort seul », durée cible mémorisée (`bt_bike_target_min`). Fin : « Terminer » / 30 s sans pédaler / déconnexion (aucun paquet 10 s) / fermeture du modal. Enregistrement auto de l'entrée + ligne `bike_sessions` + événement Agenda, bouton « Annuler l'enregistrement », brouillon local toutes les 10 s (`bt_bike_live_draft`). Séance < 30 s ou 0 kcal : non enregistrée (**seuil ajouté par moi, non validé**). Parseur FTMS testé sur paquets synthétiques (résistance 1 ou 2 octets). `node verify.js` OK.
+- **Supabase** : colonne `bike_sessions.wall_s` ajoutée (migration `bike_sessions_add_wall_s`) ; table `google_tokens` recréée (RLS, 0 policy, aucun droit anon/authenticated) ; Edge Functions `gcal-connect` et `gcal-token` déployées (v1, `verify_jwt` = true, 401 sans session vérifié), sources dans `supabase/functions/`.
+- **Google Agenda sans fenêtre** : `gcalPreAuth()` essaie dans l'ordre jeton serveur (`gcal-token`) → renouvellement silencieux (`prompt:'none'`) → fenêtre. Bouton « Connecter Google Agenda (une fois) » dans Réglages : **fait, ligne `google_tokens` présente** (jeton non vide, portée `calendar.events`, 16/11 10:43 Paris). Écran de consentement Google passé **« En production »** (vérifié) → le jeton durable n'expire plus à 7 jours. Secrets `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` déjà présents dans Supabase (créés le 01/05/2026 pour l'ancienne synchro Fit).
+
+## Découvertes
+- Le vélo (auto-alimenté) **s'éteint dès qu'on arrête de pédaler** et n'est alors plus visible en Bluetooth : il faut **pédaler avant d'appuyer sur « Connecter le vélo »**. Les compteurs console sont cumulés depuis son réveil → une connexion tardive ne perd rien.
+- **Brave Android n'a pas `navigator.bluetooth.getDevices`** (vérifié par CDP) : pas de reconnexion automatique possible, tap sur « Connecter le vélo » à chaque séance (j'avais codé une reconnexion auto, retirée dans `609ee55`). Piste non essayée : réglage dans `brave://flags`.
+- Constaté par ADB/CDP (16/11, 10:48) : panneau bloqué sur « Connexion… », 0 paquet, fenêtre Bluetooth ouverte sans vélo (il dormait). Corrigé : message « pédale d'abord », filet 90 s.
+- Correction mémorisée sur le téléphone = **−20 %** (`bt_bike_correction`), pas −25 % : l'entrée manuelle du 16/11 (id 3835, 306 kcal console → 245) est à −20 %. Le défaut du code reste 25 (autres appareils). Décision utilisateur : garder 20 %.
+- Google ne réaffiche plus un secret client ; **max 2 secrets par client** (le client « LeGrosBarbu Web » en a 2 : `****X5u3` 27/04 et `****2MbK` 01/05). Le secret Supabase date du 01/05 → correspond très probablement à `****2MbK` : **ne pas supprimer ce secret dans Google** sans en recoller un nouveau dans Supabase (sinon `gcal-token`/`gcal-connect` cassent).
+- Entrée vélo du 16/11 (id 3835) : saisie manuelle (aucune ligne `bike_sessions`, pas de durée dans le texte).
+
+## Backlog
+**À faire**
+1. **Test réel du panneau** sur une vraie séance : pédaler → Connecter le vélo → choisir le vélo → comparer écran console / panneau → Terminer → vérifier `bike_sessions` (couverture, avg_w, wall_s) et l'entrée. Rien n'a encore été reçu du vélo par l'app (0 paquet).
+2. Vérifier que l'événement **Agenda se crée sans que Google redemande** (`gcal-token` jamais encore appelé en vrai).
+3. Tester le cas **vélo éteint en pleine séance** (fin « disconnect » attendue ≤ 10 s) et la reprise de brouillon.
+4. Vérification live Brave complète (hard reload / SW) — seul le fichier servi a été contrôlé, pas le rendu.
+**À décider**
+- Seuil « séance < 30 s non enregistrée » (mon ajout) ; défaut de correction 25 → 20 dans le code ?
+- Calcul personnalisé Mifflin-St Jeor (en attente, voir plus haut) ; correction −25/−20 % : brut ou net (voir « Correction −25 % »).
+- Piste flag Brave pour `getDevices` (reconnexion auto).
+**Plus tard**
+- Test Kinomap → Health Connect (droits d'écriture Kinomap = 0) ; essai Kinomap jusqu'au ~10/12/2026, rien à payer.
+- Mettre à jour `PRODUCT.md` / changelog daté si la fonction est jugée stable.
+
+## Phrase de reprise
+« Reprends `VELO_EB520B_SUIVI.md` (section Fin de session du 16/11/2026) : je vais faire une vraie séance, teste le panneau vélo avec moi (je pédale, Connecter le vélo, Terminer), compare avec la console et vérifie `bike_sessions` et l'agenda. »

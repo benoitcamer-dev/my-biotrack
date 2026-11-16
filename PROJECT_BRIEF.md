@@ -18,7 +18,7 @@ Détail produit complet → `PRODUCT.md`. Système visuel (thème, typographie, 
 
 - **Aucun build, pas de `package.json`.** HTML/CSS/JS servis tels quels.
 - Frontend : `index.html` + `app.js` + `styles.css` (fichiers séparés), plus `index-complet.html` qui est un **bundle des trois en un seul fichier** — voir "Point critique" ci-dessous.
-- Backend : **Supabase** (`https://zlbwoxsmmdytoucgyhmc.supabase.co`, auth + Postgres). Tables connues : `entries`, `weight_entries`, `sleep_entries`, `custom_foods`, `favorites`, `user_settings`, `ciqual_foods`, `ciqual_hidden`, `hc_daily` et `hc_webhook_keys` (synchro des pas, voir plus bas). `google_tokens`/`gfit_imported` supprimées le 12/10/2026 (sync Google Fit retirée). Realtime (`postgres_changes`) abonné sur `entries`, `user_settings`, `weight_entries`, `custom_foods`. URL/clé anon Supabase codées en dur en tête de `app.js` (normal pour une clé anon Supabase — la vraie barrière d'isolation entre utilisateurs est la policy RLS côté Postgres, pas le secret de la clé).
+- Backend : **Supabase** (`https://zlbwoxsmmdytoucgyhmc.supabase.co`, auth + Postgres). Tables connues : `entries`, `weight_entries`, `sleep_entries`, `custom_foods`, `favorites`, `user_settings`, `ciqual_foods`, `ciqual_hidden`, `hc_daily` et `hc_webhook_keys` (synchro des pas, voir plus bas), `bike_sessions` (séances vélo Bluetooth, 16/11/2026) et `google_tokens` (jeton durable Google Agenda, RLS sans policy, lu seulement par les Edge Functions `gcal-connect`/`gcal-token` ; recréée le 16/11/2026 — l'ancienne avait été supprimée le 12/10). `gfit_imported` supprimée le 12/10/2026 (sync Google Fit retirée). Realtime (`postgres_changes`) abonné sur `entries`, `user_settings`, `weight_entries`, `custom_foods`. URL/clé anon Supabase codées en dur en tête de `app.js` (normal pour une clé anon Supabase — la vraie barrière d'isolation entre utilisateurs est la policy RLS côté Postgres, pas le secret de la clé).
 - Intégrations optionnelles à clé API fournie par l'utilisateur (stockée en `localStorage`, chargée conditionnellement au boot) :
   - Gemini (estimation nutritionnelle par photo)
   - Google Maps/Places (recherche d'adresse pour l'onglet "Lieux")
@@ -30,6 +30,7 @@ Détail produit complet → `PRODUCT.md`. Système visuel (thème, typographie, 
   « 🚶 Marche du jour » par jour. Doc de référence complète (calcul, réglages, sécurité de la clé,
   dépannage) : **`SYNC_PAS_HEALTH_CONNECT.md`**. Remplace la sync Google Fit (API Fit dépréciée par
   Google, retirée de l'app le 12/10/2026 — bouton, OAuth et code supprimés).
+- **Séance vélo en direct (16/11/2026)** : panneau Bluetooth FTMS dans le modal vélo (`bikeLive*`/`bl*` dans `app.js`), détail et état → `VELO_EB520B_SUIVI.md`. Agenda : `gcalPreAuth()` passe d'abord par `gcal-token` (jeton durable côté serveur), bouton de connexion unique dans Réglages.
 - **Edge Functions Supabase** : `hc-webhook` (source versionnée dans `supabase/functions/hc-webhook/`,
   `verify_jwt = false`, authentifiée par en-tête `x-api-key` haché) ; `hyper-action` (nom affiché
   « search-off », proxy de recherche Open Food Facts, non versionnée) ; `gfit-sync`/`gfit-callback`
