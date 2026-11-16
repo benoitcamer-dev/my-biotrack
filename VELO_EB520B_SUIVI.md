@@ -110,3 +110,12 @@ Conservée. Sur 1292 s (149 kcal console) : −25 % = 112 ; effort seul (sans so
 
 ## Phrase de reprise
 « Reprends `VELO_EB520B_SUIVI.md` (section Fin de session du 16/11/2026) : je vais faire une vraie séance, teste le panneau vélo avec moi (je pédale, Connecter le vélo, Terminer), compare avec la console et vérifie `bike_sessions` et l'agenda. »
+
+## Procédure du prochain test (convenu le 16/11/2026)
+L'utilisateur **prévient juste avant de monter sur le vélo** ; Claude donne alors les étapes, sans que l'utilisateur ait à s'en souvenir :
+1. Fermer la fenêtre Bluetooth restée ouverte, fermer et rouvrir la PWA (dernière version), fermer Kinomap.
+2. Sport → Vélo → Kcal machine (durée cible optionnelle).
+3. **Pédaler d'abord**, puis « Connecter le vélo » → choisir Domyos-Bike-0337 → Associer.
+4. Pédaler 5-10 min ; à un moment noter ensemble console et app (watts, kcal, durée, distance).
+5. « Terminer » (ou 30 s sans pédaler) → message « Séance enregistrée » ; vérifier l'Agenda (pas de fenêtre Google).
+6. L'utilisateur dit « j'ai fini » : Claude lit `bike_sessions` + l'entrée et compare avec la console.
