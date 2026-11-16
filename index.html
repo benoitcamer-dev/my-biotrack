@@ -301,6 +301,26 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="input-box"><label>Kcal affichées sur le vélo</label><input id="in-bike-machine-kcal" type="number" inputmode="decimal" placeholder="0" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="input-box"><label>Correction (%)</label><input id="in-bike-correction" type="number" inputmode="decimal" value="25" min="0" max="60" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 </div>
+<div id="bike-live-box" class="bike-live" style="display:none;">
+<div class="bike-live-head"><span class="bike-live-dot" id="bike-live-dot"></span><span id="bike-live-status">Vélo non connecté</span></div>
+<div class="bike-live-grid">
+<div class="bl-tile bl-big"><div class="bl-val" id="bl-w">—</div><div class="bl-lab">watts</div></div>
+<div class="bl-tile bl-big"><div class="bl-val" id="bl-kcal">—</div><div class="bl-lab">kcal (corrigées)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-elapsed">—</div><div class="bl-lab">écoulé (min)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-remain">—</div><div class="bl-lab">restant (min)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-dist">—</div><div class="bl-lab">km</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-kmh">—</div><div class="bl-lab">km/h</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-hr">—</div><div class="bl-lab">pouls</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-effort">—</div><div class="bl-lab">kcal « effort seul »</div></div>
+</div>
+<div class="bike-live-target"><label for="bike-live-target">Durée cible (min)</label><input id="bike-live-target" type="number" inputmode="decimal" min="1" placeholder="30" oninput="bikeLiveTargetChanged()"></div>
+<div id="bike-live-msg" class="bike-live-msg"></div>
+<div class="bike-live-btns">
+<button type="button" class="btn-primary" id="bike-live-connect" onclick="bikeLiveConnect()">Connecter le vélo</button>
+<button type="button" class="btn-cancel" id="bike-live-end" style="display:none;" onclick="bikeLiveEnd('manual')">Terminer</button>
+<button type="button" class="btn-cancel" id="bike-live-undo" style="display:none;" onclick="bikeLiveUndo()">Annuler l'enregistrement</button>
+</div>
+</div>
 <div id="bike-machine-note" style="display:none;font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;"></div>
 <div class="inputs-grid">
 <div class="input-box"><label id="label-qty">Quantité (g)</label><input id="in-qty" type="number" inputmode="decimal" value="100" oninput="recalc()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>

@@ -2275,6 +2275,24 @@ font-size: 11px;
 color: var(--muted);
 margin-left: 4px;
 }
+
+/* ── Séance vélo en direct (Bluetooth FTMS) ── */
+.bike-live { background: var(--surface2); border: 1px solid var(--border2); border-radius: 14px; padding: 12px; margin: 0 0 12px; }
+.bike-live-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+.bike-live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.bike-live.on .bike-live-dot { background: var(--green); }
+.bike-live.wait .bike-live-dot { background: var(--orange); }
+.bike-live-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bl-tile { background: var(--surface); border-radius: 10px; padding: 8px 4px; text-align: center; min-width: 0; }
+.bl-tile.bl-big { grid-column: span 2; padding: 12px 4px; }
+.bl-val { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.bl-big .bl-val { font-size: 28px; }
+.bl-lab { font-size: 9px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.bike-live-target { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 4px; font-size: 12px; color: var(--muted); }
+.bike-live-target input { width: 80px; text-align: center; }
+.bike-live-msg { font-size: 11px; color: var(--muted); line-height: 1.4; min-height: 0; margin: 6px 0; }
+.bike-live-msg:empty { display: none; }
+.bike-live-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 </style>
 <script>
 if ('serviceWorker' in navigator) {
@@ -2556,6 +2574,26 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="inputs-grid" id="bike-machine-row" style="display:none;">
 <div class="input-box"><label>Kcal affichées sur le vélo</label><input id="in-bike-machine-kcal" type="number" inputmode="decimal" placeholder="0" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
 <div class="input-box"><label>Correction (%)</label><input id="in-bike-correction" type="number" inputmode="decimal" value="25" min="0" max="60" oninput="onBikeMachineKcalInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEntry();}"></div>
+</div>
+<div id="bike-live-box" class="bike-live" style="display:none;">
+<div class="bike-live-head"><span class="bike-live-dot" id="bike-live-dot"></span><span id="bike-live-status">Vélo non connecté</span></div>
+<div class="bike-live-grid">
+<div class="bl-tile bl-big"><div class="bl-val" id="bl-w">—</div><div class="bl-lab">watts</div></div>
+<div class="bl-tile bl-big"><div class="bl-val" id="bl-kcal">—</div><div class="bl-lab">kcal (corrigées)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-elapsed">—</div><div class="bl-lab">écoulé (min)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-remain">—</div><div class="bl-lab">restant (min)</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-dist">—</div><div class="bl-lab">km</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-kmh">—</div><div class="bl-lab">km/h</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-hr">—</div><div class="bl-lab">pouls</div></div>
+<div class="bl-tile"><div class="bl-val" id="bl-effort">—</div><div class="bl-lab">kcal « effort seul »</div></div>
+</div>
+<div class="bike-live-target"><label for="bike-live-target">Durée cible (min)</label><input id="bike-live-target" type="number" inputmode="decimal" min="1" placeholder="30" oninput="bikeLiveTargetChanged()"></div>
+<div id="bike-live-msg" class="bike-live-msg"></div>
+<div class="bike-live-btns">
+<button type="button" class="btn-primary" id="bike-live-connect" onclick="bikeLiveConnect()">Connecter le vélo</button>
+<button type="button" class="btn-cancel" id="bike-live-end" style="display:none;" onclick="bikeLiveEnd('manual')">Terminer</button>
+<button type="button" class="btn-cancel" id="bike-live-undo" style="display:none;" onclick="bikeLiveUndo()">Annuler l'enregistrement</button>
+</div>
 </div>
 <div id="bike-machine-note" style="display:none;font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;"></div>
 <div class="inputs-grid">
@@ -4634,6 +4672,7 @@ document.getElementById('save-route-btn').style.display = 'none';
 document.getElementById('bike-mode-tabs').style.display = 'none';
 document.getElementById('bike-machine-row').style.display = 'none';
 document.getElementById('bike-machine-note').style.display = 'none';
+document.getElementById('bike-live-box').style.display = 'none';
 document.getElementById('bike-advanced').style.display = 'none';
 document.getElementById('in-kcal-box').style.display = '';
 document.getElementById('in-qty').placeholder = '';
@@ -4677,6 +4716,7 @@ const _fab = document.getElementById('fab-btn'); if (_fab) _fab.style.display = 
 // Pas d'autofocus — évite l'ouverture automatique du clavier sur mobile
 }
 function closeModal() {
+  if (typeof bikeLive !== 'undefined' && bikeLive.dev) bikeLiveEnd('manual'); // libère la connexion Bluetooth (une seule à la fois)
   blurActiveAddressInput();
   document.getElementById('modal-add').classList.remove('open');
   document.body.classList.remove('modal-open');
@@ -5735,6 +5775,7 @@ document.getElementById('in-bike-correction').value = localStorage.getItem('bt_b
 setBikeMode('machine');
 renderBikeFavsInModal();
 recalc();
+bikeLiveInit();
 }
 function setBikeMode(mode) {
 currentBikeMode = mode;
@@ -5743,6 +5784,7 @@ document.getElementById('bike-tab-machine').classList.toggle('active', mode === 
 document.getElementById('in-kcal-box').style.display = mode === 'machine' ? 'none' : '';
 document.getElementById('bike-machine-row').style.display = mode === 'machine' ? 'grid' : 'none';
 document.getElementById('bike-machine-note').style.display = mode === 'machine' ? 'block' : 'none';
+document.getElementById('bike-live-box').style.display = mode === 'machine' ? 'block' : 'none';
 if (mode === 'speed') bikeMachineKcalPerHour = 0;
 // En mode machine la durée est optionnelle (les kcal viennent du compteur) ; en mode vitesse elle
 // est indispensable au calcul — on remet alors 40 min si le champ a été laissé vide.
@@ -5775,6 +5817,246 @@ if (machineKcal > 0) {
   noteEl.innerHTML = `Indique les kcal affichées sur ton vélo : une correction (surestimation typique des compteurs d'entrée de gamme) sera appliquée.`;
 }
 recalc();
+}
+// ══ Séance vélo en direct (Bluetooth FTMS, Domyos EB 520 B) ══
+// Détails et mesures : VELO_EB520B_SUIVI.md (16/11/2026). Le vélo émet ~4 paquets/s sur Indoor Bike Data
+// (0x2AD2). Durée console `s` = temps de pédalage (elle se fige à l'arrêt) ; kcal/h console = 131,8 + 3,302 × W.
+const BL_BASE = 131.8, BL_SLOPE = 3.302;
+const BL_IDLE_MS = 30000;   // fin de séance : 30 s sans pédaler (watts et cadence à 0)
+const BL_SILENT_MS = 10000; // plus aucun paquet depuis 10 s => vélo éteint / coupé
+const BL_DRAFT_KEY = 'bt_bike_live_draft';
+const BL_ACC_KEYS = ['started','startWall','lastActiveWall','sFirst','sLast','prevS','kcalLast','distLast','measuredS','wSum','wMax','rpmSum','hrSum','hrS','devName'];
+const bikeLive = { dev: null, chr: null, tick: null, wake: null, ending: false, lastSaved: null };
+function blResetAcc() {
+  Object.assign(bikeLive, { started: false, startWall: 0, lastActiveWall: 0, idleSince: null, lastPktWall: 0, pkts: 0,
+    sFirst: 0, sLast: 0, prevS: null, kcalLast: 0, distLast: 0, measuredS: 0, wSum: 0, wMax: 0, rpmSum: 0, hrSum: 0, hrS: 0,
+    w: null, kmh: null, hr: null, devName: '', lastDraft: 0 });
+}
+blResetAcc();
+const blEl = id => document.getElementById(id);
+function blFmt(sec) { sec = Math.max(0, Math.floor(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function blCorr() { const c = parseFloat(blEl('in-bike-correction').value); return isNaN(c) ? 25 : c; }
+function blMsg(t) { blEl('bike-live-msg').textContent = t || ''; }
+function blTargetMin() { return parseFloat(blEl('bike-live-target').value) || 0; }
+function bikeLiveTargetChanged() { try { localStorage.setItem('bt_bike_target_min', blEl('bike-live-target').value); } catch {} blRender(); }
+function blParse(dv) {
+  const f = dv.getUint16(0, true); let o = 2; const r = {};
+  if (!(f & 1)) { r.kmh = dv.getUint16(o, true) / 100; o += 2; }
+  if (f & 2) o += 2;
+  if (f & 4) { r.rpm = dv.getUint16(o, true) / 2; o += 2; }
+  if (f & 8) o += 2;
+  if (f & 16) { r.dist = dv.getUint8(o) | (dv.getUint8(o + 1) << 8) | (dv.getUint8(o + 2) << 16); o += 3; }
+  if (f & 32) { // résistance : 1 ou 2 octets selon l'appareil → taille déduite de la longueur du paquet
+    let rest = 0; if (f & 64) rest += 2; if (f & 128) rest += 2; if (f & 256) rest += 5; if (f & 512) rest += 1; if (f & 1024) rest += 1; if (f & 2048) rest += 2; if (f & 4096) rest += 2;
+    o += (dv.byteLength - o - rest) >= 2 ? 2 : 1;
+  }
+  if (f & 64) { r.w = dv.getInt16(o, true); o += 2; }
+  if (f & 128) o += 2;
+  if (f & 256) { const t = dv.getUint16(o, true); if (t !== 0xFFFF) r.kcal = t; o += 5; }
+  if (f & 512) { r.hr = dv.getUint8(o); o += 1; }
+  if (f & 1024) o += 1;
+  if (f & 2048) { r.s = dv.getUint16(o, true); o += 2; }
+  return r;
+}
+function blRender() {
+  const L = bikeLive, box = blEl('bike-live-box'); if (!box) return;
+  const connected = !!L.dev, running = connected && L.started;
+  box.classList.toggle('on', running); box.classList.toggle('wait', connected && !L.started);
+  let st = 'Vélo non connecté';
+  if (L.connecting) st = 'Connexion…';
+  else if (running) st = L.idleSince ? `Arrêt de pédalage — fin dans ${Math.max(0, Math.ceil((BL_IDLE_MS - (Date.now() - L.idleSince)) / 1000))} s` : 'Séance en cours';
+  else if (connected) st = 'Connecté — pédale pour démarrer';
+  else if (L.lastSaved) st = 'Séance terminée';
+  blEl('bike-live-status').textContent = st;
+  const has = connected && L.pkts > 0, k = L.kcalLast || 0, D = L.sLast || 0, tgt = blTargetMin();
+  blEl('bl-w').textContent = has && L.w != null ? L.w : '—';
+  blEl('bl-kcal').textContent = has ? Math.round(k * (1 - blCorr() / 100)) : '—';
+  blEl('bl-elapsed').textContent = has ? blFmt(D) : '—';
+  blEl('bl-remain').textContent = has && tgt > 0 ? blFmt(tgt * 60 - D) : '—';
+  blEl('bl-dist').textContent = has ? (L.distLast / 1000).toFixed(2) : '—';
+  blEl('bl-kmh').textContent = has && L.kmh != null ? L.kmh.toFixed(1) : '—';
+  blEl('bl-hr').textContent = has && L.hr > 0 ? L.hr : '—';
+  blEl('bl-effort').textContent = has && D > 0 ? Math.max(0, Math.round(k - BL_BASE * D / 3600)) : '—';
+  blEl('bike-live-connect').style.display = connected || L.connecting ? 'none' : '';
+  blEl('bike-live-end').style.display = connected ? '' : 'none';
+  blEl('bike-live-undo').style.display = !connected && L.lastSaved ? '' : 'none';
+}
+function bikeLiveInit() {
+  const L = bikeLive;
+  try { blEl('bike-live-target').value = localStorage.getItem('bt_bike_target_min') || ''; } catch {}
+  if (!L.dev) { L.lastSaved = null; blMsg(''); }
+  const ok = !!navigator.bluetooth;
+  blEl('bike-live-connect').disabled = !ok;
+  if (!ok) blMsg('Web Bluetooth indisponible dans ce navigateur (Chrome ou Brave Android requis).');
+  blRender();
+  blCheckDraft();
+}
+async function blCheckDraft() {
+  let d = null; try { d = JSON.parse(localStorage.getItem(BL_DRAFT_KEY) || 'null'); } catch {}
+  if (!d || !d.started || bikeLive.dev) return;
+  const ok = await showConfirm(`Une séance vélo non terminée a été retrouvée (${Math.round(d.sLast / 60)} min, ${d.kcalLast} kcal machine). L'enregistrer ?`, { confirmLabel: 'Enregistrer', cancelLabel: 'Ignorer' });
+  try { localStorage.removeItem(BL_DRAFT_KEY); } catch {}
+  if (ok) { await blFinalize(d, 'draft'); blRender(); }
+}
+async function bikeLiveConnect() {
+  const L = bikeLive; if (L.dev || L.connecting) return;
+  if (!navigator.bluetooth) { blMsg('Web Bluetooth indisponible dans ce navigateur.'); return; }
+  L.connecting = true; L.lastSaved = null; blResetAcc(); blMsg(''); blRender();
+  try {
+    const dev = await navigator.bluetooth.requestDevice({ filters: [{ services: [0x1826] }] });
+    L.devName = dev.name || '';
+    const server = await dev.gatt.connect();
+    const svc = await server.getPrimaryService(0x1826);
+    const chr = await svc.getCharacteristic(0x2AD2);
+    dev.addEventListener('gattserverdisconnected', blOnDisconnect);
+    chr.addEventListener('characteristicvaluechanged', blOnPacket);
+    await chr.startNotifications();
+    L.dev = dev; L.chr = chr; L.ending = false; L.connecting = false;
+    L.lastPktWall = Date.now();
+    L.tick = setInterval(blTick, 1000);
+    try { L.wake = await navigator.wakeLock?.request('screen'); } catch {}
+    blMsg('Ferme Kinomap sur le téléphone : le vélo n\'accepte qu\'une connexion à la fois.');
+  } catch (e) {
+    L.connecting = false;
+    try { if (L.dev) L.dev.gatt.disconnect(); } catch {}
+    L.dev = null; L.chr = null;
+    if (e && e.name === 'NotFoundError') blMsg('Aucun vélo choisi.');
+    else if (/globally disabled/i.test(String(e && e.message))) blMsg('Bluetooth bloqué par Brave : brave://flags/#brave-web-bluetooth-api → Enabled, puis relancer.');
+    else blMsg('Connexion impossible : ' + (e && e.message ? e.message : e) + ' (un autre appareil, ex. Kinomap, est peut-être déjà connecté au vélo).');
+    console.warn('bike live connect:', e);
+  }
+  blRender();
+}
+function blOnDisconnect() { if (bikeLive.dev && !bikeLive.ending) bikeLiveEnd('disconnect'); }
+function blOnPacket(ev) {
+  const L = bikeLive; let r;
+  try { r = blParse(ev.target.value); } catch { return; }
+  if (r.s === undefined) return;
+  const now = Date.now(); L.lastPktWall = now; L.pkts++;
+  const w = Math.max(0, r.w || 0), rpm = r.rpm || 0, pedal = w > 0 || rpm > 0;
+  if (!L.started && pedal) {
+    L.started = true; L.sFirst = r.s; L.startWall = now - r.s * 1000; L.lastActiveWall = now; L.idleSince = null;
+    if (r.s > 5) blMsg(`Connexion tardive : le vélo comptait déjà ${blFmt(r.s)} min — compteurs repris, watts moyens reconstruits pour la partie manquée.`);
+    else blMsg('');
+  }
+  if (L.started) {
+    const dt = L.prevS != null ? r.s - L.prevS : 0;
+    if (dt > 0 && dt <= 5) { // paquets en double (dt = 0) ignorés
+      L.measuredS += dt; L.wSum += w * dt; L.rpmSum += rpm * dt;
+      if (r.hr > 0) { L.hrSum += r.hr * dt; L.hrS += dt; }
+      if (w > L.wMax) L.wMax = w;
+    }
+    if (pedal) { L.lastActiveWall = now; L.idleSince = null; } else if (!L.idleSince) L.idleSince = now;
+  }
+  L.prevS = r.s; L.sLast = r.s;
+  if (r.kcal !== undefined) L.kcalLast = r.kcal;
+  if (r.dist !== undefined && L.pkts > 1) L.distLast = r.dist; // 1er paquet de chaque connexion : distance parasite
+  L.w = w; L.kmh = r.kmh != null ? r.kmh : null; L.hr = r.hr || 0;
+  blRender();
+}
+function blTick() {
+  const L = bikeLive; if (!L.dev || L.ending) return;
+  const now = Date.now();
+  if (now - L.lastPktWall > BL_SILENT_MS) { bikeLiveEnd('disconnect'); return; }
+  if (L.started && L.idleSince && now - L.idleSince >= BL_IDLE_MS) { bikeLiveEnd('idle'); return; }
+  if (L.started && now - L.lastDraft >= 10000) {
+    L.lastDraft = now;
+    const d = {}; BL_ACC_KEYS.forEach(k => d[k] = L[k]);
+    try { localStorage.setItem(BL_DRAFT_KEY, JSON.stringify(d)); } catch {}
+  }
+  blRender();
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && bikeLive.dev) { try { bikeLive.wake = await navigator.wakeLock?.request('screen'); } catch {} }
+});
+// Calcule les mesures de la séance à partir des cumuls (state = bikeLive ou un brouillon relu)
+function blBuild(s, reason) {
+  const D = s.sLast || 0, K = s.kcalLast || 0, corr = blCorr();
+  const coverage = D > 0 ? Math.min(1, s.measuredS / D) : 0;
+  const partial = coverage < 0.95;
+  const avgMeasured = s.measuredS > 0 ? s.wSum / s.measuredS : null;
+  // Formule console : kcal/h = BASE + SLOPE × W  =>  W moyen sur toute la séance à partir des cumuls console
+  const avgFormula = D > 0 && K > 0 ? Math.max(0, (K * 3600 / D - BL_BASE) / BL_SLOPE) : null;
+  const avgW = partial ? (avgFormula != null ? avgFormula : avgMeasured) : avgMeasured;
+  const endWall = reason === 'manual' ? Date.now() : (s.lastActiveWall || Date.now());
+  const r1 = x => x == null ? null : Math.round(x * 10) / 10;
+  return {
+    reason, D, K, corr, coverage, partial, avgMeasured, avgFormula,
+    row: {
+      date: dateToStr(new Date(s.startWall)), end_reason: reason, device_name: s.devName || null,
+      duration_s: Math.round(D), wall_s: Math.max(Math.round(D), Math.round((endWall - s.startWall) / 1000)),
+      measured_s: Math.round(s.measuredS), partial,
+      avg_w: r1(avgW), max_w: Math.round(s.wMax) || null,
+      mech_kj: avgW != null ? r1(avgW * D / 1000) : null,
+      avg_rpm: s.measuredS > 0 ? r1(s.rpmSum / s.measuredS) : null,
+      avg_kmh: D > 0 ? r1(s.distLast / 1000 / (D / 3600)) : null,
+      distance_m: Math.round(s.distLast), avg_hr: s.hrS > 0 ? Math.round(s.hrSum / s.hrS) : null,
+      console_kcal: Math.round(K), correction_pct: corr, kcal_saved: Math.round(K * (1 - corr / 100)),
+      kcal_from_watts: avgW != null ? r1(BL_SLOPE * avgW * D / 3600) : null
+    }
+  };
+}
+async function blFinalize(s, reason) {
+  if (!s.started || s.sLast < 30 || s.kcalLast <= 0) { showToast('Séance vélo trop courte (< 30 s) : non enregistrée.', 'info'); return false; }
+  const b = blBuild(s, reason), row = b.row;
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { showToast('Non connecté : séance vélo non enregistrée.', 'error'); return false; }
+  const min = Math.round(row.duration_s / 60);
+  const desc = `🚴 Vélo (${min}min · ${row.console_kcal}kcal machine → ${row.kcal_saved}kcal ajusté)`;
+  const { data: ent, error } = await sb.from('entries').insert([{ user_id: user.id, type: 'burn', category: 'Sport', desc, val: row.kcal_saved,
+    prot: 0, gluc: 0, lip: 0, qty: null, kcal_100: null, date: row.date }]).select('id').single();
+  if (error) { console.error(error); showToast('Erreur enregistrement vélo : ' + error.message, 'error'); return false; }
+  const { data: ses, error: e2 } = await sb.from('bike_sessions').insert([{ ...row, entry_id: ent.id }]).select('id').single();
+  if (e2) { console.error(e2); showToast('Entrée enregistrée, mais pas la ligne détaillée : ' + e2.message, 'error'); }
+  bikeLive.lastSaved = { entryId: ent.id, sessionId: ses ? ses.id : null };
+  haptic(10);
+  let note = '';
+  if (b.partial && b.avgMeasured != null && b.avgFormula != null && Math.abs(b.avgMeasured - b.avgFormula) > 3)
+    note = ` ⚠ watts mesurés ${Math.round(b.avgMeasured)} W vs reconstruits ${Math.round(b.avgFormula)} W (écart > 3 W)`;
+  blMsg(`Séance enregistrée : ${row.kcal_saved} kcal (${row.console_kcal} console −${row.correction_pct} %), ${min} min, ${row.avg_w != null ? Math.round(row.avg_w) + ' W moy.' : ''} — couverture mesurée ${Math.round(b.coverage * 100)} %${b.partial ? ' (partielle)' : ''}.${note}`);
+  showToast(`🚴 Séance enregistrée : ${row.kcal_saved} kcal`, 'success');
+  loadData();
+  const wallMin = Math.max(1, Math.round(row.wall_s / 60));
+  addBikeToGoogleCalendar('Vélo', wallMin, row.kcal_saved, new Date(s.startWall), ent.id);
+  return true;
+}
+async function bikeLiveEnd(reason) {
+  const L = bikeLive; if (!L.dev || L.ending) return;
+  L.ending = true;
+  clearInterval(L.tick); L.tick = null;
+  const dev = L.dev; L.dev = null;
+  try { L.chr && L.chr.removeEventListener('characteristicvaluechanged', blOnPacket); } catch {}
+  try { dev.removeEventListener('gattserverdisconnected', blOnDisconnect); } catch {}
+  try { if (dev.gatt.connected) dev.gatt.disconnect(); } catch {}
+  L.chr = null;
+  try { L.wake && L.wake.release(); } catch {} L.wake = null;
+  const snap = {}; BL_ACC_KEYS.forEach(k => snap[k] = L[k]);
+  snap.lastActiveWall = L.lastActiveWall;
+  try { localStorage.removeItem(BL_DRAFT_KEY); } catch {}
+  L.lastSaved = null; blRender();
+  const saved = snap.started ? await blFinalize(snap, reason) : false;
+  if (!snap.started) blMsg('Vélo déconnecté (aucune séance démarrée).');
+  else if (!saved) blMsg('Séance terminée, non enregistrée.');
+  L.ending = false;
+  blRender();
+}
+async function bikeLiveUndo() {
+  const s = bikeLive.lastSaved; if (!s) return;
+  try {
+    const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+    const { data: ent } = await sb.from('entries').select('desc').eq('id', s.entryId).eq('user_id', user.id).maybeSingle();
+    if (ent?.desc?.includes('|||gcal:') && gcalIsConfigured()) {
+      const gid = ent.desc.split('|||gcal:')[1];
+      try {
+        if (!_gcalToken || Date.now() >= _gcalTokenExpiry) await gcalPreAuth();
+        if (_gcalToken) await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${gid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${_gcalToken}` } });
+      } catch (e) { console.warn('gcal undo:', e); }
+    }
+    if (s.sessionId) await sb.from('bike_sessions').delete().eq('id', s.sessionId);
+    await sb.from('entries').delete().eq('id', s.entryId).eq('user_id', user.id);
+    bikeLive.lastSaved = null; blMsg('Enregistrement annulé : entrée et séance supprimées.');
+    showToast('Séance vélo annulée', 'info'); loadData(); blRender();
+  } catch (e) { console.error(e); showToast('Annulation impossible : ' + e.message, 'error'); }
 }
 function renderBikeFavsInModal() {
 // #bike-advanced, jamais #walk-advanced : ce dernier contient le formulaire

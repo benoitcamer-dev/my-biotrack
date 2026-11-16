@@ -2254,3 +2254,21 @@ font-size: 11px;
 color: var(--muted);
 margin-left: 4px;
 }
+
+/* ── Séance vélo en direct (Bluetooth FTMS) ── */
+.bike-live { background: var(--surface2); border: 1px solid var(--border2); border-radius: 14px; padding: 12px; margin: 0 0 12px; }
+.bike-live-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+.bike-live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.bike-live.on .bike-live-dot { background: var(--green); }
+.bike-live.wait .bike-live-dot { background: var(--orange); }
+.bike-live-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bl-tile { background: var(--surface); border-radius: 10px; padding: 8px 4px; text-align: center; min-width: 0; }
+.bl-tile.bl-big { grid-column: span 2; padding: 12px 4px; }
+.bl-val { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.bl-big .bl-val { font-size: 28px; }
+.bl-lab { font-size: 9px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.bike-live-target { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 4px; font-size: 12px; color: var(--muted); }
+.bike-live-target input { width: 80px; text-align: center; }
+.bike-live-msg { font-size: 11px; color: var(--muted); line-height: 1.4; min-height: 0; margin: 6px 0; }
+.bike-live-msg:empty { display: none; }
+.bike-live-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
