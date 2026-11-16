@@ -397,6 +397,8 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();startSearch();this.blu
 <div class="setting-row">
 <label>📅 Google Calendar (Client ID OAuth)</label>
 <input id="s-gcal-client-id" type="text" placeholder="Colle ton Client ID ici (se termine par .apps.googleusercontent.com)" style="font-size:11px;">
+<button type="button" class="walk-fav-btn" style="margin-top:8px;" onclick="gcalConnectServer()">Connecter Google Agenda (une fois)</button>
+<div id="gcal-server-status" style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Évite la fenêtre Google à chaque séance : le jeton durable est gardé côté serveur.</div>
 <label style="margin-top:10px;display:block;">🗺️ Google Maps (Clé API)</label>
 <input id="s-gmaps-key" type="text" placeholder="Colle ta clé API Google Maps ici" style="font-size:11px;">
 <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tes sorties vélo seront automatiquement ajoutées dans Google Agenda en rose 🩷</div>

@@ -81,8 +81,49 @@ async function _loadGSI() {
   });
 }
 
+// Jeton d'accès via le serveur (jeton de renouvellement stocké par gcal-connect) : aucune fenêtre.
+// Retourne true si un jeton frais est obtenu, false sinon (jamais connecté / révoqué / réseau).
+async function gcalServerToken(fn = 'gcal-token', extra = {}) {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return false;
+    const r = await fetch(SUPABASE_URL + '/functions/v1/' + fn, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ client_id: GCAL_CLIENT_ID, ...extra })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.access_token) { gcalServerToken.lastError = j.error || ('http_' + r.status); return false; }
+    _gcalToken = j.access_token;
+    _gcalTokenExpiry = Date.now() + ((j.expires_in || 3600) - 60) * 1000;
+    return true;
+  } catch (e) { gcalServerToken.lastError = 'network'; return false; }
+}
+// Connexion UNIQUE depuis Réglages : code d'autorisation Google (fenêtre) → gcal-connect (stocke le jeton de renouvellement).
+async function gcalConnectServer() {
+  const typed = (document.getElementById('s-gcal-client-id')?.value || '').trim();
+  if (typed && typed !== GCAL_CLIENT_ID) { GCAL_CLIENT_ID = typed; localStorage.setItem('gcal_client_id', typed); }
+  if (!gcalIsConfigured()) { showToast('Renseigne d\'abord le Client ID Google.', 'error'); return; }
+  try { await _loadGSI(); } catch { showToast('Google indisponible (réseau).', 'error'); return; }
+  const st = document.getElementById('gcal-server-status');
+  google.accounts.oauth2.initCodeClient({
+    client_id: GCAL_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+    ux_mode: 'popup',
+    callback: async (r) => {
+      if (r.error || !r.code) { showToast('Autorisation Google annulée.', 'error'); return; }
+      const ok = await gcalServerToken('gcal-connect', { code: r.code });
+      const err = gcalServerToken.lastError;
+      if (st) st.textContent = ok ? '✓ Connecté : l\'agenda ne redemandera plus Google.' : '✗ Échec (' + err + ')';
+      showToast(ok ? 'Google Agenda connecté.' : (err === 'no_refresh_token' ? 'Google n\'a pas renvoyé de jeton durable : retire l\'accès de l\'app sur myaccount.google.com/permissions puis recommence.' : 'Connexion Google Agenda échouée : ' + err), ok ? 'success' : 'error');
+    },
+    error_callback: () => showToast('Autorisation Google annulée.', 'error')
+  }).requestCode();
+}
 async function gcalPreAuth(silent = false) {
   if (!gcalIsConfigured()) return;
+  if (_gcalToken && Date.now() < _gcalTokenExpiry) return;
+  if (await gcalServerToken()) return;
   await _loadGSI();
   if (_gcalToken && Date.now() < _gcalTokenExpiry) return;
   const request = (prompt) => new Promise((resolve, reject) => {
