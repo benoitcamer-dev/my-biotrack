@@ -1430,7 +1430,7 @@ const _fab = document.getElementById('fab-btn'); if (_fab) _fab.style.display = 
 // Pas d'autofocus — évite l'ouverture automatique du clavier sur mobile
 }
 function closeModal() {
-  if (typeof bikeLive !== 'undefined') { blAutoStop(); if (bikeLive.dev) bikeLiveEnd('manual'); } // libère la connexion Bluetooth (une seule à la fois)
+  if (typeof bikeLive !== 'undefined' && bikeLive.dev) bikeLiveEnd('manual'); // libère la connexion Bluetooth (une seule à la fois)
   blurActiveAddressInput();
   document.getElementById('modal-add').classList.remove('open');
   document.body.classList.remove('modal-open');
@@ -2580,7 +2580,6 @@ function blRender() {
   if (L.connecting) st = 'Connexion…';
   else if (running) st = L.idleSince ? `Arrêt de pédalage — fin dans ${Math.max(0, Math.ceil((BL_IDLE_MS - (Date.now() - L.idleSince)) / 1000))} s` : 'Séance en cours';
   else if (connected) st = 'Connecté — pédale pour démarrer';
-  else if (L.autoTimer) st = 'Recherche du vélo… pédale pour le réveiller';
   else if (L.lastSaved) st = 'Séance terminée';
   blEl('bike-live-status').textContent = st;
   const has = connected && L.pkts > 0, k = L.kcalLast || 0, D = L.sLast || 0, tgt = blTargetMin();
@@ -2603,9 +2602,9 @@ function bikeLiveInit() {
   const ok = !!navigator.bluetooth;
   blEl('bike-live-connect').disabled = !ok;
   if (!ok) blMsg('Web Bluetooth indisponible dans ce navigateur (Chrome ou Brave Android requis).');
+  if (ok && !L.dev && !L.connecting) blMsg('Pédale pour réveiller le vélo (il s\'éteint à l\'arrêt), puis appuie sur « Connecter le vélo ».');
   blRender();
   blCheckDraft();
-  blAutoStart();
 }
 async function blCheckDraft() {
   let d = null; try { d = JSON.parse(localStorage.getItem(BL_DRAFT_KEY) || 'null'); } catch {}
@@ -2634,18 +2633,24 @@ async function blOpen(dev) {
   L.dev = dev; L.chr = chr; L.ending = false; L.connecting = false; L.lastSaved = null;
   L.lastPktWall = Date.now();
   L.tick = setInterval(blTick, 1000);
-  blAutoStop();
+  clearTimeout(L.connTimer);
   try { L.wake = await navigator.wakeLock?.request('screen'); } catch {}
   blMsg('Ferme Kinomap sur le téléphone : le vélo n\'accepte qu\'une connexion à la fois.');
 }
 async function bikeLiveConnect() {
   const L = bikeLive; if (L.dev || L.connecting) return;
   if (!navigator.bluetooth) { blMsg('Web Bluetooth indisponible dans ce navigateur.'); return; }
-  blAutoStop(); L.connecting = true; L.lastSaved = null; blMsg(''); blRender();
+  L.connecting = true; L.lastSaved = null;
+  blMsg('Pédale pour réveiller le vélo (il s\'éteint à l\'arrêt), puis choisis-le dans la fenêtre Bluetooth. « Annuler » dans cette fenêtre pour abandonner.');
+  // Filet de sécurité : si la fenêtre reste ouverte sans résultat, on rend la main à l'interface après 90 s
+  clearTimeout(L.connTimer);
+  L.connTimer = setTimeout(() => { if (L.connecting && !L.dev) { L.connecting = false; blMsg('Recherche trop longue : vélo introuvable. Pédale, puis appuie à nouveau sur « Connecter le vélo ».'); blRender(); } }, 90000);
+  blRender();
   try {
     const dev = await navigator.bluetooth.requestDevice({ filters: [{ services: [0x1826] }] });
     await blOpen(dev);
   } catch (e) {
+    clearTimeout(L.connTimer);
     L.connecting = false; L.dev = null; L.chr = null;
     if (e && e.name === 'NotFoundError') blMsg('Aucun vélo choisi.');
     else if (/globally disabled/i.test(String(e && e.message))) blMsg('Bluetooth bloqué par Brave : brave://flags/#brave-web-bluetooth-api → Enabled, puis relancer.');
@@ -2653,37 +2658,6 @@ async function bikeLiveConnect() {
     console.warn('bike live connect:', e);
   }
   blRender();
-}
-// Reconnexion AUTOMATIQUE à l'ouverture du modal vélo : getDevices() renvoie les vélos déjà autorisés
-// (le 1er appairage exige un tap sur « Connecter le vélo » — règle du navigateur). On réessaie toutes les 6 s
-// tant que le modal est ouvert et que le vélo dort (il ne répond que quand on pédale).
-function blAutoStop() { const L = bikeLive; if (L.autoTimer) { clearInterval(L.autoTimer); L.autoTimer = null; } blRender(); }
-function blAutoStart() {
-  const L = bikeLive;
-  if (L.dev || L.connecting || L.autoTimer || L.lastSaved) return;
-  if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
-  L.autoTimer = setInterval(blAutoTry, 6000);
-  blAutoTry();
-}
-async function blAutoTry() {
-  const L = bikeLive;
-  const open = blEl('modal-add').classList.contains('open') && currentBikeMode === 'machine';
-  if (!open || L.dev || L.connecting) { blAutoStop(); return; }
-  if (L.autoBusy) return;
-  L.autoBusy = true;
-  try {
-    const devs = await navigator.bluetooth.getDevices();
-    const d = devs.find(x => /domyos/i.test(x.name || '')) || devs[0];
-    if (!d) { blAutoStop(); blMsg('Première fois : appuie une fois sur « Connecter le vélo » (ensuite, ce sera automatique).'); return; }
-    if (!L.autoTimer) return;
-    blRender();
-    // Vélo endormi : gatt.connect() peut rester suspendu → abandon après 8 s, nouvel essai au prochain tour
-    let to; const timeout = new Promise((_, rej) => { to = setTimeout(() => rej(new Error('auto-timeout')), 8000); });
-    try { await Promise.race([blOpen(d), timeout]); }
-    catch (e) { try { d.gatt.disconnect(); } catch {} L.dev = null; L.chr = null; }
-    finally { clearTimeout(to); }
-  } catch (e) { console.warn('bike live auto:', e); blAutoStop(); }
-  finally { L.autoBusy = false; blRender(); }
 }
 function blOnDisconnect() { if (bikeLive.dev && !bikeLive.ending) bikeLiveEnd('disconnect'); }
 function blOnPacket(ev) {
