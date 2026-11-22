@@ -1921,7 +1921,14 @@ font-size: 13px;
 font-weight: 700;
 margin-bottom: 12px;
 }
-#weight-svg { width: 100%; height: 160px; }
+#weight-svg { width: 100%; height: auto; display: block; user-select: none; -webkit-user-select: none; }
+.range-tabs.five { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.range-tabs.five .range-btn { padding: 9px 2px; font-size: 11px; }
+.weight-period-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; }
+.weight-period-label { font-size: 14px; font-weight: 700; text-transform: capitalize; text-align: center; flex: 1; }
+.weight-nav-btn { width: 44px; height: 44px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; touch-action: manipulation; }
+.weight-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.weight-readout { min-height: 22px; font-size: 12px; margin-bottom: 4px; text-align: center; }
 .imc-wrap {
 background: var(--surface);
 border: 1px solid var(--border);
@@ -2954,14 +2961,22 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="weight-chart-wrap">
 <div class="weight-chart-title">Évolution du poids</div>
-<div class="tooltip" style="position: relative; height: 160px;">
-<svg id="weight-svg" viewBox="0 0 400 160" preserveAspectRatio="none"></svg>
-<div class="y-axis">
-<label id="y-axis-max">—</label>
-<label id="y-axis-min">—</label>
+<div class="range-tabs five" role="tablist">
+<button class="range-btn" id="wrange-month" onclick="setWeightRange('month')">Mois</button>
+<button class="range-btn" id="wrange-quarter" onclick="setWeightRange('quarter')">Trimestre</button>
+<button class="range-btn" id="wrange-semester" onclick="setWeightRange('semester')">Semestre</button>
+<button class="range-btn" id="wrange-year" onclick="setWeightRange('year')">Année</button>
+<button class="range-btn" id="wrange-all" onclick="setWeightRange('all')">Tout</button>
 </div>
+<div class="weight-period-nav">
+<button id="weight-prev" class="weight-nav-btn" aria-label="Période précédente" onclick="shiftWeightPeriod(-1)">‹</button>
+<div id="weight-period-label" class="weight-period-label">—</div>
+<button id="weight-next" class="weight-nav-btn" aria-label="Période suivante" onclick="shiftWeightPeriod(1)">›</button>
 </div>
-<div style="font-size:10px;color:var(--muted);margin-top:6px;">Pince pour zoomer, glisse pour naviguer, double-tap pour réinitialiser.</div>
+<div id="weight-readout" class="weight-readout"></div>
+<svg id="weight-svg" viewBox="0 0 360 210"></svg>
+<div style="font-size:10px;color:var(--muted);margin:4px 0 12px;">Touche ou glisse sur la courbe pour lire une mesure. Pointillés : tendance.</div>
+<div id="weight-stats"></div>
 </div>
 <div class="section-label">Historique</div>
 <div id="weight-history-list"></div>
@@ -7246,7 +7261,7 @@ if (bilanRange === 'week') {
 async function loadWeightEntries() {
 try { const { data: { user } } = await sb.auth.getUser(); if (!user) return; const { data } = await sb.from('weight_entries').select('*').eq('user_id', user.id).order('date', { ascending: true }); weightEntries = data || []; } catch (e) { console.error(e); }
 }
-function openWeightModal() { document.getElementById('w-date').value = todayStr(); document.getElementById('w-val').value = ''; document.getElementById('sleep-date').value = todayStr(); renderWeightModal(); loadSleepData(); document.getElementById('modal-weight').classList.add('open'); document.body.classList.add('modal-open'); }
+function openWeightModal() { weightResetView(); document.getElementById('w-date').value = todayStr(); document.getElementById('w-val').value = ''; document.getElementById('sleep-date').value = todayStr(); renderWeightModal(); loadSleepData(); document.getElementById('modal-weight').classList.add('open'); document.body.classList.add('modal-open'); }
 function closeWeightModal() { document.getElementById('modal-weight').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function renderWeightModal() { renderIMC(); renderWeightChart(); renderWeightHistory(); }
 async function addWeightEntry() {
@@ -7263,7 +7278,7 @@ saveSettingsLocal();
 await pushSettingsRemote();
 document.getElementById('stat-bmr').textContent = calcBMR(userWeight, userHeight, userAge, userSexe);
 }
-await loadWeightEntries(); renderWeightModal(); document.getElementById('w-val').value = '';
+await loadWeightEntries(); weightOffset = weightOffsetFor(date); renderWeightModal(); document.getElementById('w-val').value = '';
 haptic(10);
 showToast('Poids enregistré ✓', 'success');
 }
@@ -7319,81 +7334,204 @@ document.getElementById('imc-label').textContent = label;
 document.getElementById('imc-val').style.color = color;
 document.getElementById('imc-cursor').style.left = Math.min(100, Math.max(0, ((imc - 16) / (40 - 16)) * 100)) + '%';
 }
+// ── Courbe de poids : périodes calendaires (mois / trimestre / semestre / année / tout),
+// axe X proportionnel au temps, navigation ‹ › entre périodes, statistiques de la période.
+let weightRange = (function() { try { const r = localStorage.getItem('bt_weight_range'); return ['month','quarter','semester','year','all'].includes(r) ? r : 'quarter'; } catch (e) { return 'quarter'; } })();
+let weightOffset = 0; // 0 = période courante, -1 = précédente…
+const WEIGHT_UNIT_MONTHS = { month: 1, quarter: 3, semester: 6, year: 12 };
+const WEIGHT_MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+function _wPad(n) { return n < 10 ? '0' + n : '' + n; }
+function _wDs(y, m, d) { const dt = new Date(Date.UTC(y, m, d)); return dt.getUTCFullYear() + '-' + _wPad(dt.getUTCMonth() + 1) + '-' + _wPad(dt.getUTCDate()); }
+function _wDay(ds) { const p = ds.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000; }
+function _wMonthIdx(ds) { const p = ds.split('-'); return (+p[0]) * 12 + (+p[1] - 1); }
+// Bornes { start, end, label } de la période affichée (dates 'YYYY-MM-DD').
+function getWeightPeriod() {
+  if (weightRange === 'all') {
+    if (!weightEntries.length) return { start: todayStr(), end: todayStr(), label: 'Tout l’historique' };
+    return { start: weightEntries[0].date, end: weightEntries[weightEntries.length - 1].date, label: 'Tout l’historique' };
+  }
+  const u = WEIGHT_UNIT_MONTHS[weightRange];
+  const startIdx = Math.floor(_wMonthIdx(todayStr()) / u) * u + weightOffset * u;
+  const y = Math.floor(startIdx / 12), m = startIdx % 12;
+  const start = _wDs(y, m, 1), end = _wDs(y, m + u, 0);
+  const m2 = (m + u - 1) % 12;
+  let label;
+  if (u === 1) label = WEIGHT_MONTHS_SHORT[m].replace('.', '') + ' ' + y;
+  else if (u === 3) label = 'T' + (m / 3 + 1) + ' ' + y + ' · ' + WEIGHT_MONTHS_SHORT[m].replace('.', '') + '–' + WEIGHT_MONTHS_SHORT[m2].replace('.', '');
+  else if (u === 6) label = 'S' + (m / 6 + 1) + ' ' + y + ' · ' + WEIGHT_MONTHS_SHORT[m].replace('.', '') + '–' + WEIGHT_MONTHS_SHORT[m2].replace('.', '');
+  else label = '' + y;
+  if (u === 1) label = new Date(Date.UTC(y, m, 1, 12)).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return { start, end, label };
+}
+function weightOffsetFor(ds) {
+  if (weightRange === 'all') return 0;
+  const u = WEIGHT_UNIT_MONTHS[weightRange];
+  return Math.floor(_wMonthIdx(ds) / u) - Math.floor(_wMonthIdx(todayStr()) / u);
+}
+function setWeightRange(r) {
+  weightRange = r; weightOffset = 0;
+  try { localStorage.setItem('bt_weight_range', r); } catch (e) {}
+  weightResetView(true);
+  renderWeightChart(); renderWeightHistory();
+}
+function shiftWeightPeriod(dir) { weightOffset += dir; renderWeightChart(); renderWeightHistory(); }
+// À l'ouverture (ou après ajout) : si la période courante est vide, se placer sur la dernière mesure.
+function weightResetView(keepRange) {
+  if (!keepRange) weightOffset = 0;
+  if (weightRange === 'all' || !weightEntries.length) return;
+  const p = getWeightPeriod();
+  if (!weightEntries.some(e => e.date >= p.start && e.date <= p.end)) weightOffset = weightOffsetFor(weightEntries[weightEntries.length - 1].date);
+}
+function weightEntriesInPeriod() {
+  const p = getWeightPeriod();
+  return weightEntries.filter(e => e.date >= p.start && e.date <= p.end);
+}
 function renderWeightChart() {
-const svg = document.getElementById('weight-svg');
-if (weightEntries.length < 2) { svg.innerHTML = '<text x="200" y="80" text-anchor="middle" fill="var(--muted)" font-size="13" font-family="Inter">Ajoute au moins 2 entrées.</text>'; return; }
-const allW = weightEntries.map(e => e.weight);
-// Échelle Y dynamique : avant, la plage était fixée en dur à 70-100kg, ce qui écrasait
-// les vraies variations (ou pire, coupait carrément les points hors de cette plage).
-const rawMin = Math.min(...allW), rawMax = Math.max(...allW);
-const pad = Math.max(2, (rawMax - rawMin) * 0.15);
-const minW = Math.floor((rawMin - pad) / 5) * 5;
-const maxW = Math.ceil((rawMax + pad) / 5) * 5;
-const range = maxW - minW;
-const gridStep = range <= 15 ? 2 : range <= 30 ? 5 : range <= 60 ? 10 : 20;
-const W = 400, H = 160, P = 32;
-const xs = function(i) { return (i / (weightEntries.length - 1)) * (W - P * 2) + P; };
-// Inverted Y: higher weight = lower on chart (top = maxW, bottom = minW)
-const ys = function(v) { return P + ((maxW - v) / (maxW - minW)) * (H - P * 2); };
-const ptsArr = weightEntries.map(function(e, i) { return [xs(i), ys(e.weight)]; });
-const pts = ptsArr.map(p => p.join(',')).join(' ');
-document.getElementById('y-axis-min').textContent = minW;
-document.getElementById('y-axis-max').textContent = maxW;
-// Y-axis gridlines, pas adapté à l'amplitude réelle des données
-const gridLines = [];
-for (let w = minW; w <= maxW; w += gridStep) {
-  const y = ys(w);
-  gridLines.push('<line x1="' + P + '" y1="' + y + '" x2="' + (W - P) + '" y2="' + y + '" stroke="rgba(122,128,152,0.18)" stroke-width="0.7" stroke-dasharray="3,3"/>');
-  // w === minW/maxW exclus : déjà affichés par les labels #y-axis-min/#y-axis-max
-  // (positionnés en absolute par-dessus le SVG, voir plus bas) — les redessiner ici les
-  // dupliquait à l'écran, celui du bas chevauchant en plus la date sous le graphique
-  // (audit live du 11/09/2026).
-  if (w !== minW && w !== maxW) {
-    gridLines.push('<text x="' + (P - 4) + '" y="' + (y + 3) + '" text-anchor="end" fill="var(--muted)" font-size="13" font-family="Inter">' + w + '</text>');
+  const svg = document.getElementById('weight-svg');
+  const p = getWeightPeriod();
+  const data = weightEntriesInPeriod();
+  // Onglets + navigation
+  ['month', 'quarter', 'semester', 'year', 'all'].forEach(r => { const b = document.getElementById('wrange-' + r); if (b) b.classList.toggle('active', r === weightRange); });
+  const lblEl = document.getElementById('weight-period-label');
+  if (lblEl) lblEl.textContent = p.label;
+  const prevB = document.getElementById('weight-prev'), nextB = document.getElementById('weight-next');
+  if (prevB && nextB) {
+    const isAll = weightRange === 'all';
+    prevB.disabled = isAll || !weightEntries.length || p.start <= weightEntries[0].date;
+    nextB.disabled = isAll || weightOffset >= 0;
+    prevB.style.visibility = nextB.style.visibility = isAll ? 'hidden' : 'visible';
+  }
+  const statsEl = document.getElementById('weight-stats');
+  const readout = document.getElementById('weight-readout');
+  const W = 360, H = 210, PL = 38, PR = 14, PT = 14, PB = 28;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg._pts = null;
+  if (data.length === 0) {
+    svg.innerHTML = '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" fill="var(--muted)" font-size="13" font-family="Inter">Aucune mesure sur cette période.</text>';
+    if (statsEl) statsEl.innerHTML = '';
+    if (readout) readout.textContent = '';
+    return;
+  }
+  // Échelle X proportionnelle au temps
+  const d0 = _wDay(p.start);
+  let d1 = _wDay(p.end);
+  if (d1 <= d0) d1 = d0 + 1;
+  const xs = d => PL + ((_wDay(d) - d0) / (d1 - d0)) * (W - PL - PR);
+  // Échelle Y dynamique, graduations « rondes »
+  const ws = data.map(e => e.weight);
+  const rawMin = Math.min.apply(null, ws), rawMax = Math.max.apply(null, ws);
+  const span = Math.max(rawMax - rawMin, 1);
+  const step = span <= 3 ? 0.5 : span <= 6 ? 1 : span <= 14 ? 2 : span <= 35 ? 5 : 10;
+  const minY = Math.floor((rawMin - span * 0.12) / step) * step;
+  const maxY = Math.ceil((rawMax + span * 0.12) / step) * step;
+  const ys = v => PT + ((maxY - v) / (maxY - minY)) * (H - PT - PB);
+  let grid = '';
+  for (let w = minY; w <= maxY + 1e-9; w += step) {
+    const y = ys(w);
+    grid += '<line x1="' + PL + '" y1="' + y + '" x2="' + (W - PR) + '" y2="' + y + '" stroke="var(--border2)" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.7"/>'
+      + '<text x="' + (PL - 5) + '" y="' + (y + 3.5) + '" text-anchor="end" fill="var(--muted)" font-size="10.5" font-family="Inter">' + (step < 1 ? w.toFixed(1) : Math.round(w * 10) / 10) + '</text>';
+  }
+  // Graduations X : hebdomadaires si ≤ 45 jours, sinon par pas de mois « rond »
+  let ticks = [];
+  const spanDays = d1 - d0;
+  if (spanDays <= 45) {
+    const sp = p.start.split('-');
+    for (let dd = 1; ; dd += 7) { const ds = _wDs(+sp[0], +sp[1] - 1, dd); if (ds > p.end) break; if (ds >= p.start) ticks.push({ ds, lbl: '' + (+ds.slice(8)) }); }
+  } else {
+    const spanMonths = spanDays / 30.44;
+    const mStep = [1, 2, 3, 6, 12, 24].find(s => spanMonths / s <= 6.5) || 24;
+    const sp = p.start.split('-');
+    let idx = (+sp[0]) * 12 + (+sp[1] - 1) + ((+sp[2]) > 1 ? 1 : 0);
+    if (mStep >= 12) idx = Math.ceil(idx / 12) * 12;
+    let first = true;
+    for (; ; idx += mStep) {
+      const y = Math.floor(idx / 12), m = idx % 12, ds = _wDs(y, m, 1);
+      if (ds > p.end) break;
+      let lbl = mStep >= 12 ? '' + y : WEIGHT_MONTHS_SHORT[m].replace('.', '') + ((first || m === 0) ? ' ' + String(y).slice(2) : '');
+      ticks.push({ ds, lbl }); first = false;
+    }
+  }
+  let xLabels = '';
+  ticks.forEach(t => {
+    const x = xs(t.ds);
+    const anchor = x < PL + 14 ? 'start' : x > W - PR - 14 ? 'end' : 'middle';
+    xLabels += '<line x1="' + x + '" y1="' + (H - PB) + '" x2="' + x + '" y2="' + (H - PB + 4) + '" stroke="var(--muted)" stroke-width="0.8"/>'
+      + '<text x="' + x + '" y="' + (H - 9) + '" text-anchor="' + anchor + '" fill="var(--muted)" font-size="10.5" font-family="Inter">' + t.lbl + '</text>';
+  });
+  const pts = data.map(e => ({ x: xs(e.date), y: ys(e.weight), e }));
+  const many = pts.length >= 10;
+  const poly = pts.map(q => q.x.toFixed(1) + ',' + q.y.toFixed(1)).join(' ');
+  const area = pts.length > 1 ? '<path d="M' + pts[0].x.toFixed(1) + ',' + (H - PB) + ' L' + poly.replace(/ /g, ' L') + ' L' + pts[pts.length - 1].x.toFixed(1) + ',' + (H - PB) + ' Z" fill="url(#wg)"/>' : '';
+  // Moyenne glissante sur 7 jours (lisse le bruit quotidien quand il y a beaucoup de mesures)
+  let ma = '';
+  if (many) {
+    const maPts = data.map(e => { const dd = _wDay(e.date); const w = weightEntries.filter(x => { const t = _wDay(x.date); return t <= dd && t > dd - 7; }); const avg = w.reduce((s, x) => s + x.weight, 0) / w.length; return xs(e.date).toFixed(1) + ',' + ys(avg).toFixed(1); }).join(' ');
+    ma = '<polyline points="' + maPts + '" fill="none" stroke="#5b7fff" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+  }
+  // Tendance : régression linéaire sur le temps réel (et non l'index de la mesure)
+  let trend = '', slopePerWeek = null;
+  if (data.length >= 3 && _wDay(data[data.length - 1].date) > _wDay(data[0].date)) {
+    const xa = data.map(e => _wDay(e.date)), n = data.length;
+    const xm = xa.reduce((a, b) => a + b, 0) / n, ym = ws.reduce((a, b) => a + b, 0) / n;
+    const num = xa.reduce((s, x, i) => s + (x - xm) * (ws[i] - ym), 0), den = xa.reduce((s, x) => s + (x - xm) ** 2, 0);
+    const slope = den ? num / den : 0, icpt = ym - slope * xm;
+    const xa0 = xa[0], xa1 = xa[n - 1];
+    const tx0 = PL + ((xa0 - d0) / (d1 - d0)) * (W - PL - PR), tx1 = PL + ((xa1 - d0) / (d1 - d0)) * (W - PL - PR);
+    const clampY = v => Math.max(PT, Math.min(H - PB, ys(v)));
+    trend = '<line x1="' + tx0 + '" y1="' + clampY(slope * xa0 + icpt) + '" x2="' + tx1 + '" y2="' + clampY(slope * xa1 + icpt) + '" stroke="' + (slope <= 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.9"/>';
+    slopePerWeek = slope * 7;
+  }
+  const dots = pts.map(q => '<circle cx="' + q.x.toFixed(1) + '" cy="' + q.y.toFixed(1) + '" r="' + (many ? 2.4 : 4) + '" fill="#5b7fff" stroke="var(--surface)" stroke-width="' + (many ? 0.8 : 1.5) + '" opacity="' + (many ? 0.55 : 1) + '"/>').join('');
+  svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.28"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>'
+    + grid + xLabels + area
+    + (pts.length > 1 ? '<polyline points="' + poly + '" fill="none" stroke="#5b7fff" stroke-width="' + (many ? 1.2 : 2.5) + '" stroke-linejoin="round" stroke-linecap="round" opacity="' + (many ? 0.5 : 1) + '"/>' : '')
+    + ma + trend + dots
+    + '<line id="wsel-line" x1="0" y1="' + PT + '" x2="0" y2="' + (H - PB) + '" stroke="var(--text)" stroke-width="0.8" opacity="0" pointer-events="none"/>'
+    + '<circle id="wsel-dot" cx="0" cy="0" r="6" fill="#5b7fff" stroke="var(--text)" stroke-width="2" opacity="0" pointer-events="none"/>';
+  svg._pts = pts; svg._W = W;
+  bindWeightChartReadout(svg);
+  selectWeightPoint(pts.length - 1);
+  // Statistiques de la période
+  if (statsEl) {
+    const first = data[0], last = data[data.length - 1];
+    const diff = round1(last.weight - first.weight);
+    const avg = round1(ws.reduce((a, b) => a + b, 0) / ws.length);
+    const col = diff < 0 ? 'var(--green)' : diff > 0 ? 'var(--danger)' : 'var(--text)';
+    const arrow = diff < 0 ? '▼' : diff > 0 ? '▲' : '';
+    const kpi = (lab, val, c) => '<div class="mini-kpi" style="text-align:center;padding:8px 4px;"><div style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">' + lab + '</div><div style="font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;' + (c ? 'color:' + c + ';' : '') + '">' + val + '</div></div>';
+    statsEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">'
+      + kpi('Variation', (data.length > 1 ? (diff > 0 ? '+' : '') + diff + ' ' + arrow : '—'), data.length > 1 ? col : '')
+      + kpi('Moyenne', avg) + kpi('Min', rawMin) + kpi('Max', rawMax) + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">' + data.length + ' mesure' + (data.length > 1 ? 's' : '')
+      + (slopePerWeek !== null ? ' · tendance ' + (slopePerWeek > 0 ? '+' : '') + round1(slopePerWeek) + ' kg/sem.' : '') + '</div>';
   }
 }
-const dots = weightEntries.map(function(e, i) {
-  const cx = xs(i), cy = ys(e.weight);
-  const label = e.weight + ' kg \u2014 ' + formatDateFR(e.date, { day: 'numeric', month: 'short' });
-  // Largeur de l'étiquette calculée dynamiquement (au lieu d'une largeur fixe qui pouvait
-  // ne pas correspondre au texte réel) puis bornée pour ne jamais sortir du graphique.
-  const labelW = Math.max(50, label.length * 6.3 + 10);
-  let boxX = cx + 10;
-  if (boxX + labelW > W - 2) boxX = cx - 10 - labelW;
-  boxX = Math.max(2, Math.min(boxX, W - labelW - 2));
-  const textX = boxX + 6;
-  return '<g style="cursor:pointer">'
-    + '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#5b7fff" stroke="#0d0f14" stroke-width="1.5"/>'
-    + '<rect id="wlbl-bg' + i + '" x="' + boxX + '" y="' + (cy - 22) + '" width="' + labelW + '" height="16" rx="4" fill="rgba(20,22,35,0.75)" opacity="0" pointer-events="none"/>'
-    + '<text id="wlbl' + i + '" x="' + textX + '" y="' + (cy - 10) + '" text-anchor="start" fill="#ffffff" font-size="11" font-weight="600" font-family="Inter" opacity="0" pointer-events="none">' + label + '</text>'
-    + '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="transparent"'
-    + ' onmouseover="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
-    + ' onmouseout="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"'
-    + ' ontouchstart="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;1&quot;)"'
-    + ' ontouchend="setTimeout(function(){document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)},1500)"'
-    + ' ontouchcancel="document.getElementById(&quot;wlbl' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;);document.getElementById(&quot;wlbl-bg' + i + '&quot;).setAttribute(&quot;opacity&quot;,&quot;0&quot;)"/>'
-    + '</g>';
-}).join('');
-// Linear regression for trend line
-const n = weightEntries.length;
-const xArr = weightEntries.map((_, i) => i);
-const yArr = weightEntries.map(e => e.weight);
-const xMean = xArr.reduce((a,b)=>a+b,0)/n, yMean = yArr.reduce((a,b)=>a+b,0)/n;
-const num = xArr.reduce((s,x,i)=>s+(x-xMean)*(yArr[i]-yMean),0);
-const den = xArr.reduce((s,x)=>s+(x-xMean)**2,0);
-const slope = den !== 0 ? num/den : 0;
-const intercept = yMean - slope * xMean;
-const tx0 = xs(0), ty0 = ys(intercept);
-const tx1 = xs(n-1), ty1 = ys(slope*(n-1)+intercept);
-svg.innerHTML = '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5b7fff" stop-opacity="0.3"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/></linearGradient></defs>'
-  + gridLines.join('')
-  + '<path class="wchart-area" d="' + smoothAreaPath(ptsArr, P, H - P, W - P) + '" fill="url(#wg)"/>'
-  + '<path class="wchart-line" d="' + smoothLinePath(ptsArr) + '" fill="none" stroke="#5b7fff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
-  + '<line x1="' + tx0 + '" y1="' + ty0 + '" x2="' + tx1 + '" y2="' + ty1 + '" stroke="' + (slope < 0 ? '#3dd68c' : '#ff6b6b') + '" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>'
-  + dots
-  + '<text x="' + P + '" y="' + (H - 8) + '" fill="var(--muted)" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[0].date, { day: 'numeric', month: 'short' }) + '</text>'
-  + '<text x="' + (W - P) + '" y="' + (H - 8) + '" text-anchor="end" fill="var(--muted)" font-size="12" font-family="Inter">' + formatDateFR(weightEntries[weightEntries.length - 1].date, { day: 'numeric', month: 'short' }) + '</text>';
-enableChartZoom(svg);
+// Affiche le point sélectionné (repère + valeur/date au-dessus du graphique).
+function selectWeightPoint(i) {
+  const svg = document.getElementById('weight-svg');
+  if (!svg || !svg._pts || !svg._pts[i]) return;
+  const q = svg._pts[i];
+  const ln = svg.querySelector('#wsel-line'), dt = svg.querySelector('#wsel-dot');
+  if (ln) { ln.setAttribute('x1', q.x); ln.setAttribute('x2', q.x); ln.setAttribute('opacity', '0.35'); }
+  if (dt) { dt.setAttribute('cx', q.x); dt.setAttribute('cy', q.y); dt.setAttribute('opacity', '1'); }
+  const r = document.getElementById('weight-readout');
+  if (r) r.innerHTML = '<b style="font-size:16px;color:var(--text);">' + q.e.weight + ' kg</b> <span style="color:var(--muted);">· ' + formatDateFR(q.e.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + '</span>';
+}
+function bindWeightChartReadout(svg) {
+  if (svg._readoutBound) return;
+  svg._readoutBound = true;
+  svg.style.touchAction = 'pan-y';
+  const pick = ev => {
+    if (!svg._pts || !svg._pts.length) return;
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+    const x = (ev.clientX - rect.left) / rect.width * svg._W;
+    let best = 0, bd = Infinity;
+    svg._pts.forEach((q, i) => { const d = Math.abs(q.x - x); if (d < bd) { bd = d; best = i; } });
+    selectWeightPoint(best);
+  };
+  svg.addEventListener('pointerdown', pick);
+  svg.addEventListener('pointermove', pick);
 }
 // Lisse une courbe (Catmull-Rom → Bézier) au lieu de segments droits, pour un rendu plus doux.
 function smoothLinePath(points) {
@@ -7414,14 +7552,17 @@ function smoothAreaPath(points, baseY, x0, x1) {
   return smoothLinePath(points) + ' L' + x1 + ',' + baseY + ' L' + x0 + ',' + baseY + ' Z';
 }
 function renderWeightHistory() {
-const el = document.getElementById('weight-history-list');
-if (!weightEntries.length) { el.innerHTML = emptyStateHTML('scale', 'Aucune entrée.', '12px 0'); return; }
-el.innerHTML = [...weightEntries].reverse().map(e => `<div class="weight-entry-item">
+  const el = document.getElementById('weight-history-list');
+  if (!weightEntries.length) { el.innerHTML = emptyStateHTML('scale', 'Aucune entrée.', '12px 0'); return; }
+  const list = weightEntriesInPeriod().reverse();
+  if (!list.length) { el.innerHTML = emptyStateHTML('scale', 'Aucune entrée sur cette période.', '12px 0'); return; }
+  const MAX = 60;
+  el.innerHTML = list.slice(0, MAX).map(e => `<div class="weight-entry-item">
 <div class="weight-entry-date">${formatDateFR(e.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
 <div class="weight-entry-val">${e.weight} kg</div>
 <button class="weight-entry-edit" onclick="openEditWeightModal('${e.id}')"><i data-lucide="pencil" class="lc-icon-sm"></i></button>
 <button class="weight-entry-del" onclick="deleteWeightEntry('${e.id}')">✕</button>
-</div>`).join('');
+</div>`).join('') + (list.length > MAX ? '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px 0;">' + (list.length - MAX) + ' entrées plus anciennes — choisis une période plus courte.</div>' : '');
 }
 
 
@@ -10354,6 +10495,24 @@ function niceScale(maxVal, steps = 4) {
   for (let v = 0; v <= maxVal * 1.05; v += step) ticks.push(Math.round(v));
   return ticks;
 }
+// Valeurs au-dessus des barres sans chevauchement : on place d'abord les plus grandes valeurs,
+// en format complet si la place le permet, sinon compact (2 134 → 2,1k) ; une valeur qui
+// recouvrirait une étiquette déjà posée est masquée (l'info reste dans la moyenne / le journal).
+function pickBarValueLabels(vals, xOf, slotW, fontPx) {
+  const out = new Array(vals.length).fill(null);
+  const placed = [];
+  const order = vals.map((v, i) => [v, i]).filter(p => p[0] !== null && p[0] !== undefined).sort((a, b) => b[0] - a[0]);
+  const cw = fontPx * 0.62;
+  order.forEach(([v, i]) => {
+    const full = fmtNum(v), compact = v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '').replace('.', ',') + 'k' : '' + v;
+    const cands = full.length * cw <= slotW - 2 ? [full] : [compact];
+    for (const txt of cands) {
+      const w = txt.length * cw, x = xOf(i);
+      if (placed.every(p => Math.abs(p.x - x) >= (p.w + w) / 2 + 3)) { placed.push({ x, w }); out[i] = txt; break; }
+    }
+  });
+  return out;
+}
 function renderBilanChart(values, goal, range) {
   const wrap = document.getElementById('bilan-chart-wrap');
   wrap.style.display = 'block';
@@ -10426,7 +10585,8 @@ function renderBilanChart(values, goal, range) {
   const estLabelW = Math.max(16, maxLabelChars * 6);
   const labelSkip = n <= 31 ? Math.max(1, Math.ceil(estLabelW / slotW)) : Infinity;
 
-  const trendLine = ''; // trend line removed
+  const valFont = slotW >= 40 ? 13 : 11;
+  const valLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.food), xs, slotW, valFont);
 
   // Bars — chacune est cliquable et amène au journal du jour/semaine/mois concerné
   const bars = chartData.map((d, i) => {
@@ -10438,7 +10598,7 @@ function renderBilanChart(values, goal, range) {
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
 ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${fmtNum(d.food)}</text>` : ''}
+${valLbl[i] ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="${valFont}" font-family="Inter" font-weight="700" stroke="var(--bg)" stroke-width="3" paint-order="stroke" pointer-events="none">${valLbl[i]}</text>` : ''}
 </g>`;
   }).join('');
 
@@ -10453,7 +10613,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="mi
   const subtitle = range === 'quarter' || range === 'year' ? ' (moy. / jour actif)' : '';
   wrap.innerHTML = `
     <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" class="lc-icon-sm"></i>Calories ingérées / jour${subtitle}</div>
-    <svg id="bilan-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
+    <svg id="bilan-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#ef4444" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
       ${bars}
@@ -10548,7 +10708,7 @@ ${!d.isEmpty ? `<text x="${cx}" y="${finalLblY}" text-anchor="middle" fill="${lb
     <div style="margin-bottom:6px;">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">⚖️ Bilan net / jour</div>
     </div>
-    <svg id="bilan-net-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;overflow:visible;">
+    <svg id="bilan-net-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible;">
       ${yLabels}
       ${bars}
       ${cumulLine}
@@ -10599,7 +10759,9 @@ function renderProtChart(values, protGoal, range) {
   // Même anti-chevauchement que le graphique calories : n'affiche que ce qui tient sans se recouvrir.
   const maxLabelChars = Math.max(1, ...chartData.map(d => d.label.length));
   const estLabelW = Math.max(16, maxLabelChars * 6);
-  const labelSkip = Math.max(1, Math.ceil(estLabelW / slotW));
+  const labelSkip = Math.max(1, Math.ceil(estLabelW / slotW));
+  const pValFont = slotW >= 40 ? 13 : 11;
+  const pValLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.prot), xs, slotW, pValFont);
 
   const bars = chartData.map((d, i) => {
     const cx = xs(i), x = cx - barW / 2, showLabel = labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0;
@@ -10610,7 +10772,7 @@ function renderProtChart(values, protGoal, range) {
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
 ${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
-${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="13" font-family="Inter" font-weight="700" pointer-events="none">${d.prot}</text>` : ''}
+${pValLbl[i] ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="${pValFont}" font-family="Inter" font-weight="700" stroke="var(--bg)" stroke-width="3" paint-order="stroke" pointer-events="none">${pValLbl[i]}</text>` : ''}
 </g>`;
   }).join('');
 
@@ -10622,7 +10784,7 @@ ${!d.isEmpty && n <= 14 ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="midd
 
   wrap.innerHTML = `
     <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i data-lucide="dumbbell" class="lc-icon"></i> Protéines / jour</div>
-    <svg id="bilan-prot-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;">
+    <svg id="bilan-prot-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">
       ${yLabels}
       <line x1="${PL}" y1="${goalY}" x2="${W-PR}" y2="${goalY}" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,3" opacity="0.7"/>
       <text x="${W-PR-2}" y="${goalY-4}" text-anchor="end" fill="#a78bfa" font-size="13" font-family="Inter" opacity="0.8">objectif ${protGoal}g</text>

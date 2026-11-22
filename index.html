@@ -680,14 +680,22 @@ onkeydown="if(event.key==='Enter'){event.preventDefault();addIngredientToRecipeB
 </div>
 <div class="weight-chart-wrap">
 <div class="weight-chart-title">Évolution du poids</div>
-<div class="tooltip" style="position: relative; height: 160px;">
-<svg id="weight-svg" viewBox="0 0 400 160" preserveAspectRatio="none"></svg>
-<div class="y-axis">
-<label id="y-axis-max">—</label>
-<label id="y-axis-min">—</label>
+<div class="range-tabs five" role="tablist">
+<button class="range-btn" id="wrange-month" onclick="setWeightRange('month')">Mois</button>
+<button class="range-btn" id="wrange-quarter" onclick="setWeightRange('quarter')">Trimestre</button>
+<button class="range-btn" id="wrange-semester" onclick="setWeightRange('semester')">Semestre</button>
+<button class="range-btn" id="wrange-year" onclick="setWeightRange('year')">Année</button>
+<button class="range-btn" id="wrange-all" onclick="setWeightRange('all')">Tout</button>
 </div>
+<div class="weight-period-nav">
+<button id="weight-prev" class="weight-nav-btn" aria-label="Période précédente" onclick="shiftWeightPeriod(-1)">‹</button>
+<div id="weight-period-label" class="weight-period-label">—</div>
+<button id="weight-next" class="weight-nav-btn" aria-label="Période suivante" onclick="shiftWeightPeriod(1)">›</button>
 </div>
-<div style="font-size:10px;color:var(--muted);margin-top:6px;">Pince pour zoomer, glisse pour naviguer, double-tap pour réinitialiser.</div>
+<div id="weight-readout" class="weight-readout"></div>
+<svg id="weight-svg" viewBox="0 0 360 210"></svg>
+<div style="font-size:10px;color:var(--muted);margin:4px 0 12px;">Touche ou glisse sur la courbe pour lire une mesure. Pointillés : tendance.</div>
+<div id="weight-stats"></div>
 </div>
 <div class="section-label">Historique</div>
 <div id="weight-history-list"></div>
