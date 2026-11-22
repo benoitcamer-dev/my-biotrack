@@ -119,3 +119,25 @@ L'utilisateur **prévient juste avant de monter sur le vélo** ; Claude donne al
 4. Pédaler 5-10 min ; à un moment noter ensemble console et app (watts, kcal, durée, distance).
 5. « Terminer » (ou 30 s sans pédaler) → message « Séance enregistrée » ; vérifier l'Agenda (pas de fenêtre Google).
 6. L'utilisateur dit « j'ai fini » : Claude lit `bike_sessions` + l'entrée et compare avec la console.
+
+---
+
+# Session du 19/11/2026 — Google vérifié, pistes « zéro clic »
+
+## Vérifié (PC Chrome + Pixel 8 via ADB/CDP)
+- Google Agenda sans fenêtre : `gcal-token` renvoie un jeton (59 min) depuis le PC **et** depuis la PWA Brave du Pixel (Client ID présent, 72 car.) ; lecture Agenda = 200. Événement test créé par `addBikeToGoogleCalendar` : arrivé sur le Pixel (agenda n° 5) en quelques secondes, puis supprimé côté Google (204) ; le Pixel l'affichait encore après 25 s (synchro en retard, à purger en ouvrant l'app Agenda).
+- Le Pixel a 3 comptes Google (dont 2 `be***@gmail.com`) : événements vélo habituels dans l'agenda n° 5.
+- `getDevices` absent aussi sur Chrome PC (comme Brave Android) → « Connecter le vélo » à chaque séance en l'état.
+- Console du vélo : la durée se règle sur la console (décompte propre). Le Bluetooth ne transmet pas la durée restante → le champ « durée cible » de l'app est une 2e saisie facultative (doublon).
+
+## Besoin exprimé par l'utilisateur
+Zéro geste : pédaler → l'app voit le vélo → entrée + Agenda automatiques.
+
+## Pistes (décision : voie Health Connect écartée si Kinomap doit être ouverte à chaque séance)
+1. **Drapeaux navigateur (à tester, non fait)** : `getDevices` + `watchAdvertisements` (expérimentaux) → l'app ouverte, panneau en veille, se brancherait seule au réveil du vélo (écran allumé, app ouverte exigés). Vérifier d'abord, en lecture seule, si le drapeau existe dans Brave 1.99.x (`brave://flags`, ex. « Web Bluetooth new permissions backend » / fonctions expérimentales). Ne rien modifier sans accord.
+2. **Raccourci « Vélo » à un tap (repli, non codé)** : ouvrir `index.html#velo` → `openBikeAdvanced()` (panneau en mode Kcal machine) après `init()` (`app.js` ~l.5825) + écouteur `hashchange` ; à modifier à l'identique dans `app.js` ET `index-complet.html` (pas de script de build, `verify.js` contrôle la synchro). Raccourci d'écran d'accueil créé via Brave sur l'URL `#velo` (les `shortcuts` du manifest sont incertains pour un raccourci Brave non-WebAPK). Reste : pédaler, tap raccourci, « Connecter », choisir le vélo.
+3. **Application Android native (service Bluetooth en arrière-plan → Supabase)** : seule voie vraiment sans geste ; abandonnée le 15/11 (gain jugé faible), à reconsidérer si 1 échoue.
+4. **Health Connect via Kinomap** : écartée (Kinomap à ouvrir à chaque séance ; export possiblement payant après ~10/12).
+
+## À noter
+- Working tree : icônes (`icon-*.png`, favicons…) marquées `D` mais référencées par `manifest.json` — ne pas les commiter ainsi sans décision.
