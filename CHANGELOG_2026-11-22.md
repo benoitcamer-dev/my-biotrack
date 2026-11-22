@@ -1,0 +1,10 @@
+# Changelog 22/11/2026
+
+- **Poids — périodes** : la courbe est filtrable par **Mois / Trimestre / Semestre / Année / Tout** (périodes calendaires, flèches ‹ › pour naviguer ; choix mémorisé dans `bt_weight_range`). À l'ouverture, si la période courante est vide, la vue se place sur la dernière mesure ; après un ajout, sur la période de la date saisie (`weightResetView`, `weightOffsetFor`).
+- **Poids — courbe** : axe X proportionnel au **temps** (avant : index de la mesure, ce qui déformait courbe et tendance), graduations de dates adaptées à la période, axe Y à graduations rondes, `viewBox` 360×210 sans `preserveAspectRatio="none"` (texte non déformé). À partir de 10 mesures : moyenne glissante 7 j en trait épais + points bruts discrets. Tendance en régression sur le temps réel. Toucher/glisser = lecture valeur + date (`selectWeightPoint`). Le zoom pincer n'est plus utilisé sur ce graphique.
+- **Poids — synthèse et historique** : cartes Variation / Moyenne / Min / Max, nombre de mesures, tendance en kg/sem. ; historique filtré sur la période (60 lignes max).
+- **Bilan calories / protéines — valeurs sans chevauchement** : `pickBarValueLabels` + `barValueSvg`. Barre assez large : valeur au-dessus ; barre étroite : valeur complète **à la verticale dans la barre** ; sinon version compacte (2,3k) masquée si elle recouvre sa voisine. Avant : valeurs seulement si n ≤ 14 et alors superposées en Trimestre/Année.
+- **Bilan — axe X** : plus de première/dernière étiquette forcées (« 21 déc.28 déc. » se chevauchaient). `preserveAspectRatio="none"` retiré des 3 graphiques du bilan.
+- **Vérification** : site déployé (Chrome) puis Pixel 8 via ADB (PWA Brave, CDP) : onglets, tap/glissement sur la courbe, 0 chevauchement mesuré (`getBoundingClientRect`) en Semaine/Mois/Trimestre/Année.
+- **Limite connue** : en Mois (30 barres, < 9 unités de large), seules ~6 valeurs sur 30 sont affichées. Piste : lecture au toucher (les barres ouvrent déjà le journal).
+- **Piège** : après déploiement, le CSS peut rester en cache HTTP ~10 min (onglets sur 2 lignes, flèches non stylées) — `fetch(url,{cache:'reload'})` puis recharger.
