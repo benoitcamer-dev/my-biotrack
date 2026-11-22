@@ -4099,7 +4099,7 @@ function renderWeightChart() {
     for (; ; idx += mStep) {
       const y = Math.floor(idx / 12), m = idx % 12, ds = _wDs(y, m, 1);
       if (ds > p.end) break;
-      let lbl = mStep >= 12 ? '' + y : WEIGHT_MONTHS_SHORT[m].replace('.', '') + ((first || m === 0) ? ' ' + String(y).slice(2) : '');
+      let lbl = mStep >= 12 ? '' + y : WEIGHT_MONTHS_SHORT[m].replace('.', '') + ((spanMonths > 12 && (first || m === 0)) ? ' ' + String(y).slice(2) : '');
       ticks.push({ ds, lbl }); first = false;
     }
   }
@@ -7147,23 +7147,37 @@ function niceScale(maxVal, steps = 4) {
   for (let v = 0; v <= maxVal * 1.05; v += step) ticks.push(Math.round(v));
   return ticks;
 }
-// Valeurs au-dessus des barres sans chevauchement : on place d'abord les plus grandes valeurs,
-// en format complet si la place le permet, sinon compact (2 134 → 2,1k) ; une valeur qui
-// recouvrirait une étiquette déjà posée est masquée (l'info reste dans la moyenne / le journal).
-function pickBarValueLabels(vals, xOf, slotW, fontPx) {
+// Valeurs des barres sans chevauchement. Barre assez large : valeur complète au-dessus.
+// Barre étroite : valeur complète écrite à la verticale DANS la barre (si elle est assez haute) ;
+// sinon version compacte (2,3k) au-dessus, masquée si elle recouvrirait une voisine.
+// Retourne [{t, v}] (v = vertical) ou null par barre.
+function pickBarValueLabels(vals, xOf, slotW, fontPx, hOf, barW) {
   const out = new Array(vals.length).fill(null);
   const placed = [];
-  const order = vals.map((v, i) => [v, i]).filter(p => p[0] !== null && p[0] !== undefined).sort((a, b) => b[0] - a[0]);
   const cw = fontPx * 0.62;
+  const order = vals.map((v, i) => [v, i]).filter(p => p[0] !== null && p[0] !== undefined).sort((a, b) => b[0] - a[0]);
   order.forEach(([v, i]) => {
     const full = fmtNum(v), compact = v >= 1000 ? (v / 1000).toFixed(1).replace('.0', '').replace('.', ',') + 'k' : '' + v;
-    const cands = full.length * cw <= slotW - 2 ? [full] : [compact];
-    for (const txt of cands) {
-      const w = txt.length * cw, x = xOf(i);
-      if (placed.every(p => Math.abs(p.x - x) >= (p.w + w) / 2 + 3)) { placed.push({ x, w }); out[i] = txt; break; }
-    }
+    const x = xOf(i);
+    const tryAbove = txt => {
+      const w = txt.length * cw;
+      if (placed.every(p => Math.abs(p.x - x) >= (p.w + w) / 2 + 3)) { placed.push({ x, w }); out[i] = { t: txt, v: false }; return true; }
+      return false;
+    };
+    if (full.length * cw <= slotW - 2) { tryAbove(full); return; }
+    const vf = Math.min(fontPx, Math.max(8, barW - 4));
+    if (barW >= 9 && hOf(i) >= full.length * vf * 0.62 + 10) { out[i] = { t: full, v: true, f: vf }; return; }
+    tryAbove(compact);
   });
   return out;
+}
+function barValueSvg(lb, cx, topY, col, fontPx) {
+  if (!lb) return '';
+  if (lb.v) {
+    const len = lb.t.length * lb.f * 0.62, x = cx + lb.f * 0.35, y = topY + 5 + len;
+    return `<text x="${x}" y="${y}" transform="rotate(-90 ${x} ${y})" text-anchor="start" fill="#ffffff" font-size="${lb.f}" font-family="Inter" font-weight="700" pointer-events="none">${lb.t}</text>`;
+  }
+  return `<text x="${cx}" y="${topY - 3}" text-anchor="middle" fill="${col}" font-size="${fontPx}" font-family="Inter" font-weight="700" stroke="var(--bg)" stroke-width="3" paint-order="stroke" pointer-events="none">${lb.t}</text>`;
 }
 function renderBilanChart(values, goal, range) {
   const wrap = document.getElementById('bilan-chart-wrap');
@@ -7238,11 +7252,11 @@ function renderBilanChart(values, goal, range) {
   const labelSkip = n <= 31 ? Math.max(1, Math.ceil(estLabelW / slotW)) : Infinity;
 
   const valFont = slotW >= 40 ? 13 : 11;
-  const valLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.food), xs, slotW, valFont);
+  const valLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.food), xs, slotW, valFont, i => ys(0) - ys(chartData[i].food), barW);
 
   // Bars — chacune est cliquable et amène au journal du jour/semaine/mois concerné
   const bars = chartData.map((d, i) => {
-    const cx = xs(i), showLabel = n <= 31 && (labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0);
+    const cx = xs(i), showLabel = n <= 31 && i % labelSkip === 0;
     const x = cx - barW/2, bh = Math.max(2, ys(0) - ys(d.food));
     const col = d.isEmpty ? 'var(--border2)' : d.food > goal ? '#ef4444' : '#3dd68c';
     const hitX = cx - slotW/2, barRx = Math.min(4, barW / 2).toFixed(1);
@@ -7250,7 +7264,7 @@ function renderBilanChart(values, goal, range) {
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.food)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
 ${showLabel ? `<text x="${cx}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
-${valLbl[i] ? `<text x="${cx}" y="${ys(d.food) - 3}" text-anchor="middle" fill="${col}" font-size="${valFont}" font-family="Inter" font-weight="700" stroke="var(--bg)" stroke-width="3" paint-order="stroke" pointer-events="none">${valLbl[i]}</text>` : ''}
+${barValueSvg(valLbl[i], cx, ys(d.food), col, valFont)}
 </g>`;
   }).join('');
 
@@ -7413,10 +7427,10 @@ function renderProtChart(values, protGoal, range) {
   const estLabelW = Math.max(16, maxLabelChars * 6);
   const labelSkip = Math.max(1, Math.ceil(estLabelW / slotW));
   const pValFont = slotW >= 40 ? 13 : 11;
-  const pValLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.prot), xs, slotW, pValFont);
+  const pValLbl = pickBarValueLabels(chartData.map(d => d.isEmpty ? null : d.prot), xs, slotW, pValFont, i => ys(0) - ys(chartData[i].prot), barW);
 
   const bars = chartData.map((d, i) => {
-    const cx = xs(i), x = cx - barW / 2, showLabel = labelSkip === 1 || i === 0 || i === n - 1 || i % labelSkip === 0;
+    const cx = xs(i), x = cx - barW / 2, showLabel = i % labelSkip === 0;
     const bh = Math.max(2, ys(0) - ys(d.prot));
     const col = d.isEmpty ? 'var(--border2)' : d.prot >= protGoal ? '#3dd68c' : '#ef4444';
     const hitX = cx - slotW / 2, barRx = Math.min(4, barW / 2).toFixed(1);
@@ -7424,7 +7438,7 @@ function renderProtChart(values, protGoal, range) {
 <rect x="${hitX}" y="${PT}" width="${slotW}" height="${H-PT-PB}" fill="transparent"/>
 <rect class="bilan-bar-rect" style="animation-delay:${(i*0.02).toFixed(2)}s" x="${x}" y="${ys(d.prot)}" width="${barW}" height="${bh}" fill="${col}" opacity="${d.isEmpty ? 0.3 : 0.85}" rx="${barRx}"/>
 ${showLabel ? `<text x="${cx}" y="${H-6}" text-anchor="middle" fill="var(--muted)" font-size="${n > 20 ? 11 : (n > 10 ? 12 : 14)}" font-family="Inter" pointer-events="none">${d.label}</text>` : ''}
-${pValLbl[i] ? `<text x="${cx}" y="${ys(d.prot)-3}" text-anchor="middle" fill="${col}" font-size="${pValFont}" font-family="Inter" font-weight="700" stroke="var(--bg)" stroke-width="3" paint-order="stroke" pointer-events="none">${pValLbl[i]}</text>` : ''}
+${barValueSvg(pValLbl[i], cx, ys(d.prot), col, pValFont)}
 </g>`;
   }).join('');
 
